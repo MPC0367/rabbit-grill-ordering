@@ -97,6 +97,10 @@ Admin routes (C4a wires them; page files may still be placeholders while others 
 `i18n/guest.ts` C1a · `i18n/cart.ts` C1b · `i18n/visit.ts` C2 · `i18n/admin.ts` C4a ·
 `i18n/orders.ts` C4b · `i18n/tables.ts` C5 · `i18n/catalog.ts` C6 ·
 `i18n/insights.ts` C7a · `i18n/more.ts` C7b. Key prefixes are listed in `i18n/index.ts`.
+The entry bundle registers only `common` and `errors`; `i18n/guest-bundle.ts`
+(GuestApp) and `i18n/admin-bundle.ts` (AdminApp) register the rest, so guest
+code must use only common, errors, guest, cart and visit keys.
+`node scripts/i18n-check.ts` checks every `t('…')` key in both languages.
 Thai copy rules (from the marketing site's native-speaker audit): natural
 restaurant Thai, no calques (`คือที่ทางของ`), no `ถูก` + verb passives, no
 officialese (`จึงขอให้`), keep brand names in Latin script (Facebook, LINE), no

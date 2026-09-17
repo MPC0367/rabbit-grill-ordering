@@ -105,7 +105,7 @@ function GalleryPage() {
           <LangToggle />
         </div>
         <nav className="kit__jump" aria-label={L('ไปยังส่วน', 'Jump to section')}>
-          {GUEST_SECTIONS.map(([id, label]) => <a key={id} href={`#${id}`} lang="en">{label}</a>)}
+          {frame === 'full' ? GUEST_SECTIONS.map(([id, label]) => <a key={id} href={`#${id}`} lang="en">{label}</a>) : null}
           <a href="#staff-kit" lang="en">Staff kit</a>
         </nav>
       </header>
@@ -137,6 +137,7 @@ function GalleryPage() {
             {lang === 'th' ? <p className="en" lang="en">Staff kit</p> : null}
           </div>
           <Boundary
+            key={lang}
             fallback={(error) => (
               <div className="kit-boundary" role="status">
                 <h3>{L('ยังแสดงชุดหน้าพนักงานไม่ได้', 'The staff kit gallery is not available')}</h3>

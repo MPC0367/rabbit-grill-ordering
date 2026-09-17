@@ -3,6 +3,7 @@ import { forwardRef, type HTMLAttributes, type MouseEvent, type Ref } from 'reac
 import type { Locale } from '../../../shared/settings.ts';
 import { linkHandler } from '../lib/router.ts';
 import { useI18n } from '../lib/i18n.tsx';
+import { useMedia } from '../lib/store.ts';
 import { cx } from './cx.ts';
 import { SegmentedControl } from './SegmentedControl.tsx';
 
@@ -81,6 +82,10 @@ export interface LangToggleProps {
  */
 export function LangToggle({ className }: LangToggleProps) {
   const { lang, setLang, t } = useI18n();
+  // One button, not a group with a hidden pressed half: the roving tabindex
+  // would otherwise leave the only visible button out of the tab order.
+  const narrow = useMedia('(max-width: 359px)');
+  if (narrow) return <LangSwitch className={className} />;
   return (
     <SegmentedControl<Locale>
       tone="box"
@@ -93,5 +98,25 @@ export function LangToggle({ className }: LangToggleProps) {
         { value: 'en', label: 'EN', lang: 'en', ariaLabel: 'English' },
       ]}
     />
+  );
+}
+
+/**
+ * The single language you can switch to ("EN" / "ไทย") as one 44px framed
+ * button: used where a full ไทย/EN box does not fit (sheet heads, 320px
+ * mastheads). The accessible name says what it does.
+ */
+export function LangSwitch({ className }: { className?: string }) {
+  const { lang, setLang, t } = useI18n();
+  const next: Locale = lang === 'th' ? 'en' : 'th';
+  return (
+    <button
+      type="button"
+      className={cx('langswitch', className)}
+      aria-label={t(next === 'en' ? 'common.readInEnglish' : 'common.readInThai')}
+      onClick={() => setLang(next)}
+    >
+      <span lang={next} aria-hidden="true">{next === 'en' ? 'EN' : 'ไทย'}</span>
+    </button>
   );
 }

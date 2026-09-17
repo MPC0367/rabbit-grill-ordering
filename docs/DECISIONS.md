@@ -869,3 +869,174 @@ row (nothing is owed), and the payments screen never lists it. The KPI
 "payment exceptions" (D-S6-10) and the annual report snapshot (D-S7-04) now
 agree: a current revision with no confirmed settlement counts only when its
 total is above zero. Found by the billing integration tests.
+
+**D-C4a-01 · Staff alert sounds are per device, off by default, and never replay history.**
+The chime is synthesised with Web Audio (`client/src/admin/shell/sound.ts`), so
+there are no audio files. The on/off preference lives in this device's
+storage, never in the account, and starts off: turning it on is the explicit
+enable control (brief 19). Audio unlocks on that click, on Test, or on the
+first tap or key press after a reload. `useOrderAlerts()` chimes for
+`order.created`, and for `service.updated`/`portion.updated` creations
+(entity version 1). It skips three kinds of event: those at or below the
+event id at first connect, those older than the latest (re)connect (a
+Last-Event-ID replay), and those more than 4 s old that arrive while the
+stream reports reconnecting or offline (the polling fallback's catch-up
+batch). A burst chimes once (2 s gap). The persistent cue is the Orders badge
+(unaccepted rounds, plus open requests for roles with `service.handle`),
+which is also shown in the tab title.
+
+**D-C4a-02 · Navigation versus reachable pages.**
+The five destinations show only what a role can use: kitchen gets Orders and
+Menu, floor gets Orders and Tables, and cashier gets Orders, Tables and More.
+`/admin/more` (its account section) and `/admin/team?self=1` (your own
+password) open for every signed-in role, and the account menu links to the
+password page. A page that needs a permission the role lacks shows a
+permission-denied panel. Unknown paths show not-found. Sign-in returns to
+the intended page only when the role can open it; otherwise it uses the
+person's saved start page on this device ("Start on this page when I sign
+in") or `me.landing`. Lock screen signs out and keeps the page for the next
+sign-in. Sign out starts fresh.
+
+**D-C4a-03 · Pausing guest ordering.**
+Pause… always opens a dialog. It asks for the guest message in both languages
+(prefilled from the current setting, required by the server), an optional
+honest estimated wait (not shown, 15, 30, 45 or 60 min), and an optional
+audit reason. Resume… offers to clear the estimated wait. Every staff page
+shows the paused state in an ink banner. For roles with `audit.view`, the
+banner also says who paused and when (from the latest `ordering.paused`
+audit row).
+
+**D-C1b-01 · The device draft follows the visit.**
+Drafts live under `rg.cart.<visit>.<guest>`. `bindCart(visit, guest)` loads
+that draft and deletes every draft and pending submission of any other visit;
+`bindCart(null, null)` only unbinds (a session that is still loading must not
+wipe a draft). An ended visit (`mode = 'ended'`, or a 410 from quote/submit)
+deletes its own draft through `endCartVisit()`. Drafts older than 12 hours are
+never restored. Lines added without a known price (e.g. a quick add that did
+not pass the dish) take the first quoted price as the price the guest saw, so
+a later change still surfaces as `price_changed`.
+
+**D-C1b-02 · One unresolved submission at a time, and its lines are frozen.**
+Place order re-quotes, then writes the attempt (key, exact payload, line uids)
+to `rg.submit.<visit>.<guest>` before the request leaves. Network errors,
+timeouts, 5xx and a reload mid-send all lead to the attempt lookup (backoff
+0.8 s up to 15 s, immediately on reconnect or "Check again now"); no new
+submission is offered meanwhile. While unresolved, the submitted lines cannot
+be edited or merged into (new dishes can still be added as new lines).
+`not_found` offers "Try sending again", which re-sends the stored payload with
+the same key; "Edit the order instead" discards the attempt (safe, nothing was
+created) and the next send uses a new key. Any definitive refusal (409, 423,
+422, 429, 401) clears the attempt and keeps the draft; `cart_changed` maps
+`details.quote` back to the sent lines and returns the guest to the list.
+Only a server response (201/200 or a `created` lookup) removes lines, and
+only the lines that were sent.
+
+**D-C1b-03 · Blocked ordering is explained once.**
+The guest shell banner owns the pause, hours, table-pause, intake and billing
+messages. The order page and review step disable Send / Place order and repeat
+only the short title plus "your draft is kept" beside the button. Adding to the
+draft stays possible while ordering is paused (the draft waits on the device,
+nothing is queued for automatic sending); the dish sheet refuses to add while
+the table is checking out.
+
+**D-C7a-01 · Insights screens (`client/src/admin/insights/*`).**
+- Every view is a URL: `period`, `anchor`, `from`/`to`, `metric`, `category`,
+  `direction`, `measure`, `include_fixture`, plus `day`, `q` and `top`.
+  Changes to what is counted push a history entry; a chart selection, the
+  search text and Top 5/10/All replace the current one.
+- `include_fixture` defaults to 1 when `operating_mode` is `demo` (the seeded
+  history is all fixtures) and to 0 in live mode. The page says which in a
+  banner, and the switch is labelled "Include demo data".
+- "All food" and "All drinks" are client-side scopes over the whole-menu
+  ranking. Rows keep the server's order and tie rule; competition ranks and
+  shares are recomputed over the group. The CSV for these scopes is the whole
+  menu and is labelled so.
+- The prior tick on each bar is the full value of the same day (week), date
+  (month) or month (year) of the previous period. Today's bar has no tick,
+  because the headline already compares the same elapsed span.
+- While a period contains today, comparisons are described as "up to HH:MM",
+  whatever the note code, because the server always cuts the previous total
+  at the same elapsed point (D-S6-04).
+- The day drill-down joins `GET /stats/orders/day` with
+  `GET /orders?scope=history&date=` for round numbers, staff names and
+  rejected/cancelled counts.
+
+**D-C4b-01 · Orders board placement and actions (`client/src/admin/orders/*`).**
+- A round sits in the column of its least-advanced active, unserved line. Its
+  one counted action changes only the lines at that stage ("Mark ready · 2"
+  leaves an almost-done dish alone); other dishes move from the ⋯ panel.
+- Rounds whose dishes are all served (or resolved) but not finished show as
+  compact "Served, not finished" rows under the Ready column, with Finish
+  order. Fully rejected or cancelled rounds appear only behind the toolbar's
+  "Show rejected · cancelled", in their own group under the board.
+- With a Kitchen or Bar filter, a ticket shows that station's dishes and a
+  "+N at the bar / in the kitchen" flag for the rest; the filter is stored
+  per device (`rg.orders.station`).
+- "Longer than usual" uses a fixed 20 minutes: no owner setting exists yet.
+  The age filter is the Sort option "Only waiting over 20 min".
+- Board history is `/admin/orders?view=history&date=` (read-only tickets; the
+  ⋯ panel still allows permitted corrections). The shell has no History tab,
+  so it is linked from the Ready column and the board foot.
+- Confirmations (reject, cancel, move back, Finish order) replace the ⋯
+  panel's body instead of stacking a second dialog (DESIGN §10.7). Finish
+  order lists every unserved dish and needs an explicit choice for each; the
+  server's `unresolved_orders` list replaces the device's when it differs.
+- A role without the step sees a disabled primary that states why ("Your role
+  can't mark dishes served"); it stays focusable.
+
+**D-C4b-02 · Assisted ordering and paper orders.**
+- One drawer (`AssistOrderPanel`) for both modes. Drafts and the attempt key
+  are stored per visit and mode (`rg.orders.draft.<mode>.<visit>`). After an
+  unanswered send the lines lock and the only ways on are "Send again" (same
+  key, same lines, same expected subtotal) or "Start over" (the key is
+  dropped; staff are told to check the board first).
+- Weighed cuts are never cart lines: the panel sends a weighing request to
+  the Requests tab instead. Paper orders cannot include them.
+- In recovery mode sold-out and paused dishes stay addable (the server
+  accepts them for paper orders) and their quote issues show as information.
+
+**D-C4b-03 · Live refresh workaround.** `lib/live.tsx` re-creates
+`subscribe` on every event, so `useResource`'s topic effect re-runs and its
+cleanup cancels the pending debounced refetch: changes from another device
+never refetch. The Orders screens add `useLiveRefresh()` (orders/liveRefresh.ts),
+a debounce that is only cleared on unmount. The foundation fix is to keep
+`subscribe`/`onResync` stable (useCallback) in LiveProvider.
+
+## Client integration pass
+
+**D-CI-01 · Live updates: stable subscriptions, parked streams.**
+`LiveProvider` now keeps `subscribe` and `onResync` stable (useCallback), so
+`useResource(path, { topics })` refetches on every matching event, not only
+after a reconnect (the bug D-C4b-03 and the C2, C4a, C5 and C7a reports
+describe). The Orders screens dropped their duplicate `useLiveRefresh` calls,
+which had turned every event into two identical GETs; the other streams'
+wrappers call `useResource` without topics and stay as they are. The stream is
+also closed on `pagehide` and reopened on a back/forward-cache `pageshow`:
+browsers allow six HTTP/1.1 connections per host, and documents parked in the
+cache kept their EventSource open, so after six full navigations every request
+(Resume guest ordering, for one) hung.
+
+**D-CI-02 · The guest entry never carries staff code or copy.**
+The entry bundle registers only `common` and `errors`. `i18n/guest-bundle.ts`
+(imported by GuestApp) adds guest, cart and visit; `i18n/admin-bundle.ts`
+(fetched beside AdminApp, and by the dev gallery) adds the staff areas and the
+guest ones. The staff kit is re-exported by the ui barrel, so
+`vite.config.ts` marks `client/src/ui/admin/*` side-effect-free: guest chunks
+that use none of it no longer load it. zod reaches the guest only when the
+weighed-cut sheet's bounds load (a dynamic import; the server validates
+anyway). The `/ui-kit` gallery is left out of production builds.
+`node scripts/i18n-check.ts` checks every `t('…')` key in both languages,
+placeholder parity and that guest code uses only guest-loaded keys.
+
+**D-CI-03 · Language switch inside guest sheets.**
+A modal sheet makes the page (and its ไทย/EN box) inert, yet brief 08 asks
+that switching language keeps the open sheet. `Sheet` takes `langSwitch`: a
+44px framed button with the one language you can switch to, beside Close, on
+the dish, service and weighed-cut sheets. Focus still opens on Close. The
+masthead box collapses to the same single button below 360px (it used to hide
+the pressed half, which left the only visible button out of the tab order).
+
+**D-CI-04 · Shell routes.** Orders gains a routed History subtab
+(`/admin/orders?view=history`, as in the approved board mock). The menu review
+queue opens for every menu manager (read-only unless `menu.review`), as C6
+asked.

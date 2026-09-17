@@ -10,25 +10,26 @@
 //   catalog.ts  catalog.*                                        (C6 admin menu)
 //   insights.ts insights.*                                       (C7a insights)
 //   more.ts     reports.* team.* settings.* audit.* more.*       (C7b more)
+//
+// Loading: the entry bundle carries only common + errors. Each interface
+// registers its own areas when its chunk loads (guest-bundle.ts from
+// GuestApp, admin-bundle.ts from AdminApp), so a guest phone never downloads
+// the staff copy. Registration mutates the same objects, so lookups made
+// after the chunk has evaluated (every render inside it) see the new keys.
 import type { Locale } from '../../../shared/settings.ts';
 import common from './common.ts';
 import errors from './errors.ts';
-import guest from './guest.ts';
-import cart from './cart.ts';
-import visit from './visit.ts';
-import admin from './admin.ts';
-import orders from './orders.ts';
-import tables from './tables.ts';
-import catalog from './catalog.ts';
-import insights from './insights.ts';
-import more from './more.ts';
 
 export type Dict = Record<string, string>;
 export interface AreaDict { th: Dict; en: Dict }
 
-const areas: AreaDict[] = [common, errors, guest, cart, visit, admin, orders, tables, catalog, insights, more];
+export const dictionaries: Record<Locale, Dict> = { th: {}, en: {} };
 
-export const dictionaries: Record<Locale, Dict> = {
-  th: Object.assign({}, ...areas.map((a) => a.th)),
-  en: Object.assign({}, ...areas.map((a) => a.en)),
-};
+export function registerDictionaries(...areas: AreaDict[]): void {
+  for (const a of areas) {
+    Object.assign(dictionaries.th, a.th);
+    Object.assign(dictionaries.en, a.en);
+  }
+}
+
+registerDictionaries(common, errors);

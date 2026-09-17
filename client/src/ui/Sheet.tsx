@@ -15,6 +15,7 @@ import { cx, useIsoLayoutEffect, useLatest } from './cx.ts';
 import { useEscape } from './hooks.ts';
 import { firstFocusable, useFocusReturn, useHistoryDismiss, useScrollLock } from './overlay.ts';
 import { Button, IconButton } from './Button.tsx';
+import { LangSwitch } from './Brand.tsx';
 import { TextArea } from './Field.tsx';
 
 export type SheetVariant = 'sheet' | 'dialog' | 'drawer';
@@ -41,7 +42,12 @@ export interface SheetProps {
   wide?: boolean;
   closeLabel?: string;
   hideClose?: boolean;
-  /** false: Escape, backdrop and Back do nothing (use sparingly). */
+  /**
+   * Guest sheets: a language switch beside the close button. The page behind a
+   * modal sheet is inert, and switching language must keep the open sheet.
+   */
+  langSwitch?: boolean;
+  /** false: Escape and the backdrop do nothing (e.g. while an action is pending). Back still closes unless history is false. */
   dismissible?: boolean;
   /** Push a history entry so Back closes it (default true). */
   history?: boolean;
@@ -58,7 +64,7 @@ export interface SheetProps {
 }
 
 function SheetParts({
-  titleId, title, kicker, head, hideClose, closeLabel, onClose, grab, children, footer, footerAlign, bodyClassName,
+  titleId, title, kicker, head, hideClose, closeLabel, onClose, grab, children, footer, footerAlign, bodyClassName, langSwitch,
 }: SheetProps & { titleId: string; grab: boolean }) {
   const { t } = useI18n();
   return (
@@ -67,7 +73,12 @@ function SheetParts({
       {head ?? (
         <div className="sheet__head">
           {kicker ? <p className="sheet__kick">{kicker}</p> : title ? <h2 id={titleId}>{title}</h2> : <span />}
-          {hideClose ? null : (
+          {langSwitch ? (
+            <div className="sheet__tools">
+              <LangSwitch />
+              {hideClose ? null : <IconButton label={closeLabel ?? t('common.close')} icon="x" iconSize="lg" onClick={onClose} data-overlay-close="" />}
+            </div>
+          ) : hideClose ? null : (
             <IconButton label={closeLabel ?? t('common.close')} icon="x" iconSize="lg" onClick={onClose} data-overlay-close="" />
           )}
         </div>
@@ -87,7 +98,7 @@ function ModalSheet(props: SheetProps) {
 
   useFocusReturn(true);
   useScrollLock(true);
-  useHistoryDismiss(true, () => close.current(), history && dismissible);
+  useHistoryDismiss(true, () => close.current(), history);
 
   useIsoLayoutEffect(() => {
     const d = ref.current;
@@ -95,7 +106,9 @@ function ModalSheet(props: SheetProps) {
     if (!d.open) {
       try { d.showModal(); } catch { d.setAttribute('open', ''); }
     }
-    const target = initialFocus?.current ?? null;
+    // With a language switch in the head, open on the close button as before
+    // rather than on the switch that now comes first.
+    const target = initialFocus?.current ?? (props.langSwitch ? d.querySelector<HTMLElement>('[data-overlay-close]') : null);
     if (target) target.focus();
     else if (!d.contains(document.activeElement)) firstFocusable(d)?.focus();
     return () => { if (d.open) d.close(); };

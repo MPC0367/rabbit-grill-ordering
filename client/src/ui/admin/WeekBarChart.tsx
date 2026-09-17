@@ -232,7 +232,7 @@ export function WeekBarChart({
                 if (b.state === 'future' || b.state === 'missing') {
                   return (
                     <rect
-                      key={b.key}
+                      key={`f-${i}`}
                       className={b.state === 'future' ? 'wbc__future' : 'wbc__missing'}
                       x={x + 0.75}
                       y={TOP + 0.75}
@@ -247,7 +247,7 @@ export function WeekBarChart({
                 const h = (v / top) * H;
                 const yTop = y(v);
                 return (
-                  <g key={b.key}>
+                  <g key={`b-${i}`}>
                     {v > 0 ? (
                       <rect className="wbc__bar" x={x} y={yTop} width={barW} height={h + 3} rx="2" style={{ y: yTop, height: h + 3 }} />
                     ) : (
@@ -284,11 +284,11 @@ export function WeekBarChart({
               const cx0 = cxOf(i);
               if (b.state === 'future' || b.state === 'missing') {
                 const text = b.state === 'missing' && slot >= 60 ? t('common.chart.noData') : '—';
-                return <text key={`v-${b.key}`} className="wbc__val is-muted" x={cx0} y={TOP - 9} textAnchor="middle" style={{ fontSize: valueSize }}>{text}</text>;
+                return <text key={`v-${i}`} className="wbc__val is-muted" x={cx0} y={TOP - 9} textAnchor="middle" style={{ fontSize: valueSize }}>{text}</text>;
               }
               const v = b.value ?? 0;
               const yy = (v > 0 ? y(v) : base - 3) - (b.state === 'partial' ? 11 : 8);
-              return <text key={`v-${b.key}`} className="wbc__val" x={cx0} y={yy} textAnchor="middle" style={{ fontSize: valueSize, y: yy }}>{format(v)}</text>;
+              return <text key={`v-${i}`} className="wbc__val" x={cx0} y={yy} textAnchor="middle" style={{ fontSize: valueSize, y: yy }}>{format(v)}</text>;
             }) : null}
           </svg>
 

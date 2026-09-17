@@ -78,9 +78,13 @@ export function LiveProvider({ url, children, onEnded }: { url: string | null; c
     let pollTimer: ReturnType<typeof setTimeout> | null = null;
     let failures = 0;
     let disposed = false;
+    // A document leaving for the back/forward cache keeps its stream open
+    // unless we close it, and browsers allow only six connections per host:
+    // a few full navigations would then stall every request.
+    let parked = false;
 
     const poll = async () => {
-      if (disposed) return;
+      if (disposed || parked) return;
       try {
         const r = await api.get<{ cursor: number; events: WireEvent[]; resync: boolean }>(`${url}/poll?since=${cursor.current}`);
         if (r.resync) resync();
@@ -95,11 +99,12 @@ export function LiveProvider({ url, children, onEnded }: { url: string | null; c
         }
         setState(navigator.onLine ? 'reconnecting' : 'offline');
       }
+      if (disposed || parked) return;
       pollTimer = setTimeout(poll, POLL_MS);
     };
 
     const connect = () => {
-      if (disposed) return;
+      if (disposed || parked) return;
       if (typeof EventSource === 'undefined' || failures >= 4) {
         // Streaming unavailable (proxy, old browser): fall back to polling.
         void poll();
@@ -135,8 +140,24 @@ export function LiveProvider({ url, children, onEnded }: { url: string | null; c
     const online = () => { if (failures >= 4) { failures = 0; if (pollTimer) clearTimeout(pollTimer); connect(); } };
     const offline = () => setState('offline');
     const visible = () => { if (document.visibilityState === 'visible') resync(); };
+    const park = () => {
+      parked = true;
+      es?.close();
+      es = null;
+      if (pollTimer) clearTimeout(pollTimer);
+      pollTimer = null;
+    };
+    const unpark = (e: PageTransitionEvent) => {
+      if (!e.persisted || !parked) return;
+      parked = false;
+      failures = 0;
+      setState('reconnecting');
+      connect(); // 'hello' triggers a resync
+    };
     window.addEventListener('online', online);
     window.addEventListener('offline', offline);
+    window.addEventListener('pagehide', park);
+    window.addEventListener('pageshow', unpark);
     document.addEventListener('visibilitychange', visible);
     return () => {
       disposed = true;
@@ -144,24 +165,29 @@ export function LiveProvider({ url, children, onEnded }: { url: string | null; c
       if (pollTimer) clearTimeout(pollTimer);
       window.removeEventListener('online', online);
       window.removeEventListener('offline', offline);
+      window.removeEventListener('pagehide', park);
+      window.removeEventListener('pageshow', unpark);
       document.removeEventListener('visibilitychange', visible);
     };
   }, [url, dispatch, resync]);
 
-  const value = useMemo<LiveApi>(() => ({
-    state,
-    lastEventAt,
-    lastSyncAt,
-    subscribe: (prefixes, fn) => {
-      const h = { prefixes, fn };
-      handlers.current.add(h);
-      return () => { handlers.current.delete(h); };
-    },
-    onResync: (fn) => {
-      resyncers.current.add(fn);
-      return () => { resyncers.current.delete(fn); };
-    },
-  }), [state, lastEventAt, lastSyncAt]);
+  // subscribe/onResync must keep their identity across events: consumers list
+  // them as effect dependencies, and a new identity on every event would re-run
+  // those effects and cancel the debounced refetch the event had just scheduled.
+  const subscribe = useCallback((prefixes: string[], fn: Handler) => {
+    const h = { prefixes, fn };
+    handlers.current.add(h);
+    return () => { handlers.current.delete(h); };
+  }, []);
+  const onResync = useCallback((fn: ResyncHandler) => {
+    resyncers.current.add(fn);
+    return () => { resyncers.current.delete(fn); };
+  }, []);
+
+  const value = useMemo<LiveApi>(
+    () => ({ state, lastEventAt, lastSyncAt, subscribe, onResync }),
+    [state, lastEventAt, lastSyncAt, subscribe, onResync],
+  );
 
   return <LiveContext.Provider value={value}>{children}</LiveContext.Provider>;
 }

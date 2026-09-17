@@ -17,12 +17,14 @@ export interface ConnectionIndicatorProps {
   state?: LiveState;
   /** Override the last successful sync (ms epoch). */
   lastSyncAt?: number | null;
+  /** Connected but the shown data failed to refresh (useResource().stale): show it as stale. */
+  stale?: boolean;
   /** Guest offline banner action (e.g. a "เรียกพนักงาน" button). */
   offlineAction?: ReactNode;
   className?: string;
 }
 
-export function ConnectionIndicator({ variant = 'staff', state, lastSyncAt, offlineAction, className }: ConnectionIndicatorProps) {
+export function ConnectionIndicator({ variant = 'staff', state, lastSyncAt, stale, offlineAction, className }: ConnectionIndicatorProps) {
   const { t } = useI18n();
   const live = useLive();
   const s = state ?? live.state;
@@ -30,9 +32,10 @@ export function ConnectionIndicator({ variant = 'staff', state, lastSyncAt, offl
   const last = lastRaw ? new Date(lastRaw).toISOString() : null;
 
   if (variant === 'staff') {
-    const tone = s === 'live' ? '' : s === 'offline' || s === 'ended' ? 'conn--offline' : 'conn--stale';
-    const word = t(`conn.${s}`);
-    const detail = s === 'live'
+    const staleLive = s === 'live' && stale;
+    const tone = s === 'live' && !stale ? '' : s === 'offline' || s === 'ended' ? 'conn--offline' : 'conn--stale';
+    const word = staleLive ? t('conn.stale') : t(`conn.${s}`);
+    const detail = s === 'live' && !stale
       ? (last ? t('conn.synced', { time: clockSeconds(last) }) : null)
       : s === 'ended' ? null
         : last ? t('conn.lastSync', { time: clock(last) }) : t('conn.neverSynced');
@@ -45,7 +48,7 @@ export function ConnectionIndicator({ variant = 'staff', state, lastSyncAt, offl
   }
 
   if (variant === 'track') {
-    if (s === 'live') {
+    if (s === 'live' && !stale) {
       return (
         <Pill tone="ok" live role="status" className={className} data-state={s}>
           {t('conn.liveGuest')}

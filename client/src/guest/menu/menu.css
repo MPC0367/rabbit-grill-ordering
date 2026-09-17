@@ -1,0 +1,58 @@
+/* Guest menu additions (stream C1a). Tokens only; the kit draws the rows. */
+
+/* First render: the list fades in once (140-200 ms, at most 4 px of travel).
+   `backwards` leaves no transform behind, so nothing sticky is affected.
+   Reduced motion: the tokens collapse the duration and the rise. */
+.mlist--in { animation: mlist-in var(--dur-fast) var(--ease-out) backwards; }
+@keyframes mlist-in { from { opacity: 0; transform: translateY(var(--rise)); } }
+
+/* Deep links and category jumps land under the sticky chrome. */
+.mmain .msec { scroll-margin-top: calc(var(--header-h) + var(--safe-top) + 5px + var(--catrow-h) + 8px); }
+.mmain .msec__title h2:focus { outline: none; }
+
+/* Section hint: seasonal tag, printed note, language marker. */
+.mhint { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.mhint .tag { align-self: center; }
+.mhint__lang { color: var(--text-2); font-style: normal; }
+.mhint > span + .mhint__lang::before { content: "·"; margin-right: 10px; }
+
+/* Row kicker: alcohol flag (always with words), demo price tag. */
+.mdish__kick { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.mdish__alc { display: inline-flex; align-items: center; gap: 5px; color: var(--alert); font-weight: var(--fw-semibold); }
+.mdish__alc .i { width: 15px; height: 15px; }
+
+/* Row meta: category (search results), language marker, why it cannot be ordered. */
+.mdish__meta { display: grid; gap: 2px; }
+.mdish__ctx { color: var(--text-2); }
+.mdish__lang { color: var(--text-3); }
+.mdish__why { display: flex; align-items: flex-start; gap: 5px; color: var(--text-2); font-weight: var(--fw-medium); margin-top: 2px; }
+.mdish__why .i { flex: none; margin-top: 3px; color: var(--text-2); }
+
+/* Search results */
+.msearch { padding-top: 20px; }
+.msearch__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 10px; }
+.msearch__head h2 { font: var(--type-title-th); min-width: 0; overflow-wrap: anywhere; }
+.msearch__head .meta { flex: none; font-feature-settings: var(--num-features); }
+.mlist > .empty { padding-top: 48px; }
+
+/* Loading placeholder keeps the printed-menu shape. */
+.mskel { padding-top: 24px; }
+.mskel__head { display: grid; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--rule-ink); }
+
+/* Desktop order panel */
+.mpanel__empty { padding: 14px 0 4px; display: grid; gap: 2px; }
+.mpanel__empty-t { font: var(--type-control-th); font-size: var(--fs-16); }
+.mpanel__body { margin-top: 6px; }
+.mpanel__opts { display: inline-flex; flex-wrap: wrap; gap: 0 6px; }
+.mpanel__opts > span + span::before { content: "· "; }
+.mpanel__more { padding: 4px 0 0 68px; }
+.mpanel .bill__note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cartpanel__foot { display: flex; gap: 6px; align-items: flex-start; }
+.cartpanel__foot .i { flex: none; margin-top: 4px; }
+.g-cart .cartpanel__list { max-height: min(52vh, 460px); overflow-y: auto; overscroll-behavior: contain; }
+
+/* The desktop sidebar keeps its group switch and list in view. */
+@media (min-width: 1080px) {
+  .g-side { max-height: calc(100dvh - var(--header-h) - 5px); overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; scrollbar-width: thin; }
+  .mmain .msec { scroll-margin-top: calc(var(--header-h) + var(--safe-top) + 13px); }
+}

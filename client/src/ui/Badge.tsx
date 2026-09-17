@@ -6,6 +6,12 @@ import { useI18n } from '../lib/i18n.tsx';
 import { cx } from './cx.ts';
 import { Icon, type IconName } from './Icon.tsx';
 
+const THAI = /[฀-๿]/;
+/** lang for plain-text labels whose language is not known up front (Thai labels are never tracked). */
+function textLang(children: ReactNode): string | undefined {
+  return typeof children === 'string' && THAI.test(children) ? 'th' : undefined;
+}
+
 // ---------------------------------------------------------------- Badge
 export interface BadgeProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
   count: number;
@@ -165,7 +171,7 @@ export const Tag = forwardRef<HTMLSpanElement, TagProps>(function Tag(
   const { t, lang: uiLang } = useI18n();
   const text = children ?? (tone === 'example' ? t('common.example') : null);
   return (
-    <span ref={ref} lang={lang ?? (tone === 'example' && children === undefined ? uiLang : undefined)} className={cx('tag', `tag--${tone}`, className)} {...rest}>
+    <span ref={ref} lang={lang ?? (tone === 'example' && children === undefined ? uiLang : textLang(children))} className={cx('tag', `tag--${tone}`, className)} {...rest}>
       {icon ? <Icon name={icon} size="xs" /> : null}
       {text}
     </span>
@@ -196,7 +202,7 @@ export const Flag = forwardRef<HTMLSpanElement, FlagProps>(function Flag(
   const fallback = kind === 'alcohol' ? t('common.alcoholConfirm') : kind === 'example' ? t('common.example') : null;
   const icon = FLAG_ICON[kind];
   return (
-    <span ref={ref} lang={lang ?? (children === undefined && fallback ? uiLang : undefined)} className={cx('flag', `flag--${kind}`, className)} {...rest}>
+    <span ref={ref} lang={lang ?? (children === undefined && fallback ? uiLang : textLang(children))} className={cx('flag', `flag--${kind}`, className)} {...rest}>
       {icon ? <Icon name={icon} size="xs" /> : null}
       {children ?? fallback}
     </span>

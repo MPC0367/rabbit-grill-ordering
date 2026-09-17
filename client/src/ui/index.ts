@@ -15,7 +15,7 @@ export { Badge, Pill, StatusPill, Tag, Flag, Chip, useStatusWording } from './Ba
 export type { BadgeProps, PillProps, PillTone, StatusPillProps, StatusPillSubject, TagProps, TagTone, FlagProps, FlagKind, ChipProps } from './Badge.tsx';
 export { Price, Leader } from './Price.tsx';
 export type { PriceProps, PriceSize, LeaderProps } from './Price.tsx';
-export { Wordmark, TableTag, LangToggle } from './Brand.tsx';
+export { Wordmark, TableTag, LangToggle, LangSwitch } from './Brand.tsx';
 export type { WordmarkProps, TableTagProps, LangToggleProps } from './Brand.tsx';
 export { Stepper } from './Stepper.tsx';
 export type { StepperProps } from './Stepper.tsx';

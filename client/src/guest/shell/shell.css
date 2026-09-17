@@ -1,0 +1,38 @@
+/* Guest shell additions (stream C1a). Tokens only; kit classes do the rest. */
+
+/* The page wrapper is a focus target for route changes and the skip link. */
+.gshell-page { outline: none; }
+
+/* Banners stack directly under the masthead double rule. */
+.gshell-banners { display: grid; }
+.gshell-banners > .banner + .banner { border-top: 0; }
+.gshell-banners .banner__body { text-wrap: pretty; }
+@media (max-width: 479px) {
+  /* Phones: the action drops under the words so the sentence keeps its width. */
+  .gshell-banners .banner:has(> .btn) { flex-wrap: wrap; }
+  .gshell-banners .banner:has(> .btn) > .banner__body { flex: 1 1 calc(100% - 34px); }
+  .gshell-banners .banner:has(> .btn) > .btn { margin-left: 30px; }
+}
+
+/* Reconnecting: a small heat chip in a zero-height sticky slot. It sits under
+   the banners (or the category row) and stays under the sticky chrome while
+   the guest scrolls, without ever pushing the menu. */
+.gshell-conn {
+  position: sticky;
+  top: calc(var(--header-h) + var(--safe-top) + 5px);
+  z-index: var(--z-sticky);
+  height: 0;
+  display: flex; justify-content: center; align-items: flex-start;
+  pointer-events: none;
+  animation: fade var(--dur-fast) var(--ease-out);
+}
+.gshell-conn[data-where="menu"] { top: calc(var(--header-h) + var(--safe-top) + 5px + var(--catrow-h)); }
+.gshell-conn .connchip { padding: 8px 0 0; }
+.gshell-conn .pill { box-shadow: var(--shadow-card); }
+@media (min-width: 1080px) {
+  .gshell-conn[data-where="menu"] { top: calc(var(--header-h) + var(--safe-top) + 5px); }
+}
+
+/* Shell pages (not found, page error, loading placeholder). */
+.gpage { padding-top: 24px; }
+.gpage--loading { display: grid; gap: 14px; padding-top: 28px; }

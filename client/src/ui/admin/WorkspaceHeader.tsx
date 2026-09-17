@@ -76,17 +76,21 @@ export const WorkspaceHeader = forwardRef<HTMLElement, WorkspaceHeaderProps>(fun
 ) {
   const { t } = useI18n();
   return (
-    <header ref={ref} {...rest} className={cx('wshead', compact && 'wshead--compact', className)}>
-      <h1>{title}</h1>
-      {tabs && tabs.length > 0 ? (
-        <SubTabs items={tabs} label={tabsLabel ?? t('common.staff.views', { title })} onNavigate={onTabNavigate} />
-      ) : null}
-      {demo ? <DemoStamp /> : null}
-      <div className="wshead__right">
-        {extra}
-        {connection}
-        {ordering}
-        {identity}
+    <header ref={ref} {...rest} className={cx('wshead-cq', className)}>
+      {/* The inner row is the styled header; the outer element is sticky and a size container,
+          so long texts give way when the workspace is narrow, whatever the viewport. */}
+      <div className={cx('wshead', compact && 'wshead--compact')}>
+        <h1>{title}</h1>
+        {tabs && tabs.length > 0 ? (
+          <SubTabs items={tabs} label={tabsLabel ?? t('common.staff.views', { title })} onNavigate={onTabNavigate} />
+        ) : null}
+        {demo ? <DemoStamp /> : null}
+        <div className="wshead__right">
+          {extra}
+          {connection}
+          {ordering}
+          {identity}
+        </div>
       </div>
     </header>
   );

@@ -23,5 +23,12 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     target: 'es2022',
+    rolldownOptions: {
+      // The ui barrel re-exports the staff kit. Its modules have no side
+      // effects, so guest chunks that use none of it must not load it.
+      treeshake: {
+        moduleSideEffects: (id: string) => !/client[\/]src[\/]ui[\/]admin[\/]/.test(id),
+      },
+    },
   },
 });
