@@ -862,3 +862,10 @@ server does, so audit filters treat demo and real rows alike.
 `scripts/browser.ts` launches Edge/Chrome with `pipe: true`: if the Node
 process is killed mid-report the pipes close and the browser exits instead of
 lingering, and a failed launch removes its throwaway profile.
+
+**D-T3-01 · A settled zero bill is not a payment exception.**
+Checkout records a finalized zero-total revision as settled without a payment
+row (nothing is owed), and the payments screen never lists it. The KPI
+"payment exceptions" (D-S6-10) and the annual report snapshot (D-S7-04) now
+agree: a current revision with no confirmed settlement counts only when its
+total is above zero. Found by the billing integration tests.

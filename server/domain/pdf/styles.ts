@@ -18,6 +18,8 @@ body { font-family: ${FONT.sans}, sans-serif; font-size: 8.4pt; line-height: 1.5
 [lang="th"] { letter-spacing: 0; }
 h1, h2, h3, h4 { margin: 0; font-weight: 500; }
 p { margin: 0 0 2.2mm; }
+/* <code> would otherwise use the browser's monospace default, a font installed on the server (not embedded). */
+code { font-family: ${FONT.sans}, sans-serif; font-size: 0.95em; }
 .muted { color: ${C.taupe}; }
 .small { font-size: 7.4pt; }
 .ember { color: ${C.emberInk}; }

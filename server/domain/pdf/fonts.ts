@@ -14,10 +14,15 @@ const LATIN = 'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U
 const LATIN_EXT = 'U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF';
 const THAI = 'U+02D7,U+0303,U+0331,U+0E01-0E5B,U+200C-200D,U+25CC';
 
+// Oswald and Cormorant are Latin-only faces. Each stack falls back to the
+// embedded Noto Sans Thai before the generic family, so Thai text and the
+// baht sign inside display-styled elements (KPI labels and values, the cover
+// badge, table headers, group rows, tags) never fall through to a font
+// installed on the server (Tahoma on Windows, tofu boxes where none exists).
 export const FONT = {
   sans: "'RG Sans'",
-  display: "'RG Display'",
-  serif: "'RG Serif'",
+  display: "'RG Display', 'RG Sans'",
+  serif: "'RG Serif', 'RG Sans'",
 } as const;
 
 const FACES: Face[] = [

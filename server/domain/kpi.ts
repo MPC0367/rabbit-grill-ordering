@@ -85,7 +85,9 @@ export function kpis(q: KpiParams): KpiDTO {
   if (financial) {
     for (const r of revisions) {
       if (r.settled === null) {
-        if (r.visit_status === 'closed' || r.business_date < clock.today) {
+        // A zero-total revision owes nothing: checkout records it as settled without a
+        // payment row (checkout.ts), and the payments screen does not list it either.
+        if (r.total_minor > 0 && (r.visit_status === 'closed' || r.business_date < clock.today)) {
           exceptions.count++;
           exceptions.value_minor += r.total_minor;
         }

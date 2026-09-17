@@ -257,7 +257,12 @@ export function priceCart(lines: CartLineInput[], opts: { charges?: ChargeRule[]
     const qty = Math.max(1, Math.min(99, input.quantity));
     const total = lineTotal(unit, modifiersMinor, qty);
 
-    if (input.expected_unit_minor !== undefined && input.expected_unit_minor !== null && input.expected_unit_minor !== unit + modifiersMinor) {
+    // Compare against what the guest saw only when this line HAS a current price:
+    // a missing/unavailable variant or an unpriced/measured item already has its
+    // own issue, and "price changed to 0" would misstate the change (T2 tests).
+    const priceKnown = item.pricing_type === 'variant' ? variant !== null
+      : item.pricing_type === 'fixed' ? item.price_minor !== null : false;
+    if (priceKnown && input.expected_unit_minor !== undefined && input.expected_unit_minor !== null && input.expected_unit_minor !== unit + modifiersMinor) {
       issue('price_changed', 'The price has changed since you added this.', { unit_price_minor: unit + modifiersMinor, line_total_minor: total });
     }
 

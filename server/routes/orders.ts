@@ -91,6 +91,10 @@ function submitCart(a: SubmitArgs): { orderId: string; replayed: boolean } {
  * invalid choices, price differences, measured-weight cuts) needs review.
  */
 function recoveryBlocked(result: PriceCartResult, lines: CartLineInput[]): boolean {
+  // A dish whose price was withdrawn reports only its first unavailability
+  // reason (e.g. `paused`), which is excused below; without this check it was
+  // recorded at 0 THB. No current price always needs review (T2 tests).
+  if (result.priced.some((p) => p.item.pricing_type === 'fixed' && p.item.price_minor === null)) return true;
   return result.quote.issues.some((issue) => {
     if (issue.code === 'sold_out') return false;
     if (issue.code !== 'not_orderable') return true;

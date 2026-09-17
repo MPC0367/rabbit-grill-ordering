@@ -658,7 +658,8 @@ export async function buildSnapshot(r: SnapshotReader, job: JobInfo): Promise<Re
           // Payment exceptions, as the KPI screen defines them (D-S6-10): a current revision with no
           // confirmed settlement once the visit closed or its finalize date passed (valued at the total),
           // or a settlement that differs from the total (valued at the difference).
-          if (!paid?.count && (b.visit_status === 'closed' || b.business_date < today)) {
+          // A zero-total revision owes nothing (checkout settles it without a payment row), as in kpi.ts.
+          if (!paid?.count && b.total_minor > 0 && (b.visit_status === 'closed' || b.business_date < today)) {
             exceptions.push({ kind: 'finalized_unpaid', at: b.finalized_at, visit_id: b.visit_id, table_label: label, amount_minor: b.total_minor, detail: `Revision ${b.revision_no} has no confirmed settlement${b.visit_status === 'closed' ? ' and the visit is closed' : ''}` });
           } else if (paid?.count && paid.minor !== b.total_minor) {
             exceptions.push({ kind: 'amount_mismatch', at: b.finalized_at, visit_id: b.visit_id, table_label: label, amount_minor: Math.abs(paid.minor - b.total_minor), detail: `Settled ${paid.minor >= b.total_minor ? 'more' : 'less'} than revision ${b.revision_no}'s total` });

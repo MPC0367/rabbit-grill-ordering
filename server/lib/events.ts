@@ -97,10 +97,16 @@ type Filter =
 
 function fetchSince(filter: Filter, cursor: number, limit = 200): EventRow[] {
   if (filter.kind === 'staff') {
+    // Hidden topics are excluded in SQL, BEFORE the limit: filtering afterwards
+    // let a run of >= `limit` hidden rows (e.g. many bill.updated events for a
+    // kitchen tablet) come back empty forever, so the cursor never advanced and
+    // new orders were never delivered, and the resync check miscounted.
     return many<EventRow>(
-      `SELECT * FROM events WHERE id > :cursor AND audience IN ('staff','all') ORDER BY id LIMIT :limit`,
-      { cursor, limit },
-    ).filter((e) => !filter.hiddenTopics.some((t) => e.topic.startsWith(t)));
+      `SELECT * FROM events WHERE id > :cursor AND audience IN ('staff','all')
+         AND NOT EXISTS (SELECT 1 FROM json_each(:hidden) h WHERE substr(events.topic, 1, length(h.value)) = h.value)
+       ORDER BY id LIMIT :limit`,
+      { cursor, limit, hidden: filter.hiddenTopics },
+    );
   }
   return many<EventRow>(
     `SELECT * FROM events WHERE id > :cursor AND audience IN ('guest','all')
@@ -128,7 +134,12 @@ export function sseStream(c: Context, filter: Filter): Response {
   c.header('Cache-Control', 'no-store, no-transform');
   c.header('X-Accel-Buffering', 'no');
   return streamSSE(c, async (stream) => {
-    let cursor = Number.isFinite(headerId) && headerId >= 0 ? headerId : latestEventId();
+    const latest = latestEventId();
+    // A cursor beyond the newest event (the database was restored or reset since
+    // the client last connected) would silently skip every new event until the
+    // ids caught up: start from now instead; the client refetches on hello.
+    const replay = Number.isFinite(headerId) && headerId >= 0 && headerId <= latest;
+    let cursor = replay ? headerId : latest;
     let closed = false;
     let wake: (() => void) | null = null;
     const poke = () => { wake?.(); };
@@ -139,7 +150,7 @@ export function sseStream(c: Context, filter: Filter): Response {
       wake?.();
     });
 
-    await stream.writeSSE({ event: 'hello', id: String(cursor), data: JSON.stringify({ cursor, server_time: nowIso(), replay: Number.isFinite(headerId) }), retry: 3000 });
+    await stream.writeSSE({ event: 'hello', id: String(cursor), data: JSON.stringify({ cursor, server_time: nowIso(), replay }), retry: 3000 });
 
     let lastBeat = Date.now();
     while (!closed) {
@@ -175,6 +186,9 @@ export function sseStream(c: Context, filter: Filter): Response {
 
 /** Poll endpoint equivalent for clients that cannot keep a stream open. */
 export function eventsSince(filter: Filter, cursor: number): { cursor: number; events: WireEvent[]; resync: boolean } {
+  // Same reset as sseStream: a cursor from a newer (pre-restore) database resyncs.
+  const latest = latestEventId();
+  if (cursor > latest) return { cursor: latest, events: [], resync: true };
   const rows = fetchSince(filter, cursor);
   if (rows.length >= 200) return { cursor: latestEventId(), events: [], resync: true };
   return { cursor: rows.at(-1)?.id ?? cursor, events: rows.map(toWire), resync: false };

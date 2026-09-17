@@ -83,6 +83,7 @@ export interface TestServer {
   openVisit(tableId: string, covers?: number | null): Promise<any>;
   guest(tableId: string, pin: string | null): Promise<Client>;
   sql<T = any>(query: string, params?: unknown[]): T[];
+  exec(query: string, params?: unknown[]): { changes: number };
   stop(): Promise<void>;
   logs(): string;
 }
@@ -146,6 +147,7 @@ export async function startServer(opts: { mode?: 'live' | 'demo'; pinRequired?: 
   }
 
   let reader: DatabaseSync | null = null;
+  let writer: DatabaseSync | null = null;
   const srv: TestServer = {
     url,
     dbPath,
@@ -173,9 +175,20 @@ export async function startServer(opts: { mode?: 'live' | 'demo'; pinRequired?: 
       reader ??= new DatabaseSync(dbPath, { readOnly: true });
       return reader.prepare(query).all(...(params as never[])) as never[];
     },
+    exec(query, params = []) {
+      // Separate writable connection (WAL allows it alongside the server).
+      // Use only to plant historical facts the API cannot create (past dates);
+      // the server's settings cache is not refreshed by writes made here.
+      writer ??= new DatabaseSync(dbPath);
+      writer.exec('PRAGMA busy_timeout = 5000');
+      const r = writer.prepare(query).run(...(params as never[]));
+      return { changes: Number(r.changes) };
+    },
     async stop() {
       reader?.close();
       reader = null;
+      writer?.close();
+      writer = null;
       child.kill();
       await new Promise((r) => setTimeout(r, 200));
       try { rmSync(dir, { recursive: true, force: true }); } catch { /* Windows may hold the WAL briefly */ }
