@@ -7,6 +7,7 @@ import { SERVICE_TYPES } from '../../../../shared/status.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useResource } from '../../lib/live.tsx';
 import { ChoiceGroup, KeyValue, Pill, RadioCard, Select, Skeleton, Switch, TextField } from '../../ui/index.ts';
+import { dateLabel } from '../../lib/format.ts';
 import { fullDateTime, NumberField, numberProblem, useTopicRefresh } from './shared.tsx';
 import { FieldRow, SettingsSection, SwitchRow, useRangeHelp, useSettingsCtx } from './settingsParts.tsx';
 import { useEffect } from 'react';
@@ -376,6 +377,37 @@ const RETENTION: Array<{ key: keyof Settings['retention']; min: number }> = [
   { key: 'audit_days', min: 365 },
 ];
 
+/** What the daily clean-up task last did (D-S8-02): when it ran, and how far raw events are removed. */
+function RetentionStatus() {
+  const { t, lang } = useI18n();
+  const { view } = useSettingsCtx();
+  const status = view.retention_status;
+  if (!status) return null;
+  return (
+    <div className="setstatus">
+      <KeyValue
+        items={[
+          {
+            key: 'run',
+            term: t('settings.retention.status'),
+            value: status.last_run_at ? t('settings.retention.lastRun', { at: fullDateTime(status.last_run_at, lang) }) : t('settings.retention.neverRun'),
+            muted: !status.last_run_at,
+          },
+          {
+            key: 'raw',
+            term: t('settings.retention.raw_events_days'),
+            value: status.raw_events_purged_through
+              ? t('settings.retention.purged', { date: dateLabel(status.raw_events_purged_through, lang, { year: true }) })
+              : t('settings.retention.purgedNone'),
+            muted: !status.raw_events_purged_through,
+          },
+        ]}
+      />
+      <p className="mp-meta">{t('settings.retention.statusHelp')}</p>
+    </div>
+  );
+}
+
 export function RetentionSection() {
   const { t } = useI18n();
   const check = useRangeCheck();
@@ -391,7 +423,12 @@ export function RetentionSection() {
         for (const r of RETENTION) check(e, `retention.${r.key}`, d.retention[r.key], r.min, 3650);
         return e;
       }}
-      after={<p className="setnote"><b>{t('settings.retention.rollover')}</b> {t('settings.retention.rolloverD')}</p>}
+      after={(
+        <>
+          <RetentionStatus />
+          <p className="setnote"><b>{t('settings.retention.rollover')}</b> {t('settings.retention.rolloverD')}</p>
+        </>
+      )}
     >
       {({ draft, merge, err }) => (
         <FieldRow>

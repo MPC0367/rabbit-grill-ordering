@@ -66,6 +66,11 @@
 .c5-payrow__act { justify-self: start; margin-left: -12px; }
 :is(.c5-payrow__main, .c5-payrow__meta):lang(th) { line-height: var(--lh-thai-min); }
 
+/* a refund recorded after checkout (D-S8-04): the bill is history, not "paid" */
+.c5-refund { display: grid; gap: 2px; }
+.c5-refund__meta { font: var(--fw-regular) var(--fs-13)/1.45 var(--font-ui); font-feature-settings: var(--num-features); overflow-wrap: anywhere; }
+.c5-refund__meta:lang(th) { line-height: var(--lh-thai-min); }
+
 /* revision history */
 .c5-revs { margin-top: 12px; border-top: 1px solid var(--rule); }
 .c5-revs > summary { display: flex; align-items: center; gap: 8px; min-height: var(--tap-staff); cursor: pointer; font: var(--type-ui-strong); color: var(--text); list-style: none; }

@@ -14,6 +14,18 @@ export type SortKey = 'oldest' | 'newest' | 'table' | 'late';
 /** Where a round shows: a board column, the served-but-unfinished list, or the rejected/cancelled group. */
 export type Placement = BoardStage | 'served' | 'void';
 
+/**
+ * How a line shows staff confirmation, from the snapshot the server takes when
+ * the round is sent (D-FX-OPS-02, D-S8-20): alcohol lines that need it get the
+ * kit's "Alcohol · staff to confirm" row, other flagged dishes a "Staff to
+ * confirm" chip, and nothing when neither the item nor the owner's alcohol
+ * switch asks for it. Today's menu never rewrites an old ticket.
+ */
+export function staffConfirmOf(l: OrderLineDTO): { alcohol: boolean; chip: boolean } {
+  if (!l.requires_staff_confirm) return { alcohol: false, chip: false };
+  return { alcohol: l.alcohol === true, chip: l.alcohol !== true };
+}
+
 export function tableOf(o: StaffOrderDTO): string {
   return o.current_table_label ?? o.table_label;
 }

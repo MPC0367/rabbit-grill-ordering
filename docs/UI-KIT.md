@@ -79,7 +79,7 @@ Every component also takes `className`. `forwardRef` is noted where it applies.
 - **Sticky header:** `WorkspaceHeader`'s sticky element is now an outer `.wshead-cq`, with `.wshead` inside it. When the workspace gets narrow, the demo stamp, sync time and other long texts hide based on the header's own width, not the viewport.
 
 ## CSS and i18n
-- **`client/src/styles/admin-kit.css`**, in ten sections:
+- **`client/src/styles/admin-kit.css`** loads with the staff platform, not with the entry bundle: `client/src/App.tsx` imports it just before the admin code (and before the `/ui-kit` gallery), so guest phones never download it and the admin screens' own stylesheets still come after it. It has ten sections:
   1. Thai safety: Oswald caps labels switch to Noto with no tracking, and Thai lines keep line-height 1.55.
   2. Rail modes by class: compact tablet rail and phone bottom bar.
   3. Header, page header and section header, including the header size queries.

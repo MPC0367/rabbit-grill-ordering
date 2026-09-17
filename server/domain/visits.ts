@@ -425,11 +425,16 @@ export function resolveQr(target: QrTarget, current: GuestContext | null): QrRes
   // A member of the current visit is recognised even if staff disabled the table
   // meanwhile: they still see their orders and bill (ordering itself is blocked).
   const alreadyJoined = visit !== undefined && current !== null && current.visitId === visit.id;
+  const pinRequired = join.pin_required && !alreadyJoined;
   return {
     table_label: table.label,
     state,
-    pin_required: join.pin_required && !alreadyJoined,
+    pin_required: pinRequired,
     already_joined: alreadyJoined,
+    // The length of THIS visit's code, so the join screen shows the right
+    // number of boxes after the setting changed (a visit keeps the PIN it was
+    // opened with). Never the code itself.
+    pin_digits: pinRequired && visit?.join_pin ? visit.join_pin.length : null,
   };
 }
 

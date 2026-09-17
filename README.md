@@ -54,7 +54,7 @@ npm run db:reset                                   # delete the development data
 
 `npm run dev` starts two processes:
 
-- **web**: Vite on `PORT` (default 8344). It is reachable from the network for phone testing and serves only the browser app.
+- **web**: Vite on `PORT` (default 8344). It is reachable from the network for phone testing, serves only the browser app, and forwards each phone's address to the API.
 - **api**: Node on `127.0.0.1:API_PORT` (default `PORT + 1`). It restarts when `server/` or `shared/` changes, and it never seeds, so a save during the first start cannot corrupt the database.
 
 ## Try it on phones (same Wi-Fi)
@@ -97,7 +97,7 @@ npm start                                              # app + API on HOST:PORT;
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Development: seed an empty database, then the watched API and the Vite web server |
-| `npm run build` | Build the browser app into `dist/` |
+| `npm run build` | Build the browser app into `dist/`, then precompress the bundles (`.br` / `.gz`) |
 | `npm start` | Production entry: one process serving `dist/` and the API. No demo seeding unless `SEED_DEMO=1` |
 | `npm run seed` | Migrate and seed an empty development database without starting a server |
 | `npm run db:reset` | Delete the development database (refused with `NODE_ENV=production`) |
@@ -109,6 +109,7 @@ npm start                                              # app + API on HOST:PORT;
 | `npm run typecheck` | TypeScript check of server, client, scripts and tests |
 | `npm run i18n:check` | Every translation key exists in Thai and English |
 | `npm run assets` | Rebuild the processed menu photographs in `public/media/` |
+| `npm run pdf:pages -- <file.pdf> [--pages 1-3,last]` | Render pages of a generated PDF to PNG, to look at the printed report itself |
 
 Run `npm run e2e` and `npm run shots` from a normal desktop terminal (PowerShell on Windows). They start the installed browser.
 
@@ -123,9 +124,9 @@ Copy `.env.example` to `.env`. A variable set in the shell always wins over `.en
 | `PUBLIC_BASE_URL` | dev: LAN address; start: `http://localhost:PORT` | The address printed in table QR codes |
 | `DATABASE_PATH` / `REPORTS_DIR` | `var/rabbit-grill.db` / `var/reports` | The data to back up |
 | `NODE_ENV` | unset | `production` for real installs (refuses seeding and resets) |
-| `COOKIE_SECURE` | on when `PUBLIC_BASE_URL` is https | Secure cookies |
-| `TRUST_PROXY_HOPS` | `0` | The number of reverse proxies in front of the app |
-| `SEED_DEMO` / `SEED_HISTORY` | dev: on / start: off | Development fixtures |
+| `COOKIE_SECURE` | unset: follows the `PUBLIC_BASE_URL` scheme (https = Secure) | Secure cookies. Leave it unset: forcing it on over plain http stops everyone signing in |
+| `TRUST_PROXY_HOPS` | `0` | The number of reverse proxies in front of the app (`npm run dev` uses 1 for its own Vite proxy) |
+| `SEED_DEMO` / `SEED_HISTORY` | off; `npm run dev` and `npm run seed` set them | Development fixtures (no other entry point seeds) |
 | `BROWSER_PATH` | auto | The Edge/Chrome/Chromium used for PDFs and tests |
 
 The restaurant's own settings (charges, payment methods, hours, services, PIN policy, alcohol, retention, roles) are edited in **More → Settings**, not in `.env`. Every default there is a proposal until the owner confirms it.

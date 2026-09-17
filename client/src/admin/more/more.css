@@ -168,7 +168,8 @@
   .rcov__c:first-child, .rcov__c:last-child { grid-column: 1 / -1; }
   .ryear { padding: 16px 14px 18px; }
   .ryear__actions { width: 100%; }
-  .ryear__actions .btn { flex: 1 1 auto; }
+  /* The next-file label ("· Final") must wrap rather than widen the card at 320. */
+  .ryear__actions .btn { flex: 1 1 auto; white-space: normal; }
 }
 .rcov dt { font: var(--type-cap); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--text-2); }
 .rcov dt:lang(th) { font: var(--fw-medium) var(--fs-13)/var(--lh-thai-min) var(--font-ui); letter-spacing: 0; text-transform: none; }
@@ -391,6 +392,8 @@ dialog.sheet--drawer .drawer__head .avatar { flex: none; }
 .setpreview__k { font: var(--type-ui-strong); }
 .setpreview__list { display: flex; flex-wrap: wrap; gap: 6px; }
 @media (max-width: 719px) { .setpreview { margin: 0 -16px -14px; padding-inline: 16px; } }
+.setstatus { display: grid; gap: 6px; padding: 10px 12px; border-radius: var(--radius-ctl); background: var(--sunken); }
+.setstatus .mp-meta { margin: 0; }
 .setnote { font: var(--type-ui-sm); color: var(--text-2); padding: 10px 12px; border-radius: var(--radius-ctl); background: var(--sunken); }
 .setnote b { color: var(--text); }
 .setnote:lang(th) { line-height: var(--lh-thai-min); }
@@ -468,6 +471,10 @@ dialog.sheet--drawer .drawer__head .avatar { flex: none; }
 .mode-counts dt { font: var(--type-ui-sm); color: var(--text-2); }
 .mode-counts dt:lang(th) { line-height: var(--lh-thai-min); }
 .mode-counts dd { font: var(--fw-medium) var(--fs-32)/1 var(--font-display); font-feature-settings: var(--num-features); }
+/* demo staff accounts the switch would deactivate (D-S8-11) */
+.mode-demo { display: grid; gap: 6px; padding: 12px 14px; border-radius: var(--radius-ctl); background: var(--alert-tint); box-shadow: inset 3px 0 0 var(--alert); }
+.mode-demo__list { margin: 0; }
+.mode-demo__u { font: var(--fw-regular) var(--fs-14)/1.4 var(--font-display); font-feature-settings: var(--num-features); letter-spacing: var(--track-ref); }
 
 /* permission matrix */
 .perm-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }

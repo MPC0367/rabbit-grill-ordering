@@ -103,8 +103,10 @@ export function GuestSessionProvider({ children }: { children: ReactNode }) {
         retry.current.n = 0;
         setState((prev) => ({
           mode: 'ended',
-          // keep the last known visit (table label for the ended page)
-          session: prev.session,
+          // Keep the last known visit (the ended page's table label, and the
+          // visit its feedback belongs to). After a reload this tab has none of
+          // its own: the mark from before the reload still has it.
+          session: prev.session ?? readEnded()?.session ?? null,
           endedReason: e.code,
           error: null,
         }));
@@ -149,7 +151,9 @@ export function GuestSessionProvider({ children }: { children: ReactNode }) {
   // Remember an ended visit for this tab; a new join forgets it.
   useEffect(() => {
     if (state.mode === 'joined') writeEnded(null);
-    else if (state.mode === 'ended') writeEnded({ reason: state.endedReason, session: state.session, at: Date.now() });
+    // Never replace a remembered visit with "nothing": the reason may arrive
+    // (410 from a fresh load) before this tab has learned which visit it was.
+    else if (state.mode === 'ended') writeEnded({ reason: state.endedReason, session: state.session ?? readEnded()?.session ?? null, at: Date.now() });
   }, [state.mode, state.endedReason, state.session]);
 
   useEffect(() => {

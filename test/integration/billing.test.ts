@@ -344,7 +344,10 @@ test('complete checkout closes the visit, revokes every guest, clears the PIN, r
   expectError(await stale().get('/api/guest/orders'), 410, 'visit_closed');
   expectError(await stale().post('/api/guest/orders', { idempotency_key: key('att'), lines: [SOUP()], expected_subtotal_minor: 15000 }), 410, 'visit_closed');
   expectError(await guest2.post('/api/guest/service', { type: 'call_staff', idempotency_key: key('svc') }), 410, 'visit_closed');
-  expectError(await guest2.post('/api/guest/bill/request', { idempotency_key: key('bill') }), 401, 'visit_access_required'); // cookie was cleared
+  // The cookie survives checkout for the short feedback window (D-S8-22), so every
+  // other route keeps answering visit_closed rather than "no cookie at all".
+  expectError(await guest2.post('/api/guest/bill/request', { idempotency_key: key('bill') }), 410, 'visit_closed');
+  assert.ok(guest2.cookies.has('rg_guest'), 'the ended visit keeps its cookie while feedback is still possible');
 
   // History is kept for staff.
   const detail = ok(await manager.get(`/api/staff/visits/${visit.id}`));
@@ -698,7 +701,9 @@ test('a refund recorded after checkout is kept as history and never reopens the 
   assert.equal((await tile(table.id)).state, 'available');
   expectError(await pay(visit.id, rev), 409, 'invalid_transition');
   expectError(await manager.post(`/api/staff/visits/${visit.id}/billing/reopen`, { version: visitRow(visit.id).version, reason: 'Re-bill' }), 409, 'invalid_transition');
-  expectError(await manager.post(`/api/staff/visits/${visit.id}/adjustments`, { kind: 'comp', amount_minor: -100, reason: 'Late comp' }), 409, 'invalid_transition');
+  expectError(await manager.post(`/api/staff/visits/${visit.id}/adjustments`, {
+    kind: 'comp', amount_minor: -100, reason: 'Late comp', idempotency_key: key('adj'), bill_version: (await bill(visit.id, manager)).bill_version,
+  }), 409, 'invalid_transition');
   assert.equal(auditCount(visit.id, 'payment.refund_record'), 1);
 
   const list = ok(await manager.get('/api/staff/payments'));
@@ -724,7 +729,12 @@ test('adjustments are refused while a payable revision exists', async () => {
   const placed = await order(guest, [SOUP(2)], 30000);
   await acceptAll(visit.id);
 
-  const adjust = (as: Client, body: Record<string, unknown>) => as.post(`/api/staff/visits/${visit.id}/adjustments`, body);
+  // Every adjustment carries its retry key and the bill version the manager saw (D-S8-01).
+  const adjust = async (as: Client, body: Record<string, unknown>) => as.post(`/api/staff/visits/${visit.id}/adjustments`, {
+    idempotency_key: key('adj'),
+    bill_version: (await bill(visit.id, manager)).bill_version,
+    ...body,
+  });
   expectError(await adjust(floor, { kind: 'discount', amount_minor: -5000, reason: 'Birthday' }), 403, 'forbidden');
   expectError(await adjust(cashier, { kind: 'discount', amount_minor: -5000, reason: 'Birthday' }), 403, 'forbidden');
   const discounted = ok(await adjust(manager, { kind: 'discount', amount_minor: -5000, reason: 'Birthday' }));
@@ -777,7 +787,9 @@ test('configured charges are snapshotted at seating and the bill is exact to the
   // 150 + (590 steak with salad as the included side: +30 upgrade) + 80 = 850 THB.
   await order(guest, [SOUP(), STEAK_SALAD, LATTE_HOT()], 85000);
   await acceptAll(visit.id);
-  ok(await manager.post(`/api/staff/visits/${visit.id}/adjustments`, { kind: 'discount', amount_minor: -1234, reason: 'Loyalty discount' }));
+  ok(await manager.post(`/api/staff/visits/${visit.id}/adjustments`, {
+    kind: 'discount', amount_minor: -1234, reason: 'Loyalty discount', idempotency_key: key('adj'), bill_version: (await bill(visit.id, manager)).bill_version,
+  }));
 
   // Base 837.66: service 10% = 83.766 -> 83.77 (half-up); VAT 7% included = 54.80 (shown, not added);
   // corkage 50.00; the disabled rule is not snapshotted. Total 837.66 + 83.77 + 50.00 = 971.43.

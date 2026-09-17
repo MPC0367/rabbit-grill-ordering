@@ -14,7 +14,7 @@
 // blank text/price cell clears it.
 import type { AdminCatalogDTO, Bilingual, ImportErrorDTO, ImportPreviewDTO, ImportRowDTO, ImportSummaryDTO } from '../../shared/dto.ts';
 import { newId } from '../../shared/ids.ts';
-import { IMAGE_ALT_MAX } from '../../shared/schemas.ts';
+import { ALIAS_MAX, ALIASES_PER_ITEM, IMAGE_ALT_MAX } from '../../shared/schemas.ts';
 import { PRICING_TYPES, STATIONS, type PricingType, type Station } from '../../shared/status.ts';
 import { nowIso } from '../../shared/time.ts';
 import { insert, many, one, parseJson, run, updateVersioned } from '../db/index.ts';
@@ -26,13 +26,16 @@ import { emit } from '../lib/events.ts';
 import { getSettings } from '../lib/settings.ts';
 import { adminCatalog } from './catalog.ts';
 import { addPriceHistory, nextItemSort, normalizePricing, syncVariants, trackOrderability, type VariantInput } from './catalog-edit.ts';
-import { bi, catalogVersion, type ItemRow, type VariantRow } from './pricing.ts';
+import { bi, catalogVersion, normalizeAliases, parseAliases, type ItemRow, type VariantRow } from './pricing.ts';
 
 export const IMPORT_COLUMNS = [
   'key', 'category_key', 'name_th', 'name_en', 'desc_th', 'desc_en', 'pricing_type', 'price_baht', 'rate_baht',
   'rate_basis_grams', 'variant_key', 'variant_name_th', 'variant_name_en', 'variant_price_baht', 'station',
-  'alcohol', 'notes_allowed', 'max_qty', 'image', 'image_alt_th', 'image_alt_en',
+  'alcohol', 'notes_allowed', 'max_qty', 'image', 'image_alt_th', 'image_alt_en', 'aliases_th', 'aliases_en',
 ] as const;
+
+/** Search aliases travel in one cell, separated by "|" (never printed on the menu). */
+export const ALIAS_SEPARATOR = '|';
 type Column = (typeof IMPORT_COLUMNS)[number];
 
 /** Item-level columns: they must agree across the rows of one key. */
@@ -46,6 +49,15 @@ const LIMITS: Partial<Record<Column, number>> = {
   name_th: 120, name_en: 120, desc_th: 400, desc_en: 400, image_alt_th: IMAGE_ALT_MAX, image_alt_en: IMAGE_ALT_MAX,
   variant_name_th: 60, variant_name_en: 60,
 };
+
+/** "grilled beef|ribeye" -> ["grilled beef", "ribeye"], or an error message. */
+function parseAliasCell(text: string): { aliases: string[] } | { error: string } {
+  const parts = normalizeAliases(text.split(ALIAS_SEPARATOR));
+  if (parts.length > ALIASES_PER_ITEM) return { error: `Up to ${ALIASES_PER_ITEM} search aliases per dish, separated by "${ALIAS_SEPARATOR}".` };
+  const tooLong = parts.find((a) => [...a].length > ALIAS_MAX);
+  if (tooLong) return { error: `Keep each search alias to ${ALIAS_MAX} characters.` };
+  return { aliases: parts };
+}
 
 // ------------------------------------------------------------------ money text
 export function minorToBaht(minor: number | null): string {
@@ -108,7 +120,10 @@ export function exportCatalogCsv(): string {
     { key: 'image', header: 'image', value: (r) => i(r).image },
     { key: 'image_alt_th', header: 'image_alt_th', value: (r) => i(r).image_alt_th },
     { key: 'image_alt_en', header: 'image_alt_en', value: (r) => i(r).image_alt_en },
+    { key: 'aliases_th', header: 'aliases_th', value: (r) => parseAliases(i(r).aliases_th).join(ALIAS_SEPARATOR) },
+    { key: 'aliases_en', header: 'aliases_en', value: (r) => parseAliases(i(r).aliases_en).join(ALIAS_SEPARATOR) },
     // Read-only context: ignored by the importer.
+    { key: 'aliases_verified', header: 'aliases_verified', value: (r) => i(r).aliases_verified === 1 },
     { key: 'variant_id', header: 'variant_id', value: (r) => r.variant?.id },
     { key: 'variant_available', header: 'variant_available', value: (r) => (r.variant ? r.variant.available === 1 : null) },
     { key: 'status', header: 'status', value: (r) => i(r).status },
@@ -132,6 +147,8 @@ export interface ItemFields {
   price_minor?: number | null; rate_minor?: number | null; rate_basis_grams?: number | null;
   station?: Station; alcohol?: 0 | 1; notes_allowed?: 0 | 1; max_qty?: number;
   image?: string | null; image_alt_th?: string | null; image_alt_en?: string | null;
+  /** Search aliases, replacing the current list. Imported aliases are never published (unreviewed). */
+  aliases_th?: string[]; aliases_en?: string[];
 }
 
 export interface ItemPlan {
@@ -279,6 +296,13 @@ export function analyseImport(csv: string): { rows: ImportRowDTO[]; errors: Impo
     if (c.max_qty) {
       if (!/^\d{1,2}$/.test(c.max_qty) || Number(c.max_qty) < 1) err(head.row, 'max_qty', 'bad_number', 'max_qty must be a whole number from 1 to 99.');
       else fields.max_qty = Number(c.max_qty);
+    }
+    for (const col of ['aliases_th', 'aliases_en'] as const) {
+      const v = c[col];
+      if (v === undefined) continue;
+      const parsed = parseAliasCell(v);
+      if ('error' in parsed) err(head.row, col, 'bad_value', parsed.error);
+      else fields[col] = parsed.aliases;
     }
     if (c.image !== undefined) {
       if (c.image !== '' && !IMAGE_RE.test(c.image)) err(head.row, 'image', 'bad_value', 'Image names use lower-case letters, digits and hyphens.');
@@ -453,6 +477,9 @@ function createFromPlan(plan: ItemPlan, batch: BatchRow, categoryId: string, cat
     image: f.image ?? null,
     image_alt_th: f.image_alt_th ?? null,
     image_alt_en: f.image_alt_en ?? null,
+    aliases_th: JSON.stringify(f.aliases_th ?? []),
+    aliases_en: JSON.stringify(f.aliases_en ?? []),
+    aliases_verified: 0,
     source_ref: `csv:${batch.filename} row ${plan.rows.join(',')}`,
     retrieved_at: batch.created_at,
     created_at: now,
@@ -480,6 +507,11 @@ function updateFromPlan(plan: ItemPlan, batch: BatchRow, item: ItemRow, category
   for (const col of ['name_th', 'name_en', 'desc_th', 'desc_en', 'image', 'image_alt_th', 'image_alt_en', 'station', 'alcohol', 'notes_allowed', 'max_qty'] as const) {
     set(col, f[col]);
   }
+  for (const col of ['aliases_th', 'aliases_en'] as const) {
+    if (f[col] !== undefined) set(col, JSON.stringify(f[col]));
+  }
+  // A spreadsheet is unreviewed data: imported aliases wait for a reviewer.
+  if (('aliases_th' in patch || 'aliases_en' in patch) && item.aliases_verified === 1) patch.aliases_verified = 0;
   if ('name_th' in patch) {
     patch.name_th_source = patch.name_th ? 'csv_import' : null;
     patch.translation_status = 'needs_review';

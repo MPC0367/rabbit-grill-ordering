@@ -4,19 +4,19 @@
 // its routed subtabs, the Demo data stamp, the connection pill, the guest
 // ordering control and the staff identity.
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
-import type { OverviewDTO, StaffMeDTO } from '../../../../shared/dto.ts';
+import type { StaffMeDTO } from '../../../../shared/dto.ts';
 import type { Locale } from '../../../../shared/settings.ts';
-import { TIMEZONE, todayBusinessDate } from '../../../../shared/time.ts';
+import { TIMEZONE } from '../../../../shared/time.ts';
 import { clock, dateLabel } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useLive, type WireEvent } from '../../lib/live.tsx';
 import { useRoute } from '../../lib/router.ts';
-import { useNow } from '../../lib/store.ts';
 import {
   AdminRail, announce, Banner, Button, ConnectionIndicator, RailFooter, RailNav, SubTabs, useToast, WorkspaceHeader,
   type RailItem, type SubTabItem,
 } from '../../ui/index.ts';
-import { useAttention } from './attention.tsx';
+import { useBusinessToday } from '../insights/query.ts';
+import { useAttention, portionsToWeigh, weighCountIsExact } from './attention.tsx';
 import { IdentityMenu } from './IdentityMenu.tsx';
 import { useLayoutMode } from './layout-mode.ts';
 import { HeaderOrderingControl, PausedBanner, useOrderingActions } from './ordering.tsx';
@@ -25,22 +25,10 @@ import { useSessionState, useStaff } from './session.tsx';
 import { applySoundDefault, useAlertSound, useOrderAlerts, type AlertKind } from './sound.ts';
 import './shell.css';
 
-/**
- * Cuts waiting for the scale. Prefers the server's `portions_to_weigh`
- * (requested ones only: a quoted cut waits on the guest) and falls back to
- * every open portion request, which is what the Requests tab lists.
- */
-function portionsToWeigh(d: OverviewDTO | undefined): number {
-  if (!d) return 0;
-  const exact = (d as OverviewDTO & { portions_to_weigh?: number }).portions_to_weigh;
-  return typeof exact === 'number' ? exact : d.open_portion_requests;
-}
-
-/** settings.notifications.sound_default, once /api/staff/auth/me carries it. */
+/** The owner's settings.notifications.sound_default, from /api/staff/auth/me. */
 function soundDefaultOf(me: StaffMeDTO): boolean | null {
-  const m = me as StaffMeDTO & { sound_default?: boolean; notifications?: { sound_default?: boolean } };
-  if (typeof m.sound_default === 'boolean') return m.sound_default;
-  if (typeof m.notifications?.sound_default === 'boolean') return m.notifications.sound_default;
+  if (typeof me.sound_default === 'boolean') return me.sound_default;
+  if (typeof me.notifications?.sound_default === 'boolean') return me.notifications.sound_default;
   return null;
 }
 
@@ -68,7 +56,9 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
   const attention = useAttention();
   const ordering = useOrderingActions();
   const { path, query } = useRoute();
-  useNow(60_000); // re-render each minute so the rail date turns over at midnight
+  // The staff clock: the server's business-day cutoff, re-read every minute so
+  // the rail date turns over when the restaurant's day does (D-AD-01).
+  const businessToday = useBusinessToday();
   const data = attention.data;
 
   // ------------------------------------------------------------ attention counts
@@ -82,7 +72,7 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
   const badge = rounds + requests;
   const requestWords = [
     serviceOpen ? t('admin.badge.requests', { n: serviceOpen }) : null,
-    cuts ? t('admin.badge.cuts', { n: cuts }) : null,
+    cuts ? t(weighCountIsExact(data) ? 'admin.badge.cutsWeigh' : 'admin.badge.cuts', { n: cuts }) : null,
   ].filter(Boolean).join(', ');
   const badgeWords = [rounds ? t('admin.badge.rounds', { n: rounds }) : null, requestWords || null].filter(Boolean).join(', ');
 
@@ -115,6 +105,10 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
   const showTabs = tabs.length > 1;
 
   const title = area === 'overview' ? t('admin.dest.overview') : dest ? t(dest.label) : t('admin.notFound.header');
+  // The More sub-pages and the QR sheet print their own h1 (Reports, Settings,
+  // Team, Audit, Payments, Print QR cards). The workspace title is then a
+  // paragraph, so every page has exactly one h1 (admin-data finding 11).
+  const ownHeading = pageKey.startsWith('more:') || pageKey === 'tables:print';
 
   // ------------------------------------------------------------ document title
   useEffect(() => {
@@ -171,7 +165,10 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
     const every = setInterval(() => { void probe.current(); }, 15_000);
     return () => { clearTimeout(first); clearInterval(every); };
   }, [troubled]);
-  const unreachable = Boolean(trouble?.long) && (live.state === 'offline' || Boolean(attention.error?.ambiguous));
+  // The live client reports an outage of its own once its reads keep failing
+  // with the network up; either signal shows the paper procedure.
+  const unreachable = Boolean(live.outage) || (Boolean(trouble?.long) && (live.state === 'offline' || Boolean(attention.error?.ambiguous)));
+  const outageSince = live.outage?.since ?? trouble?.since ?? null;
 
   const testSound = useCallback(() => {
     void sound.testNow().then((ok) => {
@@ -218,7 +215,7 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
   };
 
   const showOrderingControl = (area === 'overview' || area === 'orders') && mode !== 'bar' && (mode === 'full' || ordering.canChange);
-  const today = dateLabel(todayBusinessDate(), lang, { weekday: true, year: true });
+  const today = dateLabel(businessToday, lang, { weekday: true, year: true });
 
   const identity = (
     <IdentityMenu full={mode === 'bar'} sound={sound} onTestSound={testSound} onLock={lock} start={start} />
@@ -249,6 +246,7 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
       <div className="ws">
         <WorkspaceHeader
           title={title}
+          titleAs={ownHeading ? 'p' : 'h1'}
           tabs={showTabs && mode !== 'bar' ? tabs : undefined}
           tabsLabel={t('admin.tabsLabel', { title })}
           compact={mode !== 'full'}
@@ -261,14 +259,14 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
           <SubTabs className="subtabs--bar ashell__tabs" items={tabs} label={t('admin.tabsLabel', { title })} />
         ) : null}
         <div className="ashell__banners">
-          {unreachable && trouble ? (
+          {unreachable && outageSince !== null ? (
             <Banner
               variant="offline"
               staff
               title={t('admin.outage.title')}
               action={<Button variant="outline" size="staff" icon="refresh" onClick={() => void attention.refresh()}>{t('admin.outage.retry')}</Button>}
             >
-              {t('admin.outage.since', { time: clock(new Date(trouble.since).toISOString()) })}
+              {t('admin.outage.since', { time: clock(new Date(outageSince).toISOString()) })}
               {' · '}
               {t('admin.outage.body')}
             </Banner>
@@ -338,7 +336,10 @@ function useRouteFocus(pageKey: string, area: AreaId | null, spoken: string) {
       }
       // A page that opened its own dialog or drawer keeps that focus.
       if (document.querySelector('dialog[open]')) return;
-      const target = main?.querySelector<HTMLElement>('h1') ?? document.querySelector<HTMLElement>('.wshead h1');
+      // The page's own h1 when it has one, else the workspace title (an h1 on
+      // pages without one, a paragraph on the More sub-pages).
+      const target = main?.querySelector<HTMLElement>('h1')
+        ?? document.querySelector<HTMLElement>('.wshead h1, .wshead > .wshead__t');
       if (!target) return;
       if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
       target.focus({ preventScroll: true });

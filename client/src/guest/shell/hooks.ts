@@ -25,12 +25,12 @@ export function useOnline(): boolean {
 }
 
 /**
- * The live state as guest screens should read it. LiveProvider says 'offline'
- * only from the browser's own offline signal, and it does not clear that when
- * the network returns unless its stream errors or says hello again, which a
- * stream that survived a short blip never does. So while the browser is
- * online, a leftover 'offline' counts as live: if the stream really died, its
- * next retry fails and the provider reports 'reconnecting' (DECISIONS D-G-04).
+ * The live state as guest screens should read it. LiveProvider now clears
+ * 'offline' when the network returns (it reports 'live' if its stream is still
+ * open, 'reconnecting' otherwise), so this is a safety net rather than the fix
+ * it was: while the browser says it is online, a leftover 'offline' counts as
+ * live, and a stream that really died reports 'reconnecting' on its next retry
+ * (DECISIONS D-G-04). It also covers a browser that never fires 'online'.
  */
 export function useGuestLiveState(): LiveState {
   const online = useOnline();

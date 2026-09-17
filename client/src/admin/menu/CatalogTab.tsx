@@ -193,7 +193,7 @@ export default function CatalogTab() {
                   <p className="ct-empty">
                     {t('catalog.list.emptyCategory')}
                     {canEdit ? (
-                      <Button variant="quiet" size="staff" opensDialog onClick={() => setNewItem({ categoryId: category.id })}>
+                      <Button variant="quiet" size="staff" opensDialog aria-label={t('catalog.item.addHereNamed', { name: catLabel })} onClick={() => setNewItem({ categoryId: category.id })}>
                         {t('catalog.item.addHere')}
                       </Button>
                     ) : null}

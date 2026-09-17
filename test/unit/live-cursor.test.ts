@@ -79,6 +79,30 @@ describe('syncCursor', () => {
     assert.equal(syncCursor(s, { cursor: 800 }), false);
   });
 
+  test('a hello takes the server cursor, forward or back, without resetting on a replay', () => {
+    const s = createLiveCursor();
+    // Polling ran while the stream was down and carried the page to 48.
+    syncCursor(s, { cursor: 48 });
+    acceptEvent(s, 48);
+    // The browser reconnects the same EventSource: the server replays from
+    // the Last-Event-ID it was given (40) and says so.
+    assert.equal(syncCursor(s, { cursor: 40, authoritative: true, replay: true }), false);
+    assert.equal(s.cursor, 40); // the server's cursor, not our maximum
+    assert.equal(s.seen.has(48), true); // a replay of 41..48 is still a duplicate
+    // A fresh stream after a restore: no replay, so a lower cursor IS a reset.
+    assert.equal(syncCursor(s, { cursor: 12, authoritative: true }), true);
+    assert.equal(s.cursor, 12);
+    assert.equal(s.seen.size, 0);
+  });
+
+  test('a poll answered with resync takes the server cursor', () => {
+    const s = createLiveCursor();
+    syncCursor(s, { cursor: 500 });
+    // More than the 200-row replay window: the server answers with its newest id.
+    assert.equal(syncCursor(s, { cursor: 900, since: 500, authoritative: true }), false);
+    assert.equal(s.cursor, 900);
+  });
+
   test('ignores malformed cursors', () => {
     const s = createLiveCursor();
     syncCursor(s, { cursor: 12 });

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CatalogDTO, MenuItemDTO, OrderDTO, PortionRequestDTO, QuoteDTO, SubmitResultDTO, VisitDetailDTO } from '../../../../shared/dto.ts';
 import { newIdempotencyKey } from '../../../../shared/ids.ts';
 import { api } from '../../lib/api.ts';
-import { clock, money } from '../../lib/format.ts';
+import { clock, dateTime, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useResource } from '../../lib/live.tsx';
 import {
@@ -154,8 +154,8 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
     if (!f.already) errs.already = t('recover.err.already');
     if ([...f.reason.trim()].length < 3) errs.reason = t('recover.err.reason');
     setFieldErrors(errs);
-    const first = Object.keys(errs)[0];
-    if (first) bodyRef.current?.querySelector<HTMLElement>(`[data-field="${first}"] input, [data-field="${first}"] textarea, [data-field="${first}"] legend`)?.focus();
+    const first = Object.keys(errs)[0] as keyof RecoverFields | undefined;
+    if (first) focusField(first);
     return { ok: !first, iso };
   };
 
@@ -172,11 +172,43 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
     onDone?.(r.order.reference);
   };
 
+  const focusField = (name: keyof RecoverFields) => {
+    bodyRef.current?.querySelector<HTMLElement>(`[data-field="${name}"] input, [data-field="${name}"] textarea, [data-field="${name}"] legend`)?.focus();
+  };
+
   const failed = (err: unknown) => {
     const e = toApiError(err);
     if (e.ambiguous) { setSend({ state: 'ambiguous' }); return; }
     // Definitive answer: nothing was created, so the attempt key is free again.
     update((d) => ({ ...d, key: null, sentLines: null, sentSubtotal: null }));
+    if (recover) {
+      const d = (e.details ?? {}) as { issues?: Array<{ path?: string; message?: string; code?: string }>; previous_party_closed_at?: string; reference?: string };
+      // The paper ticket is dated before the previous party at this table left:
+      // it belongs to them and must not land on this bill (D-S8-15).
+      const time = e.code === 'validation_failed' ? d.issues?.find((x) => x.path === 'original_time') : undefined;
+      if (time) {
+        const words = time.message === 'before_previous_party'
+          ? t('recover.err.beforePrevious', { time: d.previous_party_closed_at ? dateTime(d.previous_party_closed_at, lang) : '' })
+          : time.message === 'too_old' ? t('recover.err.past')
+          : time.message === 'future' ? t('recover.err.future')
+          : t('recover.err.time');
+        setFieldErrors((prev) => ({ ...prev, time: words }));
+        setSend({ state: 'error', message: words });
+        focusField('time');
+        return;
+      }
+      if (e.code === 'validation_failed' && d.issues?.some((x) => x.code === 'not_measured_weight' || x.code === 'one_cut_per_line')) {
+        setSend({ state: 'error', message: t('recover.err.weight') });
+        return;
+      }
+      if (e.code === 'conflict') {
+        const words = t('recover.err.referenceUsed', { reference: d.reference ?? '' });
+        setFieldErrors((prev) => ({ ...prev, reference: words }));
+        setSend({ state: 'error', message: words });
+        focusField('reference');
+        return;
+      }
+    }
     if (e.code === 'cart_changed') {
       const q = (e.details as { quote?: QuoteDTO } | null)?.quote;
       if (q) setQuote(q);
@@ -192,7 +224,11 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
     if (recover) {
       const check = recoverChecks();
       if (!check.ok || !check.iso) return;
-      const blocking = (quote?.issues ?? []).filter((i) => i.code !== 'sold_out' && i.code !== 'not_orderable');
+      // Sold out / paused are recorded anyway (D-S8-19), and a cut with its
+      // weight from the paper is priced by the recover endpoint, which the
+      // quote endpoint does not do (D-S8-21).
+      const blocking = (quote?.issues ?? []).filter((i) => i.code !== 'sold_out' && i.code !== 'not_orderable'
+        && !(i.code === 'measured_weight_needs_quote' && lines[i.line_index]?.measured_grams != null));
       if (blocking.length) { setSend({ state: 'error', message: t('assist.err.fixLines') }); return; }
       update((d) => ({ ...d, key: d.key ?? `rec-${d.recover.reference.trim()}`, sentLines: d.sentLines ?? d.lines }));
       setSend({ state: 'sending' });
@@ -245,7 +281,15 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
 
   // ---------------------------------------------------------------- body
   const issuesFor = (i: number) => (quote?.issues ?? []).filter((x) => x.line_index === i);
-  const subtotal = quote?.subtotal_minor ?? lines.reduce((s, l) => s + (unitPrice(items.get(l.item_id), l) ?? 0) * l.quantity, 0);
+  /** A weighed cut the quote could not price (the quote endpoint takes no grams): its own arithmetic. */
+  const weighedMinor = (l: DraftLine, i: number) => (
+    l.measured_grams != null && quote?.lines.find((x) => x.line_index === i)?.measured_grams == null
+      ? unitPrice(items.get(l.item_id), l) ?? 0
+      : 0
+  );
+  const subtotal = quote
+    ? quote.subtotal_minor + lines.reduce((s, l, i) => s + weighedMinor(l, i), 0)
+    : lines.reduce((s, l) => s + (unitPrice(items.get(l.item_id), l) ?? 0) * (l.measured_grams != null ? 1 : l.quantity), 0);
   const showMoney = can('orders.view_bill_values');
 
   let body;
@@ -372,13 +416,17 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
             const item = items.get(l.item_id);
             const n = staffName(item?.name);
             const qline = quote?.lines.find((x) => x.line_index === i);
-            const issues = issuesFor(i);
+            const weighed = l.measured_grams != null;
+            // The quote cannot price a paper cut; the recover endpoint does.
+            const issues = issuesFor(i).filter((x) => !(weighed && x.code === 'measured_weight_needs_quote'));
             const variant = item?.variants.find((x) => x.id === l.variant_id);
             const mods = l.modifiers.flatMap((m) => {
               const g = item?.modifier_groups.find((x) => x.id === m.group_id);
               return m.option_ids.map((id) => g?.options.find((o) => o.id === id)).filter(Boolean).map((o) => pick(o!.name));
             });
-            const lineTotal = qline?.line_total_minor ?? ((unitPrice(item, l) ?? 0) * l.quantity);
+            const lineTotal = weighed && qline?.measured_grams == null
+              ? (unitPrice(item, l) ?? 0)
+              : qline?.line_total_minor ?? ((unitPrice(item, l) ?? 0) * l.quantity);
             return (
               <li key={l.uid} className={`ao-line${issues.length ? ' has-issue' : ''}`}>
                 <div className="ao-line__main">
@@ -387,8 +435,9 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
                     {n.secondary ? <span className="ao-line__en" lang="en">{n.secondary}</span> : null}
                     {n.noThai && n.text ? <span className="ao-line__en">{t('common.ticket.noThaiName')}</span> : null}
                   </p>
-                  {variant || mods.length ? (
+                  {variant || mods.length || weighed ? (
                     <p className="ao-line__chips">
+                      {weighed ? <span className="chip-mod">{t('recover.weighChip', { g: l.measured_grams! })}</span> : null}
                       {variant ? <span className="chip-mod" lang={pick(variant.name).lang}>{pick(variant.name).text}</span> : null}
                       {mods.map((m, k) => <span key={k} className="chip-mod" lang={m.lang}>{m.text}</span>)}
                     </p>
@@ -411,6 +460,8 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
                 </div>
                 <span className="ao-line__total num">{showMoney ? money(lineTotal) : null}</span>
                 <div className="ao-line__qty">
+                  {/* One weighed cut is one line: its quantity is the weight. */}
+                  {weighed ? null : (
                   <Stepper
                     value={l.quantity}
                     min={1}
@@ -420,6 +471,7 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
                     disabled={locked}
                     label={t('common.qtyInOrder', { name: n.text })}
                   />
+                  )}
                   <IconButton icon="x" size="staff" label={t('assist.removeNamed', { name: n.text })} disabled={locked} onClick={() => removeLine(l.uid)} />
                 </div>
               </li>

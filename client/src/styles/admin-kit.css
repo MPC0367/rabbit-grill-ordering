@@ -48,7 +48,7 @@
   line-height: var(--lh-thai-min);
 }
 .wait small:lang(th), .stat__v small:lang(th), .delta small:lang(th), .rank__qty b small:lang(th) { letter-spacing: 0; }
-.wshead h1:lang(th), .apage h1:lang(th) { letter-spacing: 0; }
+.wshead :is(h1, .wshead__t):lang(th), .apage h1:lang(th) { letter-spacing: 0; }
 .tno__k:lang(th) { line-height: var(--lh-thai-min); text-transform: none; }
 :is(.audit__time span, .dtable__cap, .dtable__none, .banner--staff, .gk__note, .gk__lede, .gk__h p):lang(th) { line-height: var(--lh-thai-min); }
 
@@ -119,8 +119,8 @@ button.rail__row { width: 100%; text-align: left; }
 .wshead-cq { position: sticky; top: 0; z-index: var(--z-sticky); container-type: inline-size; min-width: 0; }
 .wshead-cq > .wshead { position: relative; top: auto; z-index: auto; }
 .wshead { min-width: 0; }
-.wshead h1 { white-space: nowrap; }
-.wshead h1, .wshead .subtabs, .wshead .demo { flex: none; }
+.wshead :is(h1, .wshead__t) { white-space: nowrap; }
+.wshead :is(h1, .wshead__t), .wshead .subtabs, .wshead .demo { flex: none; }
 .wshead__right { min-width: 0; }
 @container (max-width: 1180px) {
   .wshead { gap: 14px; }

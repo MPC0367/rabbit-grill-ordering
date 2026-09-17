@@ -1,10 +1,17 @@
 // `npm start`: the production entry (run `npm run build` first). One process
 // serves the built app and the API on HOST:PORT.
 //
-// Unlike a bare `node server/main.ts`, it never seeds development fixtures
-// unless SEED_DEMO=1 is set explicitly (in the shell or in .env): the demo
-// staff accounts have published passwords. The server itself warns about a
-// localhost QR address and Secure cookies over http. See docs/OPERATIONS.md.
+// It never seeds development fixtures unless SEED_DEMO=1 is set explicitly (in
+// the shell or in .env): the demo staff accounts have published passwords. The
+// server's own default is off as well (D-S8-30); this keeps it off even if a
+// copied .env still carries SEED_HISTORY, and it says so in the warning below.
+//
+// Cookies need no setting either way: COOKIE_SECURE unset follows the scheme
+// of PUBLIC_BASE_URL, so an https install gets Secure cookies and a plain-http
+// restaurant LAN can still sign staff in (D-S8-09). Force COOKIE_SECURE=1 only
+// behind https. The server warns at start about a QR address phones cannot
+// open, a forced Secure cookie over http, and http in production.
+// See docs/OPERATIONS.md.
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { envValue, isOn, readDotEnv, ROOT } from './env.ts';

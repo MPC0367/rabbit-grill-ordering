@@ -65,6 +65,8 @@ export default function ReportsPage() {
   const canGenerate = can('reports.generate');
   const canFinancial = can('reports.financial');
   const canRaw = can('reports.export_raw');
+  // Labels are decided inside the scope this viewer's own copy would have (D-S8-13).
+  const scope = { canFinancial, canRaw };
 
   const res = useResource<YearsDTO>(allowed ? '/api/staff/reports/years' : null, { topics: ['report.'] });
   useTopicRefresh(['report.'], () => (allowed ? res.refresh() : undefined), 250);
@@ -134,7 +136,7 @@ export default function ReportsPage() {
       const needsReason = issuesOf(err).some((i) => i.path === 'reason');
       if (needsReason) {
         // Someone finished a final report meanwhile: ask for the reason.
-        setAsk({ year, kind, next: { label: 'revised', revision: nextLabel(year, kind, includeDemo).revision } });
+        setAsk({ year, kind, next: { label: 'revised', revision: nextLabel(year, kind, includeDemo, scope).revision } });
         setAskError(t('reports.err.reasonRequired'));
         void res.refresh();
       } else if (ask) {
@@ -148,7 +150,7 @@ export default function ReportsPage() {
   };
 
   const onGenerate = (year: ReportYearDTO, kind: ReportKind) => {
-    const next = nextLabel(year, kind, includeDemo);
+    const next = nextLabel(year, kind, includeDemo, scope);
     if (kind === 'annual_pdf' && next.label !== 'revised') {
       void submit(year, kind);
       return;
@@ -224,6 +226,7 @@ export default function ReportsPage() {
                 includeDemo={includeDemo}
                 canGenerate={canGenerate}
                 canFinancial={canFinancial}
+                canRaw={canRaw}
                 onGenerate={onGenerate}
                 onRetry={(j) => void onRetry(j)}
                 onDownload={(j) => void onDownload(j)}

@@ -27,7 +27,7 @@ import { AppError } from '../lib/errors.ts';
 import { cutoffHour, getSettings } from '../lib/settings.ts';
 import { publicOrderingState } from './guards.ts';
 import {
-  bi, catalogVersion, getCategory, hasPrice, getItem, itemGroups, itemVariants, prepKind, seasonalActive, unavailableReason,
+  bi, catalogVersion, getCategory, hasPrice, getItem, itemGroups, itemVariants, parseAliases, prepKind, seasonalActive, unavailableReason,
   type CategoryRow, type GroupRow, type ItemRow, type OptionRow, type VariantRow,
 } from './pricing.ts';
 
@@ -307,6 +307,8 @@ function buildMenuItem(item: ItemRow, cat: CategoryRow, data: CatalogData, audie
   const allergenRows = data.allergens.get(item.id) ?? [];
   const showAllergenEntries = audience === 'admin' || item.allergen_status === 'verified';
   const img = imageInfo(item.image);
+  const aliases = { th: parseAliases(item.aliases_th), en: parseAliases(item.aliases_en) };
+  const showAliases = audience === 'admin' || item.aliases_verified === 1;
   const badges: string[] = [];
   if (s.operating_mode === 'demo' && !verified) badges.push('demo_fixture');
   if (item.pricing_type === 'measured_weight') badges.push('staff_confirms_portion');
@@ -351,6 +353,10 @@ function buildMenuItem(item: ItemRow, cat: CategoryRow, data: CatalogData, audie
     badges,
     sort: item.sort,
     version: item.version,
+    // Search aliases: guests get the reviewed ones, the editor gets the drafts too.
+    ...(showAliases && (aliases.th.length > 0 || aliases.en.length > 0)
+      ? { aliases_th: aliases.th, aliases_en: aliases.en }
+      : {}),
   };
 }
 
@@ -415,6 +421,9 @@ export function publicConfig(): PublicConfigDTO {
     default_locale: s.default_locale,
     ordering: publicOrderingState(),
     services: SERVICE_TYPES.filter((t) => s.services[t]),
+    // The guest sheet holds a request back for this long itself, on the same
+    // rule the server enforces (D-S8-23).
+    service_cooldown_seconds: s.service_cooldown_seconds,
     analytics: {
       enabled: s.analytics.enabled,
       idle_threshold_seconds: s.analytics.idle_threshold_seconds,
@@ -477,6 +486,7 @@ function buildAdminItem(item: ItemRow, cat: CategoryRow, data: CatalogData, extr
     publish_blockers: publishBlockers(item, variants, groups),
     unpublished_changes: item.published_version !== item.version,
     requires_staff_confirm: item.requires_staff_confirm === 1,
+    aliases_verified: item.aliases_verified === 1,
     prep_kind_override: item.prep_kind,
     prep_kind: prepKind(item, cat),
     modifier_group_ids: groups.map((g) => g.id),

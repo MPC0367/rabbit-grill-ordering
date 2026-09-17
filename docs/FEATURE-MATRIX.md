@@ -19,6 +19,7 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | `UT file` | `test/unit/*.test.ts` | Pure-module tests (`npm test`) |
 | `E2E x` | `test/e2e/journeys.ts` journey *x* | Real browser sessions (installed Edge) against one seeded instance (`npm run e2e`) |
 | `VIS set/name` | `test/visual/out/<set>/` | Captured screens, audited in the page and reviewed by a person (`npm run shots`) |
+| `PDF p<n>` | `var/pdf-pages/<report>/` | A page of a generated annual PDF, rendered to PNG and looked at by a person (`npm run pdf:pages`) |
 | `REVIEW` | brief walk-through of 2026-09-17 | Manual screenshots of every brief-34 guest state. Not versioned (kept in `var/scratch/review-brief-guest/shots`). |
 | `DOC` | a file in this repository | Documentation or configuration |
 
@@ -64,7 +65,7 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | --- | --- | --- | --- |
 | 07 | High-entropy opaque QR token; never trust a typed table number | Verified | `IT access.test.ts` (QR, tampered ids, scenario 5); 256-bit tokens (D-04) |
 | 07 | Permanent table and temporary visit are separate; one active visit per table | Verified | `IT access.test.ts › scenario 6`; `IT billing.test.ts › complete checkout…` |
-| 07 | Staff open a visit with a fresh PIN; scan → table label → PIN; scoped guest credential | Verified | `IT access.test.ts`; `E2E a` (the PIN read from the seat dialog is typed on the phone) |
+| 07 | Staff open a visit with a fresh PIN; scan → table label → PIN; scoped guest credential | Verified | `IT access.test.ts`; `E2E a` (the PIN read from the seat dialog is typed on the phone). A QR resolve says how long *this* visit's code is (`pin_digits`, 4–8), so the join screen draws the right boxes (`IT round2.test.ts`, D-S8-24) |
 | 07 | The permanent QR alone reveals no PIN or bill and cannot order | Verified | `IT access.test.ts › copied permanent QR…`; `E2E a` (the QR URL carries no PIN) |
 | 07 | Closing revokes access; the printed QR is reused for the next visit | Verified | `IT billing.test.ts`; `E2E f` (old cookie refused, rescan shows nothing of the previous party) |
 | 07 | Rate-limited PIN and join attempts; PIN rotation; lockout | Verified | `IT access.test.ts` (limits, lockout, rotation); `IT hardening.test.ts › join-PIN lockouts escalate…`, `…a busy seating wave behind one address can join…` (D-S8-07, D-S8-10) |
@@ -82,7 +83,7 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | 09 | Groups Food and Drinks (Dessert in Food); categories beneath | Verified | `VIS guest/menu-*`; `E2E g` (group kept) |
 | 09 | Per-group scroll memory; category jump with offset; scroll spy; every category reachable (All categories sheet) | Implemented | `VIS guest/categories-*`; `E2E g` checks that the scroll position is kept. No automated check of the scroll spy. |
 | 09 | Hide empty categories; explain filtered empty results | Implemented | D-S1.4; `REVIEW` p04 (no results), e01 (empty group) |
-| 09 | Search Thai, English and aliases; whitespace and case normalised; results show their category; clear and no-results actions | Verified | `UT guest-menu-search.test.ts`; `E2E a`, `E2E c` search by name |
+| 09 | Search Thai, English and aliases; whitespace and case normalised; results show their category; clear and no-results actions | Verified | `UT guest-menu-search.test.ts`; `E2E a`, `E2E c` search by name. Aliases are per dish and reach guests only after a reviewer approves them (`IT round2.test.ts`, D-S8-28) — the owner supplies the words ([OWNER-CHECKLIST §3](OWNER-CHECKLIST.md#3-translations)) |
 | 09 | Item card: full name, verified price or price-pending, verified description, availability, action | Verified | `VIS guest/menu-*`; D-S1.4 |
 | 09 | Real matched images with alt text, lazy loading, text-led fallback | Implemented · Needs owner content | 39 dish photos; 56 drinks text-led; permission pending |
 | 09 | Sold-out display follows the owner setting; never orderable | Verified | `IT pricing.test.ts › scenario 7`; setting `menu.sold_out_display` |
@@ -117,9 +118,9 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | 14 | Repeat ordering is a new round, re-reviewed against the current menu | Verified | `IT journey.test.ts`; `E2E c` (portion round), `E2E g` |
 | 14 | No fabricated wait times | Implemented | The estimated wait is shown only when staff set one (D-C4a-03) |
 | 15 | Configurable service actions; only supported ones enabled | Implemented · Needs owner content | `settings.services` (water and utensils off, D-16) |
-| 15 | Sent, Acknowledged and Completed states; duplicate taps deduplicated; cooldown; separate staff queue | Verified | `IT service.test.ts`; `E2E d` (two requests only, acknowledged live) |
+| 15 | Sent, Acknowledged and Completed states; duplicate taps deduplicated; cooldown; separate staff queue | Verified | `IT service.test.ts`; `IT round2.test.ts` (the repeat wait is now the server's rule, `429` with `retry_after_seconds`, D-S8-23); `E2E d` (two requests only, acknowledged live) |
 | 15 | In-person fallback when the device is offline | Verified | `E2E offline` (explicit offline state); ServiceSheet offline copy |
-| 15 | Optional, short feedback; no duplicates; never published | Verified | `IT service.test.ts` (feedback); D-21 |
+| 15 | Optional, short feedback; no duplicates; never published | Verified | `IT service.test.ts` (feedback); `IT round2.test.ts` (30 minutes after checkout, eligibility, and the owner's read-only list, D-S8-22); D-21 |
 | 16 | One combined bill; request bill; pending versus confirmed amounts | Verified | `E2E d`, `E2E e`; `IT billing.test.ts` |
 | 16 | Billing state blocks ordering; immutable revision; staff-recorded payment; Paid; Complete checkout frees the table; payment alone does not | Verified | `IT billing.test.ts`; `IT concurrency.test.ts`; `E2E f` |
 | 16 | Reopening needs authorisation and invalidates the payable revision | Verified | `IT billing.test.ts` (reopen); `IT roles.test.ts` |
@@ -139,10 +140,10 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | 18 | Who may cancel, correct, pause, rotate QR and override closure is defined | Verified | `IT roles.test.ts › cancelling needs…`; `IT billing.test.ts` (manager exception) |
 | 18 | Secure sessions and logout; individual attribution | Verified | `IT roles.test.ts › signed-out browsers…`; audit rows carry the actor |
 | 18 | Authenticated first-admin setup | Verified (manual run) | `npm run admin:create` on an empty database, then the new owner signs in ([TESTING.md](TESTING.md#latest-result)); [OPERATIONS.md › First admin](OPERATIONS.md#first-admin) |
-| 18 | No hard-coded production passwords; no privileged secrets in the browser | Verified | Demo accounts exist only when seeded. `npm start` never seeds unless `SEED_DEMO=1` (D-DT-03). Live mode refuses demo accounts (`IT hardening.test.ts › demo staff accounts cannot sign in to a live restaurant…`, D-S8-11). No source maps served (`SERVE_SOURCEMAPS`, D-S8-09). |
+| 18 | No hard-coded production passwords; no privileged secrets in the browser | Verified | Demo accounts exist only when seeded, and seeding is now off unless `SEED_DEMO=1` is set: `npm start`, and a bare `node server/main.ts` too (D-DT-03, D-S8-30). Live mode refuses demo accounts and Settings can retire them in the switching request (`IT hardening.test.ts › demo staff accounts cannot sign in to a live restaurant…`, `IT round2.test.ts`, D-S8-11, D-S8-27). No source maps served (`SERVE_SOURCEMAPS`, D-S8-09). |
 | 18 | Kitchen sees no payment references or unrestricted reports | Verified | `IT roles.test.ts › kitchen and floor cannot…`, `…kitchen's staff event stream hides payment…` |
 | 19 | Columns New → Served, with rejected and cancelled behind a filter; filtered lists on narrow screens | Verified | `VIS staff/orders-board-*`, `VIS narrow/orders-board-*`; D-C4b-01 |
-| 19 | Ticket: reference, table, round, time, age, quantities, choices, notes and allergy flag, next actions | Verified | `E2E b`; `VIS staff/orders-board-*` |
+| 19 | Ticket: reference, table, round, time, age, quantities, choices, notes and allergy flag, next actions | Verified | `E2E b`; `VIS staff/orders-board-*`. Each line keeps its own `alcohol` and `requires_staff_confirm`, snapshotted when the round was sent, so a later menu edit never rewrites a ticket (`IT round2.test.ts`, D-S8-20) |
 | 19 | Filters (table, status, age, station); oldest first | Implemented | D-24, D-C4b-01; `UT board-model.test.ts` |
 | 19 | New submissions distinguished from updates | Verified | `E2E b` (`is-new` emphasis) |
 | 19 | Per-line and bulk actions; accept and reject with guest-visible reasons | Verified | `IT concurrency.test.ts › bulk transition…`; `IT roles.test.ts › …require a reason`; `E2E b` |
@@ -152,7 +153,7 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | 19 | No drag-only controls; no auto-accept | Implemented | Button actions only |
 | 20 | Table grid with state, visit, orders, bill and assistance | Verified | `VIS staff/tables-*`; `E2E a`, `E2E f` (tile states) |
 | 20 | Create and edit labels without changing history; enable or disable | Implemented | **Tables → Manage**; D-20 (order label snapshots) |
-| 20 | Per-table QR generate, preview, print, download; batch print; labelled cards | Verified | `VIS staff/qr-print-en-1440`; `E2E a` (qr-cards URL) |
+| 20 | Per-table QR generate, preview, print, download; batch print; labelled cards | Verified | `VIS staff/qr-print-en-1440`; `E2E a` (qr-cards URL). The print page warns when the cards would carry an address only this computer can open (`qr_base_is_local`, D-S8-09) |
 | 20 | Open visit, show and rotate PIN, revoke guests; view orders, requests and bill | Verified | `IT access.test.ts`; `E2E a`, `E2E f` |
 | 20 | Complete checkout in one authoritative operation | Verified | `IT billing.test.ts`; `E2E f` |
 | 20 | Rotate a compromised QR, with reprint indicated | Verified | `IT access.test.ts › QR rotation…`; D-18 |
@@ -169,7 +170,7 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | 22 | Service queue by age with table, type, note, time, status and staff; acknowledge, complete, cancel; conflicts | Verified | `IT service.test.ts`; `E2E d`; `VIS staff/requests-*` |
 | 22 | Staff-assisted ordering on the same validation path, recorded as staff-assisted | Verified | `IT orders.test.ts`, `IT concurrency.test.ts` (assist); D-C4b-02 |
 | 22 | Explicit offline state; no invisible local-only orders | Verified | `E2E offline`; D-C1b-02 (nothing is queued for automatic sending) |
-| 22 | Manual paper-order recovery without duplicate preparation, flagged in the audit | Verified | `IT service.test.ts` (paper recovery); D-25 |
+| 22 | Manual paper-order recovery without duplicate preparation, flagged in the audit | Verified | `IT service.test.ts` (paper recovery); `IT round2.test.ts` (a cut weighed at the counter is recovered with `measured.grams`, D-S8-21); `IT pricing.test.ts` (never priced at 0, never before the previous party, D-S8-19, D-S8-15); D-25 |
 | 23 | Fulfilment, bill, payment and visit states kept separate | Verified | `IT billing.test.ts` |
 | 23 | Billing screen: orders, chargeable and excluded lines, adjustments, breakdown, revision, total, status | Verified | `E2E f`; `VIS staff/tables-drawer-*` |
 | 23 | Full-bill payment with method, time, staff, amount and reference; cash tendered and change | Verified | `E2E f` (change shown); `IT billing.test.ts` |
@@ -180,10 +181,10 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | 25 | Scheduled hours | Implemented · Needs owner content | Stored, not enforced until verified (D-17) |
 | 25 | Table pause; category or station pause | Verified | `IT orders.test.ts › table pause`; `IT pricing.test.ts` (paused category) |
 | 25 | Backlog count and oldest wait; honest estimated wait; transactional intake limit | Verified | `IT orders.test.ts › the intake limit pauses…`; D-C4a-03 |
-| 25 | Settings: branding, languages, tables, services, hours, charges, payment methods, cancellation permissions, PIN policy, notifications, retention; future-only changes marked | Implemented · Needs owner content | `VIS staff/settings-*`; `FUTURE_ONLY_SETTINGS` |
+| 25 | Settings: branding, languages, tables, services, hours, charges, payment methods, cancellation permissions, PIN policy, notifications, retention; future-only changes marked | Implemented · Needs owner content | `VIS staff/settings-*`; `FUTURE_ONLY_SETTINGS`. A section saves on the version it was drawn from (`stale_version` with the current view, D-S8-26), Settings shows when retention last ran, and going live can retire the demo accounts in the same request (`IT round2.test.ts`) |
 | 25 | Data retention applied | Verified · Needs owner content | `IT hardening.test.ts › the retention task removes old notes, comments, raw events and audit rows, keeps totals…`; daily task plus `npm run jobs -- retention` (D-S8-02); periods to confirm |
 | 26 | Business date and range filters; Bangkok boundaries; explicit cutoff | Verified | `IT insights.test.ts`; `UT money-time.test.ts` |
-| 26 | KPIs: QR adoption, guest order time, average order and table value, operational errors, payment exceptions, staff response | Verified | `IT engagement.test.ts › QR adoption…`, `IT insights.test.ts`; metric dictionary in DECISIONS.md |
+| 26 | KPIs: QR adoption, guest order time, average order and table value, operational errors, payment exceptions, staff response | Verified | `IT engagement.test.ts › QR adoption…`, `IT insights.test.ts`; metric dictionary in DECISIONS.md. Table, category and staff filters name every figure they could not narrow (`IT round2.test.ts`, D-S8-25), and a refund after checkout is reported as a refund, not an exception (D-S8-04) |
 | 26 | Item quantities, hourly volumes, cancellations with reasons, open bills, request counts; precise total labels | Verified | `IT insights.test.ts`; D-S6-10 |
 | 26 | Honest empty states and sample sizes; fixtures excluded | Verified | `IT insights.test.ts` (fixture filtering) |
 | 26 | CSV export respecting permissions, filters, timezone and formula injection | Verified | `IT insights.test.ts`, `IT roles.test.ts` (export.csv); D-S6-12 |
@@ -197,7 +198,7 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | 27 | Order snapshots; menu edits never change history; archive instead of delete | Verified | `IT insights.test.ts` (archived and renamed items); `IT pricing.test.ts` |
 | 27 | Constraints: one active visit, scoped idempotency, one settlement; transactions around critical changes | Verified | `IT concurrency.test.ts` (15 tests) |
 | 28 | Guest and staff operations as specified; every mutation authenticated, validated and atomic; guest scope | Verified | `IT access.test.ts`; `IT roles.test.ts` |
-| 28 | Versions and event ids; clients ignore duplicates; reconnect refetches | Verified | `IT realtime.test.ts`; `UT live-cursor.test.ts`; `E2E realtime` (the round is shown once) |
+| 28 | Versions and event ids; clients ignore duplicates; reconnect refetches | Verified | `IT realtime.test.ts`; `UT live-cursor.test.ts`; `E2E realtime` (the round is shown once). The stream also names the database (`epoch`), so a client reconnecting to a restored copy restarts instead of trusting its own cursor (`IT round2.test.ts`, D-S8-31) |
 | 28 | Commit before broadcast; outbox or polling recovers missed events | Verified | `IT realtime.test.ts › scenario 12`; `E2E realtime` |
 | 28 | Measured update latency | Implemented (not measured) | `E2E b` waits up to 12 s per step and `E2E realtime` prints its catch-up time. No latency target is claimed. |
 | 29 | Server-side authorisation for visits, roles, reports and streams | Verified | `IT access.test.ts`, `IT roles.test.ts` |
@@ -206,10 +207,10 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | 29 | Upload restrictions | Implemented | Menu photos come from `npm run assets` and are chosen in the item editor. No automated test. |
 | 29 | Secrets in env; secret-free example | Verified | `.env.example` |
 | 29 | Guest identifier minimisation; configurable retention | Verified | Pseudonymous analytics sessions (D-C3-01); retention task (see 25) |
-| 29 | Request size limits, compression, static caching; no source maps served | Verified | `IT hardening.test.ts › oversized request bodies are refused…`; D-S8-09 |
+| 29 | Request size limits, compression, static caching; no source maps served | Verified | `IT hardening.test.ts › oversized request bodies are refused…`; D-S8-09. `npm run build` also writes `.br` / `.gz` siblings and the server prefers them: `E2E prod-files` (494,805 → 80,491 bytes for the staff bundle, D-DT-07) |
 | 29 | Revoked or signed-out staff and guests lose access immediately, also mid-request | Verified | `IT hardening.test.ts › a staff live stream ends…`, `…a guest revoked while an order is still uploading…` (D-S8-08) |
 | 29 | Backup and restore instructions before live operation | Verified | [OPERATIONS.md › Backup and restore](OPERATIONS.md#backup-and-restore); `npm run jobs -- backup` run on a seeded database (see [TESTING.md](TESTING.md)) |
-| 29 | LAN testing explained; explicit reachable QR base URL; development server bound deliberately; network conditions documented | Verified | `npm run dev` picks the LAN address (D-DT-02); `E2E a` (QR URL not localhost); `E2E files` (only the app is served to the LAN, API on 127.0.0.1) (D-DT-01); [OPERATIONS.md](OPERATIONS.md#multi-device-qr-testing-on-a-lan) |
+| 29 | LAN testing explained; explicit reachable QR base URL; development server bound deliberately; network conditions documented | Verified | `npm run dev` picks the LAN address (D-DT-02); `E2E a` (QR URL not localhost); `E2E files` (only the app is served to the LAN, API on 127.0.0.1) (D-DT-01, now in `vite.config.ts` as well, so a bare `npx vite` is no weaker); the development proxy forwards each phone's address, so join limits are per phone, checked by hand (D-DT-06); [OPERATIONS.md](OPERATIONS.md#multi-device-qr-testing-on-a-lan) |
 | 29 | No indiscriminate service-worker caching; offline blocks submission and keeps drafts; no delayed auto-send | Verified | No service worker exists; `E2E offline` |
 | 30 | State matrix (17 conditions) | Verified | [TESTING.md › Brief 30](TESTING.md). Backend unreachable on the guest side: `E2E offline`. Payment callback: n/a (deferred). |
 | 31 | Integration tests for authorisation, money, transitions and idempotency | Verified | `npm test` |
@@ -268,7 +269,7 @@ Every requirement in the product brief (*Rabbit Grill Khao Yai Menu Ordering Pla
 | 40 | Raw events retained for a configured period, with aggregates kept and disclosed | Verified | `IT hardening.test.ts` (retention keeps totals); purge date shown on Engagement and in reports (D-S8-02) |
 | 41 | Reports → Annual archive: choose a year, coverage and status, generate and download; provisional year to date; final report through a durable job | Verified | `E2E h` (provisional PDF generated and downloaded); `IT reports.test.ts`; D-S7-01, D-S7-02 |
 | 41 | Scheduler-less equivalent command | Verified | `npm run jobs -- report --year`, `rollover --run` |
-| 41 | PDF identity, charts, embedded Thai fonts, dates, page numbers, repeated headers, landscape appendices | Verified (structure) · layout reviewed as HTML | `IT reports.test.ts › the annual PDF…` checks fonts, Thai text and structure. The layout was reviewed from the print-rendered HTML of a full 2025 report (520 pages). The PDF pages were not rasterised ([TESTING.md](TESTING.md#latest-result)). |
+| 41 | PDF identity, charts, embedded Thai fonts, dates, page numbers, repeated headers, landscape appendices | Verified (structure and sampled pages) | `IT reports.test.ts › the annual PDF…` checks fonts, Thai text and structure. The layout was reviewed from the print-rendered HTML of a full 2025 report (520 pages), and six pages of the PDF file itself were rendered and looked at with `npm run pdf:pages` (cover, contents, year overview, the monthly and weekly charts, a landscape appendix with repeated headers and Thai dish names, the last page) (D-DT-08, [TESTING.md](TESTING.md#pdf-pages-npm-run-pdfpages)). No automated test compares rendered pages. |
 | 41 | Nine content sections; complete appendices; companion CSV exports; no secrets or notes | Verified | `IT reports.test.ts › the annual data export…`; D-S7-06 |
 | 41 | Job states with retry; consistent snapshot; permission rechecked on download; no predictable URLs | Verified | `IT reports.test.ts`; D-S7-01, D-S7-03 |
 | 41 | Approved logo | Needs owner content | Typographic wordmark until a logo is supplied (D-S7-05) |

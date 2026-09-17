@@ -1,7 +1,7 @@
 // Board history: every round of one business date, newest first, read-only
 // tickets (managers can still open the panel to correct a served dish).
 import { useMemo, useState } from 'react';
-import type { CatalogDTO, StaffOrderDTO } from '../../../../../shared/dto.ts';
+import type { StaffOrderDTO } from '../../../../../shared/dto.ts';
 import { addDays } from '../../../../../shared/time.ts';
 import { dateLabel } from '../../../lib/format.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
@@ -17,7 +17,7 @@ import { errorText, tn, todayDate } from '../support.ts';
 import { useBoardActions, type OrdersResponse } from './actions.ts';
 import { matchesQuery, placementOf } from './model.ts';
 import { OrderDetails } from './OrderDetails.tsx';
-import { linesCarryConfirm, OrderTicket } from './OrderTicket.tsx';
+import { OrderTicket } from './OrderTicket.tsx';
 
 type Outcome = 'all' | 'served' | 'open' | 'void';
 
@@ -32,9 +32,6 @@ export default function HistoryView() {
   const raw = query.get('date') ?? '';
   const date = ISO_DATE.test(raw) && raw <= today ? raw : today;
   const res = useResource<OrdersResponse>(`/api/staff/orders${qs({ scope: 'history', date, limit: 500 })}`, { topics: ['order.', 'line.'] });
-  const needMenu = Boolean(res.data) && !res.data!.orders.every((o) => linesCarryConfirm(o.lines));
-  const menu = useResource<CatalogDTO>(needMenu ? '/api/public/menu' : null, { topics: ['menu.'] });
-  const alcoholItems = useMemo(() => new Set((menu.data?.items ?? []).filter((i) => i.alcohol).map((i) => i.id)), [menu.data]);
   const actions = useBoardActions(res);
   const [search, setSearch] = useState('');
   const [outcome, setOutcome] = useState<Outcome>('all');
@@ -131,7 +128,6 @@ export default function HistoryView() {
                 fresh={false}
                 busy={null}
                 conflict={actions.conflicts[r.order.id] ?? null}
-                alcoholItems={alcoholItems}
                 showMoney={can('orders.view_bill_values')}
                 can={can}
                 onAdvance={() => {}}

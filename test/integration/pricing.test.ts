@@ -338,7 +338,10 @@ test('charges policy: a new visit applies the 10% exclusive + 7% inclusive rules
       assert.equal(r.body.order.subtotal_minor, 15_000);
       await acceptAll(p.visit.id);
       // A 10.05 THB discount makes the charge base end in half a satang.
-      const adj = await manager.post(`/api/staff/visits/${p.visit.id}/adjustments`, { kind: 'discount', amount_minor: -1_005, reason: 'Rounding check' });
+      const seen = await manager.get(`/api/staff/visits/${p.visit.id}/bill`);
+      const adj = await manager.post(`/api/staff/visits/${p.visit.id}/adjustments`, {
+        kind: 'discount', amount_minor: -1_005, reason: 'Rounding check', idempotency_key: key('adj'), bill_version: seen.body.bill_version,
+      });
       assert.equal(adj.status, 200, JSON.stringify(adj.body));
     }
 
@@ -359,7 +362,10 @@ test('charges policy: a new visit applies the 10% exclusive + 7% inclusive rules
     assert.equal(before1.body.total_minor, 13_995);
 
     // One more satang off: base 13994; service 1399.4 -> 1399; VAT 13994 - round(13078.50) = 915; total 15393.
-    const adj2 = await manager.post(`/api/staff/visits/${seatedAfter.visit.id}/adjustments`, { kind: 'correction', amount_minor: -1, reason: 'Rounding check 2' });
+    const seen2 = await manager.get(`/api/staff/visits/${seatedAfter.visit.id}/bill`);
+    const adj2 = await manager.post(`/api/staff/visits/${seatedAfter.visit.id}/adjustments`, {
+      kind: 'correction', amount_minor: -1, reason: 'Rounding check 2', idempotency_key: key('adj'), bill_version: seen2.body.bill_version,
+    });
     assert.equal(adj2.status, 200);
     const after2 = await seatedAfter.guest.get('/api/guest/bill');
     assert.deepEqual(charges(after2.body), [['service', 1_399, false], ['vat', 915, true]]);

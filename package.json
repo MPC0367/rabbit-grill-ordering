@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "node scripts/dev.ts",
-    "build": "vite build",
+    "build": "vite build && node scripts/precompress.ts",
     "start": "node scripts/start.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:reset": "node scripts/db-reset.ts",
@@ -21,7 +21,8 @@
     "test": "node --test --test-concurrency=1 \"test/unit/**/*.test.ts\" \"test/integration/**/*.test.ts\"",
     "test:unit": "node --test \"test/unit/**/*.test.ts\"",
     "e2e": "node test/e2e/run.ts",
-    "shots": "node test/visual/shots.ts"
+    "shots": "node test/visual/shots.ts",
+    "pdf:pages": "node scripts/pdf-pages.ts"
   },
   "dependencies": {
     "@fontsource-variable/cormorant-garamond": "5.3.0",
@@ -41,6 +42,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.1",
+    "pdfjs-dist": "6.3.289",
     "sharp": "0.35.4",
     "typescript": "7.0.2",
     "vite": "8.3.0"

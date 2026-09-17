@@ -13,7 +13,7 @@ import { useNameText } from './parts.tsx';
 interface Form {
   name_th: string; name_en: string; note_th: string; note_en: string;
   group: GroupKey; status: ItemStatus; seasonal: boolean; active_from: string; active_until: string;
-  station: Station; alcohol: boolean; ordering_paused: boolean;
+  station: Station; prep_kind: '' | 'cook' | 'prepare'; alcohol: boolean; ordering_paused: boolean;
 }
 
 function formOf(c: AdminCategory | null, group: GroupKey): Form {
@@ -22,12 +22,12 @@ function formOf(c: AdminCategory | null, group: GroupKey): Form {
     note_th: c?.note?.th ?? '', note_en: c?.note?.en ?? '',
     group: c?.group ?? group, status: c?.status ?? 'draft',
     seasonal: c?.seasonal ?? false, active_from: c?.active_from ?? '', active_until: c?.active_until ?? '',
-    station: c?.station ?? (group === 'drinks' ? 'bar' : 'kitchen'), alcohol: c?.alcohol ?? false,
+    station: c?.station ?? (group === 'drinks' ? 'bar' : 'kitchen'), prep_kind: c?.prep_kind ?? '', alcohol: c?.alcohol ?? false,
     ordering_paused: c?.ordering_paused ?? false,
   };
 }
 
-const FIELDS: Array<keyof Form> = ['name_th', 'name_en', 'note_th', 'note_en', 'group', 'status', 'seasonal', 'active_from', 'active_until', 'station', 'alcohol', 'ordering_paused'];
+const FIELDS: Array<keyof Form> = ['name_th', 'name_en', 'note_th', 'note_en', 'group', 'status', 'seasonal', 'active_from', 'active_until', 'station', 'prep_kind', 'alcohol', 'ordering_paused'];
 const nul = (s: string) => (s.trim() ? s.trim() : null);
 
 export default function CategoryEditor({ category, defaultGroup, readOnly, onClose }: {
@@ -75,7 +75,7 @@ export default function CategoryEditor({ category, defaultGroup, readOnly, onClo
       name_th: nul(form.name_th), name_en: form.name_en.trim(), note_th: nul(form.note_th), note_en: nul(form.note_en),
       group: form.group, status: form.status, seasonal: form.seasonal,
       active_from: form.active_from || null, active_until: form.active_until || null,
-      station: form.station, alcohol: form.alcohol,
+      station: form.station, prep_kind: form.prep_kind || null, alcohol: form.alcohol,
     };
     if (canPause) values.ordering_paused = form.ordering_paused;
     setSaving(true);
@@ -180,6 +180,19 @@ export default function CategoryEditor({ category, defaultGroup, readOnly, onClo
             <Select density="staff" label={t('catalog.field.station')} value={form.station} onChange={(e) => set('station', e.target.value as Station)}
               options={[{ value: 'kitchen', label: t('catalog.station.kitchen') }, { value: 'bar', label: t('catalog.station.bar') }]} />
           </div>
+          {/* What guests read while the kitchen works on a dish of this category (D-S8-18). */}
+          <Select
+            density="staff"
+            label={t('catalog.field.prepKind')}
+            value={form.prep_kind}
+            onChange={(e) => set('prep_kind', e.target.value as Form['prep_kind'])}
+            help={t('catalog.category.prepKindHelp')}
+            options={[
+              { value: '', label: t('catalog.prep.auto') },
+              { value: 'cook', label: t('catalog.prep.cook') },
+              { value: 'prepare', label: t('catalog.prep.prepare') },
+            ]}
+          />
           <Select density="staff" label={t('catalog.category.status')} value={form.status} onChange={(e) => set('status', e.target.value as ItemStatus)}
             help={t('catalog.category.statusHelp')}
             options={(['draft', 'published', 'archived'] as const).map((s) => ({ value: s, label: t(`catalog.status.${s}`) }))} />
@@ -222,6 +235,7 @@ function ConflictList({ fields, latest }: { fields: Array<keyof Form>; latest: F
   if (!fields.length) return null;
   const shown = (k: keyof Form, v: Form[keyof Form]): string => {
     if (typeof v === 'boolean') return v ? t('common.yes') : t('common.no');
+    if (k === 'prep_kind') return v ? t(`catalog.prep.${v}`) : t('catalog.prep.auto');
     if (!v) return t('catalog.conflict.blank');
     if (k === 'status') return t(`catalog.status.${v}`);
     if (k === 'group') return t(`catalog.group.${v}`);

@@ -283,7 +283,10 @@ test('scenario 12: the staff board catches up after a disconnect and a live stre
   assert.ok(created.every((w) => w.entity.version === 1));
 
   // Role filtering: the kitchen never receives bill events, a manager does.
-  const adjust = await manager.post(`/api/staff/visits/${party.visit.id}/adjustments`, { kind: 'correction', amount_minor: 100, reason: 'Event filter check' });
+  const seenBill = await manager.get(`/api/staff/visits/${party.visit.id}/bill`);
+  const adjust = await manager.post(`/api/staff/visits/${party.visit.id}/adjustments`, {
+    kind: 'correction', amount_minor: 100, reason: 'Event filter check', idempotency_key: key('adj'), bill_version: seenBill.body.bill_version,
+  });
   assert.equal(adjust.status, 200, JSON.stringify(adjust.body));
   const managerPoll = await manager.get(`/api/staff/events/poll?since=${cursor}`);
   assert.ok((managerPoll.body.events as Wire[]).some((w) => w.topic === 'bill.updated' && w.visit_id === party.visit.id));
@@ -300,11 +303,14 @@ test('a run of more than 200 events hidden from a role never stalls that role\'s
   const [{ start }] = srv.sql<{ start: number }>('SELECT MAX(id) AS start FROM events');
 
   // 205 bill adjustments in a row: 205 consecutive bill.updated events, which the kitchen may not see.
-  for (let batch = 0; batch < 205; batch += 25) {
-    const size = Math.min(25, 205 - batch);
-    const replies = await Promise.all(Array.from({ length: size }, (_, i) =>
-      manager.post(`/api/staff/visits/${party.visit.id}/adjustments`, { kind: 'correction', amount_minor: 1, reason: `Filter window ${batch + i}` })));
-    for (const r of replies) assert.equal(r.status, 200, JSON.stringify(r.body));
+  // Each carries the bill version the one before it returned (D-S8-01), so they are sent in order.
+  let billVersion = (await manager.get(`/api/staff/visits/${party.visit.id}/bill`)).body.bill_version as number;
+  for (let i = 0; i < 205; i++) {
+    const r = await manager.post(`/api/staff/visits/${party.visit.id}/adjustments`, {
+      kind: 'correction', amount_minor: 1, reason: `Filter window ${i}`, idempotency_key: key('adj'), bill_version: billVersion,
+    });
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    billVersion = r.body.bill_version as number;
   }
   const hidden = srv.sql(`SELECT id FROM events WHERE id > ? AND topic = 'bill.updated'`, [start]);
   assert.equal(hidden.length, 205);

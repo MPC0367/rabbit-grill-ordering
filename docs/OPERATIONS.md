@@ -43,11 +43,11 @@ Put these in `.env` (copy from `.env.example`) or in the service environment. A 
 | `HOST` | `0.0.0.0` | Bind address. `0.0.0.0` accepts connections from the LAN. Use `127.0.0.1` when a reverse proxy on the same machine is the only client. |
 | `API_PORT` | `PORT + 1` | Development only. The API behind Vite listens on `127.0.0.1:API_PORT`. |
 | `PUBLIC_BASE_URL` | `npm run dev`: `http://<first LAN address>:PORT`. Otherwise `http://localhost:PORT`. | The origin printed in every table QR code. The server warns at start when it is a localhost address. Reprint all cards after changing it. |
-| `TRUST_PROXY_HOPS` | `0` | The number of reverse proxies in front of the app. The client address for rate limits is then read from `X-Forwarded-For`. Never set it higher than the real number, or clients could choose their own address. |
-| `COOKIE_SECURE` | on when `PUBLIC_BASE_URL` is `https://` | Browsers drop Secure cookies over plain http, which stops staff signing in and guests joining. The server warns at start about a mismatch. |
+| `TRUST_PROXY_HOPS` | `0` | The number of reverse proxies in front of the app. The client address for rate limits is then read from `X-Forwarded-For` (the Nth address from the right). Never set it higher than the real number, or clients could choose their own address. The server warns once if `X-Forwarded-For` arrives while this is `0`. `npm run dev` ignores the setting and runs its API with `1`, because Vite is exactly one proxy and forwards each phone's address (D-DT-06). |
+| `COOKIE_SECURE` | unset: follows the scheme of `PUBLIC_BASE_URL` (`https://` = Secure) | Leave it unset. Browsers drop Secure cookies over plain http, which stops staff signing in and guests joining, so forcing `1` on a plain-http LAN locks everyone out; `0` switches Secure off behind https. The server warns at start about a mismatch (D-S8-09). |
 | `DATABASE_PATH` | `var/rabbit-grill.db` | Keep it on a local disk, not a network share, because SQLite locking needs a local file system. |
 | `REPORTS_DIR` | `var/reports` | Annual PDFs and data exports. |
-| `SEED_DEMO` | `npm run dev`: on. `npm start`: off. | Seeds an **empty** database with the draft catalog, demo tables and demo staff accounts. The demo passwords are public. |
+| `SEED_DEMO` | off | Seeds an **empty** database with the draft catalog, demo tables and demo staff accounts, whose passwords are public. Nothing seeds unless it is set: `npm run dev` and `npm run seed` set it themselves, and no other entry point does, not even a bare `node server/main.ts` (D-S8-30). |
 | `SEED_HISTORY` | on whenever seeding | Adds a synthetic fixture year from 2025-01-01 to yesterday (about 140 MB). |
 | `BROWSER_PATH` | auto-detected | Edge, Chrome or Chromium for PDFs (see [Annual PDFs](#annual-pdfs-the-browser-context)). |
 | `STAFF_SESSION_HOURS` | `14` | Staff sign-in lifetime. |
@@ -84,7 +84,7 @@ Then sign in at `/admin/login` and:
 **If a database was ever seeded** (for example, a trial run that became the real one), it contains `demo-owner`, `demo-manager` and the other demo accounts with public passwords.
 
 - **Recommended:** start again from an empty database.
-- **Otherwise:** deactivate every `demo-*` account in **More → Team** before anyone relies on the system. The server refuses to switch the operating mode to *live* while an active demo account exists (`demo_accounts_active`, D-S8-11). Its settings API can deactivate them in the same request (`deactivate_demo_staff: true`), but the Settings screen does not offer that yet.
+- **Otherwise:** deactivate every `demo-*` account in **More → Team** before anyone relies on the system. The server refuses to switch the operating mode to *live* while an active demo account exists (`demo_accounts_active`, D-S8-11). **More → Settings → Operating mode** then offers "Deactivate demo accounts and switch", which retires them, signs them out, audits it and switches in one transaction (D-S8-27). It is refused while the acting owner is itself a demo account, or if no real owner would remain, so create the real owner first.
 - In live mode, a demo account can neither sign in nor use an existing session. The Team page marks these accounts as demo data.
 - Demo history is flagged as fixture data and is excluded from real reports, but it stays in the database.
 
@@ -100,8 +100,9 @@ npm run dev
 1. If `var/rabbit-grill.db` has no menu yet, the seed runs to completion first. It takes about 10–20 s and prints the demo accounts and the PINs of the open demo tables. Skip it with `SEED_DEMO=0`, or skip only the synthetic year with `SEED_HISTORY=0`.
 2. The API starts on `127.0.0.1:API_PORT` under `node --watch`. Saves in `server/` or `shared/` restart it, and it never seeds.
 3. Vite starts on `HOST:PORT`, proxies `/api` and `/files` to the API, and serves only `client/`, `shared/`, `public/` and `node_modules/` (`scripts/vite-dev.ts`). The database, report files and server source are never served, even to the LAN.
+4. The proxy adds `X-Forwarded-For` and the API runs with `TRUST_PROXY_HOPS=1`, so join and sign-in limits count each phone separately instead of treating the whole Wi-Fi as one client (D-DT-06). A phone that sends the header itself cannot escape its own budget: the proxy appends the real address last.
 
-**If the first seed was interrupted** (closed window, crash), the database may hold a catalog without its history or live tables. Seeding only runs on an empty catalog, so run `npm run db:reset` and start again.
+**If the first seed was interrupted** (closed window, crash), the database holds a catalog without its history or live tables. It is marked as unfinished: `npm run dev` and `npm run seed` refuse it and say so, and the server warns at start (D-S8-29). Run `npm run db:reset` and start again.
 
 ### Production build on this computer
 
@@ -110,6 +111,8 @@ npm run build
 npm run seed          # optional: demo data for a local trial (development database only)
 npm start
 ```
+
+`npm run build` is two steps: `vite build`, then `scripts/precompress.ts`, which writes a `.br` and `.gz` beside every bundle above 1 KB in `dist/assets`. The server sends those when the browser accepts them, so phones on restaurant Wi-Fi get maximum-ratio Brotli and the one process does not compress the same bundle again for every guest. Skipping the second step costs nothing but speed: the server then gzips on the fly (D-DT-07).
 
 `npm start` is `scripts/start.ts` → `server/main.ts`. It never seeds by itself, and it warns when `NODE_ENV` is not `production` or `dist/` has not been built. Open `http://localhost:8344`.
 
@@ -282,7 +285,7 @@ Migrations in `server/db/migrations/` run on start. Applied migrations are never
   - raw analytics events (only once their daily aggregates exist)
   - audit entries
 
-  Orders, visits, bills and payments are never touched. Preview a run with `npm run jobs -- retention --dry-run` (D-S8-02).
+  Orders, visits, bills and payments are never touched. **Settings → Data retention** shows when the task last ran and how far raw events have been removed. Preview a run with `npm run jobs -- retention --dry-run` (D-S8-02).
 
 ## Annual PDFs: the browser context
 
@@ -295,6 +298,7 @@ Annual PDF reports are HTML printed by an installed Chromium-family browser (`sc
 - **Linux:** run the service as an ordinary user. Chromium refuses to start as root without `--no-sandbox`, which this app does not pass. The report fonts (Noto Sans Thai, Oswald, Cormorant Garamond) are embedded in the PDF, so no system Thai fonts are needed.
 - **Check it** from the same account the service uses: `npm run jobs -- report --year 2026` prints the file path, or the reason it failed. In the app, the owner uses **More → Reports → Generate**. Jobs show Queued → Generating → Ready or Failed, and a failed job can be retried.
 - **Timing.** A full synthetic year took about half a minute on the test laptop. Ordering keeps working while a report generates.
+- **Look at the pages.** `npm run pdf:pages -- <file.pdf> --pages 1-3,last` renders pages of a finished PDF to PNG with pdf.js in the same headless browser (`var/pdf-pages/<name>/`). Use it to check a real file after a font, layout or printer change; `--text` also writes each page's text, which keeps Thai ([TESTING.md](TESTING.md#pdf-pages-npm-run-pdfpages)).
 
 ## Background jobs
 

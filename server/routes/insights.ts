@@ -16,6 +16,7 @@ import { clientIp } from '../lib/http.ts';
 import { ingestAnalytics, engagementStats } from '../domain/analytics.ts';
 import { datesBetween, fixtureSql, resolvePeriod, type StatsParams } from '../domain/aggregates.ts';
 import { kpis } from '../domain/kpi.ts';
+import { resolveFilters } from '../domain/kpi-filters.ts';
 import { dayDrilldown, itemStats, listRounds, menuStats, orderStats, type RoundRow } from '../domain/stats.ts';
 
 // ------------------------------------------------------------------ query parsing
@@ -31,7 +32,14 @@ const MenuQuery = BaseQuery.extend({
   direction: z.enum(['most', 'least']).default('most'),
   measure: z.enum(['net', 'submitted', 'per_available_day', 'grams']).default('net'),
 });
-const ExportQuery = MenuQuery.extend({
+/** Optional report filters (KPI screen and the per-round CSV). */
+const FilterQuery = z.object({
+  table_id: IdSchema.optional(),
+  category_id: IdSchema.optional(),
+  staff_id: IdSchema.optional(),
+});
+const KpiQuery = BaseQuery.extend(FilterQuery.shape);
+const ExportQuery = MenuQuery.extend(FilterQuery.shape).extend({
   view: z.enum(['orders', 'menu', 'engagement']),
   metric: z.enum(METRICS).default('rounds'),
   /** orders view: one row per day (default) or per round. */
@@ -268,8 +276,14 @@ export const insightsStaff = new Hono<AppEnv>()
     return c.json(engagementStats(periodParams(statsQuery(c, BaseQuery))));
   })
   .get('/stats/kpis', requireStaff('stats.view'), (c) => {
-    const q = statsQuery(c, BaseQuery);
-    return c.json(kpis({ ...periodParams(q), financial: staffOf(c).can('reports.financial') }));
+    const q = statsQuery(c, KpiQuery);
+    return c.json(kpis({
+      ...periodParams(q),
+      financial: staffOf(c).can('reports.financial'),
+      table_id: q.table_id ?? null,
+      category_id: q.category_id ?? null,
+      staff_id: q.staff_id ?? null,
+    }));
   })
   .get('/stats/export.csv', requireStaff('stats.view'), (c) => {
     const q = statsQuery(c, ExportQuery);
@@ -282,7 +296,10 @@ export const insightsStaff = new Hono<AppEnv>()
         if (q.rows === 'order') {
           const rp = resolvePeriod(p);
           const showMoney = staff.can('billing.view');
-          csv = roundRowsCsv(listRounds(rp.from, rp.to, rp.include_fixture, showMoney), showMoney);
+          // The same filters as the KPI screen, so the rounds behind a filtered
+          // figure can be exported (unknown ids are refused, not ignored).
+          const filters = resolveFilters({ table_id: q.table_id, category_id: q.category_id, staff_id: q.staff_id });
+          csv = roundRowsCsv(listRounds(rp.from, rp.to, rp.include_fixture, showMoney, filters), showMoney);
           name = exportName('order-rounds', p);
         } else {
           csv = dayRowsCsv(orderStats({ ...p, metric: q.metric }));

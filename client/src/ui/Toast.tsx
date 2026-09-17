@@ -1,7 +1,8 @@
 // Toast system and live regions (DESIGN §10.24).
 //  - One toast at a time, 4s, paused while hovered or focused, optional ghost
 //    action ("เลิกทำ"). Shown above the dock; raised above open dialogs via
-//    the popover top layer where supported.
+//    the popover top layer where supported. It moves to the top of the screen
+//    rather than cover the control that has just taken focus (WCAG 2.4.11).
 //  - Screen readers hear toasts through one polite and one assertive region
 //    at the app root. Assertive is only for errors (failed submission,
 //    connection loss).
@@ -200,18 +201,61 @@ export function useToast(): ToastApi {
   return useContext(ToastContext) ?? fallbackApi;
 }
 
+/** Do these two boxes overlap on screen? */
+function overlaps(a: DOMRect, b: DOMRect): boolean {
+  if (b.width === 0 && b.height === 0) return false;
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
 function ToastViewport({ toast, onDone }: { toast: ToastItem | null; onDone: (id?: string) => void }) {
   const region = useRef<HTMLDivElement>(null);
+  // Which edge the toast sits on. It starts at the bottom and moves to the top
+  // if it would cover the control that has just taken focus (WCAG 2.4.11).
+  const [edge, setEdge] = useState<'bottom' | 'top'>('bottom');
+  const edgeRef = useRef<'bottom' | 'top'>('bottom');
   useEffect(() => {
     const el = region.current as (HTMLDivElement & { showPopover?: () => void; hidePopover?: () => void }) | null;
+    edgeRef.current = 'bottom';
+    setEdge('bottom');
     if (!el || typeof el.showPopover !== 'function') return;
     try {
       if (el.matches(':popover-open')) el.hidePopover?.();
       if (toast) el.showPopover();
     } catch { /* unsupported: the region is a plain fixed element */ }
   }, [toast]);
+
+  const id = toast?.id;
+  useEffect(() => {
+    if (!id) return;
+    let frame = 0;
+    const check = () => {
+      const card = region.current?.querySelector('.toast') as HTMLElement | null;
+      const focused = document.activeElement as HTMLElement | null;
+      if (!card || !focused || focused === document.body || card.contains(focused)) return;
+      if (!overlaps(card.getBoundingClientRect(), focused.getBoundingClientRect())) return;
+      if (edgeRef.current === 'bottom') {
+        edgeRef.current = 'top';
+        setEdge('top');
+        // Measure again once the move has been painted.
+        frame = requestAnimationFrame(() => { frame = requestAnimationFrame(check); });
+        return;
+      }
+      // Covered at both edges (a very short screen): the words have already
+      // been announced and the toast is transient, so let it go.
+      onDone(id);
+    };
+    const onFocus = () => {
+      cancelAnimationFrame(frame);
+      // Focus scrolls the page first (scroll-padding); measure after that.
+      frame = requestAnimationFrame(() => { frame = requestAnimationFrame(check); });
+    };
+    document.addEventListener('focusin', onFocus);
+    onFocus(); // the toast may appear over what is already focused
+    return () => { document.removeEventListener('focusin', onFocus); cancelAnimationFrame(frame); };
+  }, [id, onDone]);
+
   return (
-    <div ref={region} className="toast-region" popover="manual" data-empty={toast ? undefined : ''}>
+    <div ref={region} className="toast-region" popover="manual" data-edge={edge} data-empty={toast ? undefined : ''}>
       {toast ? <ToastCard key={toast.id} toast={toast} onDone={onDone} /> : null}
     </div>
   );

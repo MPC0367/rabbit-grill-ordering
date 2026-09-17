@@ -176,6 +176,13 @@
 .seg > button[disabled] { opacity: 0.55; cursor: not-allowed; }
 .seg--staff > button { min-height: calc(var(--control-h-staff) - 6px); }
 .seg .count { font-family: var(--font-display); font-feature-settings: var(--num-features); color: var(--text-2); margin-left: 4px; }
+/* Work waiting in a segment (board "New · 3"): the count carries the same ink
+   weight as the New column head, pressed or not. */
+.seg > button.is-attn { color: var(--text); font-weight: var(--fw-semibold); }
+.seg > button.is-attn .count {
+  display: inline-block; min-width: 20px; padding: 1px 6px; margin-left: 5px; border-radius: var(--radius-pill);
+  background: var(--inverse); color: var(--on-inverse); text-align: center;
+}
 /* box tone: language and dense admin toggles, reference-site framed square */
 .seg--box { padding: 0; gap: 0; background: var(--surface); border: 1px solid var(--rule-ink); border-radius: var(--radius-hair); }
 .seg--box > button { min-height: 44px; min-width: 44px; padding: 0 10px; border-radius: 0; border: 0; color: var(--text); font-weight: var(--fw-medium); }
@@ -769,7 +776,10 @@ button.srow:disabled, .srow[aria-disabled="true"] { cursor: default; }
 .line__th { font: var(--type-ticket-th); overflow-wrap: anywhere; }
 .line__en { font: var(--fw-regular) var(--fs-13)/1.4 var(--font-ui); color: var(--text-2); }
 .line__chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; align-items: center; }
-.line__st { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font: var(--fw-semibold) var(--fs-13)/1.3 var(--font-ui); }
+.line__st { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 4px; font: var(--fw-semibold) var(--fs-13)/1.3 var(--font-ui); }
+/* Who recorded the step goes on its own line: staff names used to wrap in the
+   middle of "Ready · 19:46 · Ploy Chaiwong". */
+.line__by { flex-basis: 100%; margin: 1px 0 0 20px; color: var(--text-2); font-weight: var(--fw-regular); }
 .line__st .i { width: 15px; height: 15px; flex: none; }
 .line__st--ok { color: var(--ok); }
 .line__st--ok .i { stroke-width: 2; }
@@ -1085,6 +1095,10 @@ dialog.sheet--drawer .sheet__body { padding-top: 4px; }
 .toast-region .toast { position: relative; left: auto; bottom: auto; transform: none; pointer-events: auto; max-width: min(100%, 520px); }
 html[data-scope="admin"] .toast-region { bottom: 24px; }
 @media (min-width: 1080px) { html[data-scope="guest"] .toast-region { bottom: 32px; } }
+/* The toast steps out of the way of whatever has keyboard focus (WCAG 2.4.11).
+   On a short screen (a phone at 400% zoom) the 4-second toast otherwise sits
+   over the rows being tabbed through. It clears any pinned top bar. */
+html .toast-region[data-edge="top"] { inset: calc(var(--pinned-top, 0px) + 8px) 0 auto 0; }
 
 
 /* =====================================================================
@@ -1240,8 +1254,8 @@ html[data-scope="admin"] .toast-region { bottom: 24px; }
 
 .ws { min-width: 0; display: flex; flex-direction: column; }
 .wshead { position: sticky; top: 0; z-index: var(--z-sticky); display: flex; align-items: center; gap: 20px; min-height: var(--admin-header-h); padding: 0 var(--admin-pad); background: var(--canvas); border-bottom: 1px solid var(--rule); }
-.wshead h1 { font: var(--type-admin-title); letter-spacing: 0.005em; }
-.wshead h1:lang(th) { font: var(--fw-semibold) var(--fs-26)/var(--lh-thai-min) var(--font-ui); } /* Thai is never Cormorant */
+.wshead :is(h1, .wshead__t) { font: var(--type-admin-title); letter-spacing: 0.005em; }
+.wshead :is(h1, .wshead__t):lang(th) { font: var(--fw-semibold) var(--fs-26)/var(--lh-thai-min) var(--font-ui); } /* Thai is never Cormorant */
 .wshead__right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 .ordering { display: inline-flex; align-items: stretch; border: var(--border-ctl); border-radius: var(--radius-ctl); background: var(--surface); overflow: hidden; }
 .ordering__state { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font: var(--type-ui-sm); color: var(--text-2); white-space: nowrap; }

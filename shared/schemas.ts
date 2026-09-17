@@ -2,6 +2,7 @@
 // the server; the client imports the same schemas for form validation.
 import { z } from 'zod';
 import { LINE_STATUSES, SERVICE_STATUSES, SERVICE_TYPES, ITEM_STATUSES, REVIEW_STATUSES, PRICING_TYPES, STATIONS } from './status.ts';
+import { ALIASES, MEASURED_GRAMS, PREFERRED_GRAMS } from './limits.ts';
 import { ROLES } from './permissions.ts';
 
 const id = z.string().min(3).max(64).regex(/^[A-Za-z0-9_-]+$/);
@@ -65,7 +66,7 @@ export const FeedbackBody = z.object({
 
 export const PortionRequestBody = z.object({
   item_id: id,
-  preferred_grams: z.number().int().min(50).max(5000).nullish(),
+  preferred_grams: z.number().int().min(PREFERRED_GRAMS.min).max(PREFERRED_GRAMS.max).nullish(),
   note: shortText(200).nullish(),
   idempotency_key: idempotencyKey,
 });
@@ -151,11 +152,22 @@ export const AssistOrderBody = z.object({
 
 export const StaffQuoteBody = z.object({ visit_id: id, lines: z.array(CartLineInput).max(60) });
 
+/**
+ * A paper-order line. A weighed cut also carries the weight staff recorded on
+ * the ticket (`measured.grams`); it is priced at the item's approved rate, and
+ * one line is one cut (quantity 1). Only manual recovery accepts it - guests
+ * and staff-assisted rounds get a weighing quote instead.
+ */
+export const RecoverLineInput = CartLineInput.extend({
+  measured: z.object({ grams: z.number().int().min(MEASURED_GRAMS.min).max(MEASURED_GRAMS.max) }).nullish(),
+});
+export type RecoverLineInput = z.infer<typeof RecoverLineInput>;
+
 export const RecoverOrderBody = z.object({
   visit_id: id,
   manual_reference: z.string().trim().min(1).max(40),
   original_time: isoInstant,
-  lines: z.array(CartLineInput).min(1).max(60),
+  lines: z.array(RecoverLineInput).min(1).max(60),
   already: z.enum(['none', 'prepared', 'served']),
   reason: shortText(200).min(3),
 });
@@ -168,7 +180,7 @@ export const ServiceTransitionBody = z.object({
 
 export const StaffPortionRequestBody = PortionRequestBody.extend({ visit_id: id });
 export const PortionQuoteBody = z.object({
-  grams: z.number().int().min(1).max(10_000),
+  grams: z.number().int().min(MEASURED_GRAMS.min).max(MEASURED_GRAMS.max),
   choices: z.array(z.object({ group_id: id, option_ids: z.array(id).max(20) })).max(10).default([]),
   note: shortText(200).nullish(),
   expires_minutes: z.number().int().min(1).max(120).nullish(),
@@ -204,11 +216,12 @@ export const AdjustmentBody = z.object({
   /**
    * Retry key: the same key with the same details returns the bill instead of
    * adding the adjustment again; different details answer idempotency_mismatch.
-   * Clients should always send it (optional only for older clients).
+   * Required: an adjustment sent twice by a flaky connection must not discount
+   * the bill twice.
    */
-  idempotency_key: idempotencyKey.optional(),
+  idempotency_key: idempotencyKey,
   /** The bill_version the manager was looking at; a newer bill answers stale_version. */
-  bill_version: z.number().int().optional(),
+  bill_version: z.number().int(),
 });
 export const VoidAdjustmentBody = z.object({ bill_version: z.number().int(), reason: shortText(200).min(3) });
 export const PaymentBody = z.object({
@@ -230,11 +243,19 @@ export const CheckoutBody = z.object({
 
 // ------------------------------------------------------------------ catalog admin
 const bil = (max: number) => shortText(max).nullish();
+/** Search aliases: short plain words, never printed on the menu. */
+export const ALIAS_MAX = ALIASES.maxLength;
+export const ALIASES_PER_ITEM = ALIASES.perItem;
+const aliasList = z.array(shortText(ALIAS_MAX).min(1)).max(ALIASES_PER_ITEM);
 export const ItemInput = z.object({
   category_id: id,
   name_th: bil(120), name_en: bil(120),
   desc_th: bil(400), desc_en: bil(400),
   desc_verified: z.boolean().optional(),
+  /** Other spellings guests search for. Replaces the list; [] clears it. */
+  aliases_th: aliasList.optional(), aliases_en: aliasList.optional(),
+  /** menu.review only: publish the aliases to the guest menu. An edit by anyone else clears it. */
+  aliases_verified: z.boolean().optional(),
   portion_note_th: bil(60), portion_note_en: bil(60),
   pricing_type: z.enum(PRICING_TYPES),
   price_minor: nonNegMinor.nullish(),

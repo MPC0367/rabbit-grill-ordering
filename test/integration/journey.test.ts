@@ -110,7 +110,7 @@ test('scenario 1: a T01 guest joins by QR + PIN, orders a customised steak, and 
   const guest = srv.client();
   const scan = await guest.post('/api/public/qr/resolve', { token: T.tokens.tbl_T01 });
   assert.equal(scan.status, 200);
-  assert.deepEqual(scan.body, { table_label: 'T01', state: 'ready', pin_required: true, already_joined: false });
+  assert.deepEqual(scan.body, { table_label: 'T01', state: 'ready', pin_required: true, already_joined: false, pin_digits: 4 });
 
   const noPin = await joinTable(guest, 'tbl_T01');
   assert.equal(noPin.status, 401);
@@ -129,7 +129,7 @@ test('scenario 1: a T01 guest joins by QR + PIN, orders a customised steak, and 
   assert.match(setCookie, /SameSite=Lax/i);
   assert.match(setCookie, /Path=\/(;|$)/i);
   const rescan = await guest.post('/api/public/qr/resolve', { token: T.tokens.tbl_T01 });
-  assert.deepEqual(rescan.body, { table_label: 'T01', state: 'ready', pin_required: false, already_joined: true });
+  assert.deepEqual(rescan.body, { table_label: 'T01', state: 'ready', pin_required: false, already_joined: true, pin_digits: null });
   const session = await guest.get('/api/guest/session');
   assert.equal(session.status, 200);
   assert.equal(session.body.guest_id, joined.body.guest_id);

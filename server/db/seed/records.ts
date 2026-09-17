@@ -350,6 +350,8 @@ export function writeOrder(ctx: SeedCtx, o: SimOrder): void {
       portion_quote_id: l.measured?.quote_id ?? null,
       line_total_minor: l.line_total_minor,
       note: l.note, allergy_flag: l.allergy,
+      alcohol: l.item.alcohol ? 1 : 0,
+      requires_staff_confirm: l.item.requires_staff_confirm ? 1 : 0,
       status: end.status,
       status_reason: end.kind === 'forward' ? null : end.reason,
       submitted_at: iso(l.steps[0].at),

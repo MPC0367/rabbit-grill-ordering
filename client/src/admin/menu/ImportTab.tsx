@@ -16,7 +16,7 @@ const MAX_CHARS = 2_000_000;
 const COLUMNS = [
   'key', 'category_key', 'name_th', 'name_en', 'desc_th', 'desc_en', 'pricing_type', 'price_baht', 'rate_baht',
   'rate_basis_grams', 'variant_key', 'variant_name_th', 'variant_name_en', 'variant_price_baht', 'station',
-  'alcohol', 'notes_allowed', 'max_qty', 'image', 'image_alt_th', 'image_alt_en',
+  'alcohol', 'notes_allowed', 'max_qty', 'image', 'image_alt_th', 'image_alt_en', 'aliases_th', 'aliases_en',
 ];
 
 type RowFilter = 'all' | 'errors' | 'create' | 'update_draft' | 'skipped';

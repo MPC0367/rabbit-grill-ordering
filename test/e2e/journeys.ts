@@ -1027,12 +1027,37 @@ export async function devServerExposure(base: string, lanBase: string | null, ro
 /** The production build serves the app, but not its source maps or made-up asset paths. */
 export async function productionExposure(base: string, root: string): Promise<Check> {
   const c = new Check('prod-files');
-  const { readdirSync } = await import('node:fs');
+  const { readdirSync, readFileSync } = await import('node:fs');
+  const { brotliDecompressSync } = await import('node:zlib');
+  const { get } = await import('node:http');
   const assets = readdirSync(join(root, 'dist', 'assets'));
   const map = assets.find((f) => f.endsWith('.js.map'));
   const js = assets.find((f) => f.endsWith('.js'));
   const status = async (path: string) => (await fetch(base + path, { signal: AbortSignal.timeout(10_000) })).status;
+  // fetch() negotiates and decodes compression itself; node:http shows the bytes on the wire.
+  const wire = (path: string, acceptEncoding: string) => new Promise<{ status: number; encoding: string; body: Buffer }>((done, fail) => {
+    const req = get(base + path, { headers: { 'Accept-Encoding': acceptEncoding }, timeout: 10_000 }, (res) => {
+      const parts: Buffer[] = [];
+      res.on('data', (d: Buffer) => parts.push(d));
+      res.on('end', () => done({ status: res.statusCode ?? 0, encoding: String(res.headers['content-encoding'] ?? ''), body: Buffer.concat(parts) }));
+      res.on('error', fail);
+    });
+    req.on('timeout', () => req.destroy(new Error(`timeout: ${path}`)));
+    req.on('error', fail);
+  });
   if (js) c.ok((await status(`/assets/${js}`)) === 200, `a built bundle is served (${js})`);
+  // npm run build precompresses the bundles (scripts/precompress.ts); the server picks the sibling.
+  const packed = assets.find((f) => f.endsWith('.js') && assets.includes(`${f}.br`));
+  if (packed) {
+    const plain = readFileSync(join(root, 'dist', 'assets', packed));
+    const br = await wire(`/assets/${packed}`, 'br, gzip');
+    c.ok(br.status === 200 && br.encoding === 'br' && brotliDecompressSync(br.body).equals(plain),
+      `a bundle is sent from its precompressed Brotli copy (${packed}: ${plain.length} -> ${br.body.length} bytes)`);
+    const identity = await wire(`/assets/${packed}`, 'identity');
+    c.ok(identity.status === 200 && identity.encoding === '' && identity.body.equals(plain), 'a browser that accepts no compression gets the plain bundle');
+  } else {
+    c.info('no precompressed bundles in dist/assets (built without scripts/precompress.ts)');
+  }
   if (map) c.ok((await status(`/assets/${map}`)) === 404, `its source map is not served (${map})`);
   else c.info('the build wrote no source maps');
   c.ok((await status(`/assets/${js ? js.replace(/\.js$/, '') : 'x'}-missing.js`)) === 404, 'a missing bundle is a 404, not the app page');

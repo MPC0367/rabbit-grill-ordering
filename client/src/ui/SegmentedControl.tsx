@@ -15,6 +15,8 @@ export interface SegmentOption<T extends string> {
   lang?: string;
   /** Accessible name when the label is not text. */
   ariaLabel?: string;
+  /** Work is waiting in this segment: the count turns into an ink chip (board "New · 3"). */
+  emphasis?: boolean;
   disabled?: boolean;
 }
 
@@ -57,6 +59,7 @@ function SegmentedControlInner<T extends string>(
           ref={(el) => { buttons.current[i] = el; }}
           type="button"
           lang={o.lang}
+          className={o.emphasis ? 'is-attn' : undefined}
           aria-pressed={o.value === value}
           aria-label={o.ariaLabel}
           tabIndex={i === current ? 0 : -1}

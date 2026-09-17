@@ -57,6 +57,11 @@ export function DemoStamp({ label, className }: { label?: string; className?: st
 
 export interface WorkspaceHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   title: string;
+  /**
+   * The workspace title is the page's h1. On a sub-route whose page writes
+   * its own h1 (More › Reports), pass 'p' so the page has one h1, not two.
+   */
+  titleAs?: 'h1' | 'p';
   tabs?: SubTabItem[];
   /** Accessible name of the subtab nav; defaults to "{title} views". */
   tabsLabel?: string;
@@ -73,19 +78,20 @@ export interface WorkspaceHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 
 }
 
 export const WorkspaceHeader = forwardRef<HTMLElement, WorkspaceHeaderProps>(function WorkspaceHeader(
-  { title, tabs, tabsLabel, onTabNavigate, demo, extra, connection, ordering, identity, compact, className, ...rest },
+  { title, titleAs = 'h1', tabs, tabsLabel, onTabNavigate, demo, extra, connection, ordering, identity, compact, className, ...rest },
   ref,
 ) {
   const { t } = useI18n();
   const own = useRef<HTMLElement | null>(null);
   // Focus moving up a workspace stops below this sticky header.
   usePinnedEdge(own, 'top');
+  const Title = titleAs;
   return (
     <header ref={mergeRefs(ref, own)} {...rest} className={cx('wshead-cq', className)}>
       {/* The inner row is the styled header; the outer element is sticky and a size container,
           so long texts give way when the workspace is narrow, whatever the viewport. */}
       <div className={cx('wshead', compact && 'wshead--compact')}>
-        <h1>{title}</h1>
+        <Title className={titleAs === 'p' ? 'wshead__t' : undefined}>{title}</Title>
         {tabs && tabs.length > 0 ? (
           <SubTabs items={tabs} label={tabsLabel ?? t('common.staff.views', { title })} onNavigate={onTabNavigate} />
         ) : null}

@@ -9,7 +9,7 @@ import type { AppEnv } from '../app.ts';
 import type { AttemptLookupDTO, OrderDTO, QuoteDTO, StaffOrderDTO, SubmitResultDTO } from '../../shared/dto.ts';
 import {
   AssistOrderBody, FinishOrderBody, IdSchema, IsoDateSchema, QuoteBody, RecoverOrderBody, StaffQuoteBody,
-  SubmitOrderBody, TransitionBody, idempotencyKey, type CartLineInput,
+  SubmitOrderBody, TransitionBody, idempotencyKey, type CartLineInput, type RecoverLineInput,
 } from '../../shared/schemas.ts';
 import { LINE_STATUSES, STATIONS, type LineStatus } from '../../shared/status.ts';
 import { nowIso } from '../../shared/time.ts';
@@ -95,6 +95,28 @@ function submitCart(a: SubmitArgs): { orderId: string; replayed: boolean } {
  * dish is re-checked with those two states ignored: "paused" must never hide
  * "not verified" or "price pending" (D-S8-19).
  */
+/**
+ * Weighed cuts on a paper ticket (D-S8-21): staff enter the grams they wrote
+ * down, and the line is priced at the dish's approved rate. Grams belong only
+ * to a measured-weight dish, and one line is one cut.
+ */
+function assertRecoveryWeights(lines: RecoverLineInput[]): void {
+  const issues: Array<{ path: string; message: string; code: string }> = [];
+  lines.forEach((line, i) => {
+    const grams = line.measured?.grams ?? null;
+    const item = getItem(line.item_id);
+    if (grams === null) return;
+    if (!item || item.pricing_type !== 'measured_weight') {
+      issues.push({ path: `lines.${i}.measured`, message: 'Only dishes sold by weight take a weight.', code: 'not_measured_weight' });
+      return;
+    }
+    if (line.quantity !== 1) {
+      issues.push({ path: `lines.${i}.quantity`, message: 'Enter one weighed cut per line.', code: 'one_cut_per_line' });
+    }
+  });
+  if (issues.length) throw new AppError('validation_failed', 'Some weighed cuts are not valid.', { issues });
+}
+
 function recoveryBlocked(result: PriceCartResult, lines: CartLineInput[]): boolean {
   return result.quote.issues.some((issue) => {
     if (issue.code !== 'sold_out' && issue.code !== 'not_orderable') return true;
@@ -238,8 +260,17 @@ export const ordersStaff = new Hono<AppEnv>()
     }
     // The paper reference is the attempt identity: re-sending the same entry
     // replays it; the same reference with different content is a conflict.
+    assertRecoveryWeights(input.lines);
     const key = `rec_${sha256(input.manual_reference).slice(0, 40)}`;
-    const hash = payloadHash({ lines: cartPayloadHash(input.lines), original_time: new Date(originalMs).toISOString(), already: input.already });
+    const weights = input.lines.map((l) => l.measured?.grams ?? null);
+    const hash = payloadHash({
+      lines: cartPayloadHash(input.lines),
+      original_time: new Date(originalMs).toISOString(),
+      already: input.already,
+      // Only present when a cut was weighed, so entries made before weighed
+      // cuts were accepted still replay instead of looking like a new payload.
+      ...(weights.some((g) => g !== null) ? { measured: weights } : {}),
+    });
     const result = tx(() => {
       const visit = visitOr404(input.visit_id);
       const existing = findAttempt(visit.id, key);
@@ -248,7 +279,7 @@ export const ordersStaff = new Hono<AppEnv>()
         throw new AppError('conflict', 'That paper reference was already entered with different details.', { field: 'manual_reference', reference: existing.reference });
       }
       assertCanOrder(visit, 'manual_recovery');
-      const priced = priceCart(input.lines, { charges: visitCharges(visit) });
+      const priced = priceCart(input.lines, { charges: visitCharges(visit), measuredGrams: (i) => weights[i] });
       if (priced.priced.length !== input.lines.length || recoveryBlocked(priced, input.lines)) cartChanged(priced.quote);
       return createOrder({
         visit,

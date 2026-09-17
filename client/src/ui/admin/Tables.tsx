@@ -17,6 +17,12 @@ export interface TileAction {
   busy?: boolean;
   /** Describes why a disabled action is unavailable. */
   describedBy?: string;
+  /**
+   * Accessible name. Defaults to "Details, table 07": a grid of tiles
+   * otherwise repeats one word (WCAG 2.4.6), and a description is not a name.
+   * Pass null to keep the visible label alone.
+   */
+  ariaLabel?: string | null;
 }
 
 export interface TableTileProps extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
@@ -64,6 +70,10 @@ export const TableTile = forwardRef<HTMLButtonElement, TableTileProps>(function 
     lang === 'en' ? stateWord.toLowerCase() : stateWord,
     ...attention.map((a) => t(`common.attn.aria.${a.kind}`)),
   ].join(lang === 'th' ? ' ' : ', ');
+  // The visible label comes first, so it is still the name that is spoken (WCAG 2.5.3).
+  const actionName = action?.ariaLabel === null
+    ? undefined
+    : action?.ariaLabel ?? t('common.tile.actionAria', { action: actionLabel, label });
 
   return (
     <article {...rest} className={cx('tcard', `tcard--${STATE_SWATCH[state]}`, selected && 'is-open', className)} aria-label={spoken}>
@@ -88,6 +98,7 @@ export const TableTile = forwardRef<HTMLButtonElement, TableTileProps>(function 
             icon={state === 'available' ? 'seat' : undefined}
             loading={action.busy}
             aria-disabled={action.disabled || undefined}
+            aria-label={actionName}
             aria-describedby={action.describedBy}
             aria-expanded={state === 'dining' ? Boolean(selected) : undefined}
             opensDialog={state === 'disabled' || state === 'available'}

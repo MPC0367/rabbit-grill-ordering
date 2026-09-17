@@ -17,7 +17,10 @@ import PaymentDialog from './PaymentDialog.tsx';
 import AdjustmentDialog from './AdjustmentDialog.tsx';
 
 export type BillStep = 'start' | 'finalize' | 'pay';
-type DialogKind = BillStep | 'reopen' | 'adjust' | 'reverse';
+type DialogKind = BillStep | 'reopen' | 'adjust' | 'reverse' | 'void';
+
+/** One discount, comp or correction on the running bill (D-S8-01). */
+export type BillAdjustment = NonNullable<StaffBillDTO['adjustments']>[number];
 
 export interface NextBillStep {
   step: BillStep;
@@ -26,12 +29,18 @@ export interface NextBillStep {
   blockedBy?: string;
 }
 
+/** What a dialog acts on: a payment to reverse, an adjustment to void. */
+export interface BillTarget {
+  payment?: PaymentDTO;
+  adjustment?: BillAdjustment;
+}
+
 export interface BillController {
   visitId: string;
   res: Resource<StaffBillDTO>;
   bill: StaffBillDTO | undefined;
   next: NextBillStep | null;
-  open: (kind: DialogKind, payment?: PaymentDTO) => void;
+  open: (kind: DialogKind, target?: BillTarget) => void;
   can: (p: Permission) => boolean;
   /** Every billing dialog; render once. */
   dialogs: ReactNode;
@@ -80,14 +89,14 @@ export function useBillController(visitId: string, opts: Options = {}): BillCont
   const bill = res.data;
   const billRef = useRef(bill);
   billRef.current = bill;
-  const [dialog, setDialog] = useState<{ kind: DialogKind; payment?: PaymentDTO } | null>(null);
+  const [dialog, setDialog] = useState<({ kind: DialogKind } & BillTarget) | null>(null);
   const [error, setError] = useState<string | null>(null);
   const onChange = opts.onChange;
 
   const label = bill?.table_label ?? '';
-  const open = useCallback((kind: DialogKind, payment?: PaymentDTO) => {
+  const open = useCallback((kind: DialogKind, target?: BillTarget) => {
     setError(null);
-    setDialog({ kind, payment });
+    setDialog({ kind, ...target });
   }, []);
   const close = useCallback(() => { setDialog(null); setError(null); }, []);
 
@@ -183,6 +192,30 @@ export function useBillController(visitId: string, opts: Options = {}): BillCont
     }
   };
 
+  // ---------------------------------------------------------------- void an adjustment
+  // Voiding is idempotent on the server (an already voided adjustment just
+  // returns the bill), so an answer that never arrived can simply be retried.
+  const voidAdjustment = async (reason?: string) => {
+    const b = billRef.current;
+    const adj = dialog?.adjustment;
+    if (!b || !adj || !reason) return;
+    try {
+      const next = await api.post<StaffBillDTO>(`${base}/adjustments/${encodeURIComponent(adj.id)}/void`, {
+        bill_version: b.bill_version,
+        reason,
+      });
+      await changed(next);
+      close();
+      toast.show(t('billing.toast.voided', { amount: money(adj.amount_minor, { sign: true }) }));
+    } catch (err) {
+      if (isAmbiguous(err)) { setError(t('billing.error.ambiguous')); return; }
+      await fail(err, isApiError(err, 'stale_version') ? t('billing.error.changedElsewhere')
+        : isApiError(err, 'bill_changed', 'already_settled') ? t('billing.adjust.finalised')
+        : isApiError(err, 'not_found') ? t('billing.adjust.voidGone')
+        : undefined);
+    }
+  };
+
   const next = useMemo(() => nextBillStep(bill, can, t), [bill, can, t]);
 
   const kind = dialog?.kind;
@@ -191,6 +224,13 @@ export function useBillController(visitId: string, opts: Options = {}): BillCont
   const finalizeTotal = bill ? bill.running_total_minor ?? bill.total_minor : 0;
   const pendingCount = bill ? bill.pending_lines.reduce((n, l) => n + l.quantity, 0) : 0;
   const payment = dialog?.payment;
+  const adjustment = dialog?.adjustment;
+  const voidedLine = adjustment?.order_line_id
+    ? (() => {
+      const line = bill?.lines.find((l) => l.line_id === adjustment.order_line_id);
+      return line ? dishName(pick, line.name, [line.variant_name ? pick(line.variant_name).text : null]).text : null;
+    })()
+    : null;
 
   const dialogs = (
     <>
@@ -257,6 +297,24 @@ export function useBillController(visitId: string, opts: Options = {}): BillCont
         <p className="c5-note">
           {bill?.visit_status === 'closed' ? t('billing.reverse.closedNote') : t('billing.reverse.openNote')}
         </p>
+      </Dialog>
+
+      <Dialog
+        open={kind === 'void' && Boolean(adjustment)}
+        onClose={close}
+        density="staff"
+        tone="danger"
+        title={adjustment
+          ? t('billing.void.title', { kind: t(`billing.adjust.kind.${adjustment.kind}`), amount: money(adjustment.amount_minor, { sign: true }) })
+          : ''}
+        confirmLabel={t('billing.void.confirm')}
+        onConfirm={voidAdjustment}
+        error={error}
+        reason={{ label: t('billing.reason'), required: true, limit: 200, placeholder: t('billing.void.placeholder') }}
+      >
+        {adjustment ? <p>{t('billing.void.was', { reason: adjustment.reason })}</p> : null}
+        {voidedLine ? <p className="c5-note">{t('billing.void.line', { dish: voidedLine })}</p> : null}
+        <p className="c5-note">{t('billing.void.body')}</p>
       </Dialog>
 
       {kind === 'pay' && bill ? (

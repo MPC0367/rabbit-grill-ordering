@@ -266,6 +266,30 @@ function EditorForm({ latest }: { latest: AdminItemDTO }) {
                 {' '}{t('catalog.editor.descResetNote')}
               </p>
             )}
+            {/* Search aliases: other spellings guests type, never printed (D-S8-28). */}
+            <fieldset className="mn-fieldset mn-fieldset--bare" disabled={readOnly}>
+              <legend className="visually-hidden">{t('catalog.editor.aliases')}</legend>
+              <div className="mn-grid2">
+                <TextArea density="staff" label={t('catalog.editor.aliasesTh')} optional lang="th" value={form.aliases_th} limit={240}
+                  help={t('catalog.editor.aliasesHelp')} error={errors.aliases_th} onChange={(v) => set('aliases_th', v)} />
+                <TextArea density="staff" label={t('catalog.editor.aliasesEn')} optional lang="en" value={form.aliases_en} limit={240}
+                  error={errors.aliases_en} onChange={(v) => set('aliases_en', v)} />
+              </div>
+              {canReview ? (
+                <Checkbox
+                  label={t('catalog.editor.aliasesVerified')}
+                  description={t('catalog.editor.aliasesVerifiedHelp')}
+                  checked={form.aliases_verified}
+                  disabled={!form.aliases_th.trim() && !form.aliases_en.trim()}
+                  onChange={(e) => set('aliases_verified', e.target.checked)}
+                />
+              ) : (
+                <p className="mn-note">
+                  <Icon name={latest.aliases_verified ? 'check-c' : 'info'} size="sm" />
+                  {latest.aliases_verified ? t('catalog.editor.aliasesAreVerified') : t('catalog.editor.aliasesNotVerified')}
+                </p>
+              )}
+            </fieldset>
           </EdSection>
 
           <EdSection id="pricing" title={t('catalog.editor.pricing')}>
@@ -284,6 +308,21 @@ function EditorForm({ latest }: { latest: AdminItemDTO }) {
                   disabled={!form.notes_allowed || readOnly} onChange={(e) => set('note_max', e.target.value)}
                   help={t('catalog.editor.noteMaxHelp', { n: config?.notes_max_length ?? 140 })} />
               </div>
+              {/* What guests read while the kitchen works on this dish (D-S8-18). */}
+              <Select
+                density="staff"
+                label={t('catalog.field.prepKind')}
+                value={form.prep_kind}
+                onChange={(e) => set('prep_kind', e.target.value as ItemForm['prep_kind'])}
+                help={form.prep_kind === '' && latest.prep_kind
+                  ? `${t('catalog.editor.prepKindHelp')} ${t('catalog.prep.now', { word: t(`catalog.prep.${latest.prep_kind}`) })}`
+                  : t('catalog.editor.prepKindHelp')}
+                options={[
+                  { value: '', label: t('catalog.prep.auto') },
+                  { value: 'cook', label: t('catalog.prep.cook') },
+                  { value: 'prepare', label: t('catalog.prep.prepare') },
+                ]}
+              />
               <Checkbox label={t('catalog.editor.notesAllowed')} description={t('catalog.editor.notesAllowedHelp')} checked={form.notes_allowed} onChange={(e) => set('notes_allowed', e.target.checked)} />
               <Checkbox label={t('catalog.editor.alcohol')} description={t('catalog.editor.alcoholHelp')} checked={form.alcohol} onChange={(e) => set('alcohol', e.target.checked)} />
               <Checkbox label={t('catalog.editor.staffConfirm')} description={t('catalog.editor.staffConfirmHelp')} checked={form.requires_staff_confirm} onChange={(e) => set('requires_staff_confirm', e.target.checked)} />

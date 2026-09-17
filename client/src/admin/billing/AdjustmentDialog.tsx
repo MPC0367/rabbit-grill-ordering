@@ -6,7 +6,7 @@ import { api } from '../../lib/api.ts';
 import { money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { Button, SegmentedControl, Select, Sheet, TextArea, TextField } from '../../ui/index.ts';
-import { dishName, errorText, isApiError, parseBaht } from '../tables/shared.ts';
+import { dishName, errorText, isAmbiguous, isApiError, parseBaht, pendingKey } from '../tables/shared.ts';
 
 type Kind = 'discount' | 'comp' | 'correction';
 type Direction = 'off' | 'on';
@@ -31,6 +31,10 @@ export default function AdjustmentDialog({ bill, onClose, onSaved, onStale }: Pr
   const [reasonError, setReasonError] = useState<string | null>(null);
   const amountRef = useRef<HTMLInputElement>(null);
   const reasonRef = useRef<HTMLTextAreaElement>(null);
+  // The bill these numbers come from (D-S8-01). A change from another device
+  // is shown once and has to be seen before the adjustment is applied to it.
+  const [seen, setSeen] = useState(bill.bill_version);
+  const stale = bill.bill_version !== seen;
 
   const lineOptions = useMemo(() => bill.lines.map((l) => ({
     value: l.line_id,
@@ -59,6 +63,11 @@ export default function AdjustmentDialog({ bill, onClose, onSaved, onStale }: Pr
       return;
     }
     if (after !== null && after < 0) { setAmountError(t('billing.adjust.tooMuch', { amount: money(base) })); amountRef.current?.focus(); return; }
+    // The bill moved on while this dialog was open: show the new total first.
+    if (stale) { setSeen(bill.bill_version); setError(t('billing.adjust.recheck', { total: money(base) })); return; }
+    // Kept until the server gives a definitive answer, so a retry after a lost
+    // answer replays the same attempt instead of discounting twice.
+    const k = pendingKey(`adjust.${bill.visit_id}`);
     setBusy(true);
     try {
       const next = await api.post<StaffBillDTO>(`/api/staff/visits/${encodeURIComponent(bill.visit_id)}/adjustments`, {
@@ -66,18 +75,40 @@ export default function AdjustmentDialog({ bill, onClose, onSaved, onStale }: Pr
         amount_minor: signed,
         reason: reason.trim(),
         order_line_id: lineId || null,
+        idempotency_key: k.key(),
+        bill_version: seen,
       });
+      k.clear();
       setBusy(false);
       await onSaved(next);
     } catch (err) {
       setBusy(false);
+      if (isAmbiguous(err)) { setError(t('billing.error.ambiguous')); return; }
+      k.clear();
       if (isApiError(err, 'validation_failed')) {
         const d = (err.details ?? {}) as { max_reduction_minor?: number };
         if (d.max_reduction_minor !== undefined) { setAmountError(t('billing.adjust.tooMuch', { amount: money(d.max_reduction_minor) })); return; }
       }
+      if (isApiError(err, 'stale_version')) {
+        const current = (err.details as { current?: StaffBillDTO } | null)?.current;
+        if (current) setSeen(current.bill_version);
+        await onStale();
+        setError(t('billing.adjust.recheck', { total: money(current ? current.subtotal_minor + current.adjustments_minor : base) }));
+        return;
+      }
+      if (isApiError(err, 'idempotency_mismatch')) {
+        await onStale();
+        setError(t('billing.adjust.alreadyRecorded'));
+        return;
+      }
       if (isApiError(err, 'bill_changed', 'already_settled')) {
         await onStale();
         setError(t('billing.adjust.finalised'));
+        return;
+      }
+      if (isApiError(err, 'invalid_transition')) {
+        await onStale();
+        setError(t('billing.adjust.lineGone'));
         return;
       }
       setError(errorText(t, err));
@@ -170,6 +201,10 @@ export default function AdjustmentDialog({ bill, onClose, onSaved, onStale }: Pr
         placeholder={t('billing.adjust.reasonPlaceholder')}
         error={reasonError ?? undefined}
       />
+
+      {stale ? (
+        <p className="c5-callout c5-callout--heat c5-block" role="status">{t('billing.adjust.changedHere', { total: money(base) })}</p>
+      ) : null}
 
       <p className="c5-kvline c5-block" aria-live="polite">
         <span>{bill.charges.length > 0 ? t('billing.adjust.beforeCharges') : t('billing.adjust.newTotal')}</span>

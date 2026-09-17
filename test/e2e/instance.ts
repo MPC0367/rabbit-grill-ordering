@@ -97,8 +97,10 @@ export async function startInstance(opts: {
     DATABASE_PATH: join(dir, 'app.db'),
     REPORTS_DIR: join(dir, 'reports'),
     SEED_HISTORY: opts.history === false ? '0' : '1',
-    // Every simulated phone shares 127.0.0.1; the per-address join limit is
-    // covered by the integration suite, not here.
+    // Every simulated phone shares one address (this computer); the
+    // per-address join limit is covered by the integration suite, not here.
+    // Production path: the browsers reach the server directly (0 proxies).
+    // Development path: scripts/dev.ts sets 1 for its API (Vite is the proxy).
     TRUST_PROXY_HOPS: '0',
     ...opts.env,
   };
@@ -109,8 +111,14 @@ export async function startInstance(opts: {
   if (mode === 'dev') {
     child = spawn(process.execPath, ['scripts/dev.ts'], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] });
   } else {
-    // Build, seed explicitly (npm start never seeds on its own), then start.
-    for (const [label, args] of [['build', [resolve(ROOT, 'node_modules/vite/bin/vite.js'), 'build']], ['seed', ['scripts/seed.ts']]] as const) {
+    // Build (the two steps of `npm run build`), seed explicitly (npm start
+    // never seeds on its own), then start.
+    const steps = [
+      ['build', [resolve(ROOT, 'node_modules/vite/bin/vite.js'), 'build']],
+      ['precompress', ['scripts/precompress.ts']],
+      ['seed', ['scripts/seed.ts']],
+    ] as const;
+    for (const [label, args] of steps) {
       const r = spawnSync(process.execPath, [...args], { cwd: ROOT, env, encoding: 'utf8' });
       out.write(`---- ${label}\n${r.stdout}${r.stderr}`);
       if (r.status !== 0) throw new Error(`${label} failed (exit ${r.status}); see ${log}`);

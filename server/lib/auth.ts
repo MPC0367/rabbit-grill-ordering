@@ -176,26 +176,53 @@ export function clearGuestCookie(c: Context): void {
 }
 
 interface GuestLookup {
-  guest_id: string; guest_no: number; revoked_at: string | null; created_at: string;
+  guest_id: string; guest_no: number; revoked_at: string | null; revoke_reason: string | null; created_at: string;
   visit_id: string; visit_status: VisitStatus; table_id: string; table_label: string;
-  seated_at: string; bill_requested_at: string | null; is_fixture: number;
+  seated_at: string; bill_requested_at: string | null; closed_at: string | null; is_fixture: number;
+}
+
+/**
+ * Checkout closes the visit and revokes every phone at the table. Feedback is
+ * the one thing a guest may still send afterwards, for this long (D-S8-22):
+ * the cashier often completes checkout while the party is still at the table.
+ */
+export const FEEDBACK_GRACE_MS = 30 * 60_000;
+
+export type GuestAccessError = 'visit_access_required' | 'visit_access_revoked' | 'visit_closed';
+
+export interface GuestResolveOptions {
+  /**
+   * Accept a session that only checkout ended, while the grace window lasts.
+   * Feedback routes only; every other guest route keeps refusing it.
+   */
+  feedbackGrace?: boolean;
+}
+
+/** Was this session ended by checkout, within the feedback grace window? */
+function inFeedbackGrace(row: Pick<GuestLookup, 'revoked_at' | 'revoke_reason' | 'closed_at' | 'visit_status'>): boolean {
+  if (row.visit_status !== 'closed' || !row.closed_at) return false;
+  // A phone staff revoked earlier (or a guest who left) does not come back.
+  if (row.revoked_at !== null && row.revoke_reason !== 'checkout') return false;
+  return Date.now() - new Date(row.closed_at).getTime() <= FEEDBACK_GRACE_MS;
 }
 
 /** Resolve the guest cookie; returns a reason code when access is not valid. */
-export function resolveGuest(c: Context): { guest: GuestContext } | { error: 'visit_access_required' | 'visit_access_revoked' | 'visit_closed' } {
+export function resolveGuest(c: Context, opts: GuestResolveOptions = {}): { guest: GuestContext } | { error: GuestAccessError; graceOpen: boolean } {
   const token = getCookie(c, GUEST_COOKIE);
-  if (!token) return { error: 'visit_access_required' };
+  if (!token) return { error: 'visit_access_required', graceOpen: false };
   const row = one<GuestLookup>(
-    `SELECT g.id AS guest_id, g.guest_no, g.revoked_at, g.created_at, v.id AS visit_id, v.status AS visit_status,
-            v.table_id, t.label AS table_label, v.seated_at, v.bill_requested_at, v.is_fixture
+    `SELECT g.id AS guest_id, g.guest_no, g.revoked_at, g.revoke_reason, g.created_at, v.id AS visit_id, v.status AS visit_status,
+            v.table_id, t.label AS table_label, v.seated_at, v.bill_requested_at, v.closed_at, v.is_fixture
        FROM guest_sessions g JOIN visits v ON v.id = g.visit_id JOIN dining_tables t ON t.id = v.table_id
       WHERE g.token_hash = :hash`,
     { hash: sha256(token) },
   );
-  if (!row) return { error: 'visit_access_required' };
-  if (row.visit_status === 'closed') return { error: 'visit_closed' };
-  if (row.revoked_at) return { error: 'visit_access_revoked' };
-  if (Date.now() - new Date(row.created_at).getTime() > config.guestSessionHours * 3_600_000) return { error: 'visit_access_required' };
+  if (!row) return { error: 'visit_access_required', graceOpen: false };
+  const grace = inFeedbackGrace(row);
+  const expired = Date.now() - new Date(row.created_at).getTime() > config.guestSessionHours * 3_600_000;
+  if (expired) return { error: 'visit_access_required', graceOpen: false };
+  if (row.visit_status === 'closed' && !(grace && opts.feedbackGrace === true)) return { error: 'visit_closed', graceOpen: grace };
+  if (row.revoked_at && !(grace && opts.feedbackGrace === true)) return { error: 'visit_access_revoked', graceOpen: grace };
   return {
     guest: {
       guestId: row.guest_id,
@@ -212,12 +239,18 @@ export function resolveGuest(c: Context): { guest: GuestContext } | { error: 'vi
   };
 }
 
-/** Middleware: require valid access to an active dining visit. */
-export function requireGuest(): MiddlewareHandler {
+/**
+ * Middleware: require valid access to an active dining visit.
+ * `feedbackGrace` also accepts a session that checkout ended, for the short
+ * window the feedback routes honour (D-S8-22).
+ */
+export function requireGuest(opts: GuestResolveOptions = {}): MiddlewareHandler {
   return async (c, next) => {
-    const r = resolveGuest(c);
+    const r = resolveGuest(c, opts);
     if ('error' in r) {
-      if (r.error !== 'visit_access_required') clearGuestCookie(c);
+      // The cookie is kept while feedback may still be sent; the next request
+      // after the window clears it.
+      if (r.error !== 'visit_access_required' && !r.graceOpen) clearGuestCookie(c);
       throw new AppError(r.error);
     }
     const now = nowIso();
@@ -241,11 +274,15 @@ export function guestOf(c: Context): GuestContext {
  * uploading, so the session is checked again inside the transaction and a
  * revoked guest creates nothing.
  */
-export function guestTx<T>(guestId: string, fn: () => T): T {
+export function guestTx<T>(guestId: string, fn: () => T, opts: GuestResolveOptions = {}): T {
   return tx(() => {
-    const row = one<{ revoked_at: string | null }>('SELECT revoked_at FROM guest_sessions WHERE id = ?', [guestId]);
+    const row = one<Pick<GuestLookup, 'revoked_at' | 'revoke_reason' | 'visit_status' | 'closed_at'>>(
+      `SELECT g.revoked_at, g.revoke_reason, v.status AS visit_status, v.closed_at
+         FROM guest_sessions g JOIN visits v ON v.id = g.visit_id WHERE g.id = ?`, [guestId]);
     if (!row) throw new AppError('visit_access_required');
-    if (row.revoked_at) throw new AppError('visit_access_revoked');
+    const grace = opts.feedbackGrace === true && inFeedbackGrace(row);
+    if (row.visit_status === 'closed' && !grace) throw new AppError('visit_closed');
+    if (row.revoked_at && !grace) throw new AppError('visit_access_revoked');
     return fn();
   });
 }

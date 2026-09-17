@@ -325,8 +325,12 @@ type Pick = ReturnType<typeof useI18n>['pick'];
 function rowProps(r: RankingRowDTO, measure: Measure, maxValue: number, t: T, pick: Pick, open: () => void) {
   const th = r.name.th;
   const name = th ?? r.name.en ?? '';
-  const cat = pick(r.category).text;
-  const category = pick(r.name).fallback ? `${cat} · ${t('common.enOnly')}` : cat;
+  const cat = pick(r.category);
+  // The marker names the language the dish is printed in, not always English:
+  // an English page showing a Thai-only dish says "Thai name only".
+  const namePick = pick(r.name);
+  const marker = namePick.fallback ? t(namePick.lang === 'en' ? 'common.enOnly' : 'insights.thOnly') : null;
+  const category = marker ? `${cat.text} · ${marker}` : cat.text;
   const value = measureValue(r, measure);
   let shareText: string;
   switch (measure) {

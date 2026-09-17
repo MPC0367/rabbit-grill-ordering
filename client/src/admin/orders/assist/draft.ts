@@ -3,8 +3,8 @@
 // submission whose answer never arrived (brief 13, 22).
 import { useCallback, useEffect, useState } from 'react';
 import type { MenuItemDTO } from '../../../../../shared/dto.ts';
-import { allocateGroupPicks } from '../../../../../shared/money.ts';
-import type { CartLineInput } from '../../../../../shared/schemas.ts';
+import { allocateGroupPicks, measuredAmount } from '../../../../../shared/money.ts';
+import type { RecoverLineInput } from '../../../../../shared/schemas.ts';
 import { storage } from '../../../lib/store.ts';
 
 export interface DraftLine {
@@ -15,6 +15,12 @@ export interface DraftLine {
   modifiers: Array<{ group_id: string; option_ids: string[] }>;
   note: string;
   allergy_note: boolean;
+  /**
+   * Paper recovery only (D-S8-21): the weight staff wrote on the ticket for a
+   * dish sold by weight. One cut is one line, so the quantity stays 1 and two
+   * cuts never stack.
+   */
+  measured_grams?: number | null;
 }
 
 export interface RecoverFields {
@@ -83,14 +89,22 @@ export function newUid(): string {
 
 /** Same dish with the same choices and note: stack quantities instead of adding a row. */
 export function sameLine(a: Omit<DraftLine, 'uid' | 'quantity'>, b: Omit<DraftLine, 'uid' | 'quantity'>): boolean {
+  // Two weighed cuts are two cuts, whatever they weigh: they never stack.
+  if (a.measured_grams != null || b.measured_grams != null) return false;
   const mods = (m: DraftLine['modifiers']) => JSON.stringify([...m].map((g) => ({ g: g.group_id, o: [...g.option_ids].sort() })).sort((x, y) => x.g.localeCompare(y.g)));
   return a.item_id === b.item_id && a.variant_id === b.variant_id && a.note.trim() === b.note.trim()
     && a.allergy_note === b.allergy_note && mods(a.modifiers) === mods(b.modifiers);
 }
 
 /** Price per unit as this device sees it (base or variant price plus charged choices). */
-export function unitPrice(item: MenuItemDTO | undefined, line: Pick<DraftLine, 'variant_id' | 'modifiers'>): number | null {
+export function unitPrice(item: MenuItemDTO | undefined, line: Pick<DraftLine, 'variant_id' | 'modifiers' | 'measured_grams'>): number | null {
   if (!item) return null;
+  // A weighed cut from a paper ticket: grams at the dish's approved rate, the
+  // same arithmetic the server uses (shared/money.ts).
+  if (line.measured_grams != null) {
+    if (item.rate_minor === null || item.rate_basis_grams === null) return null;
+    return measuredAmount(line.measured_grams, item.rate_minor, item.rate_basis_grams);
+  }
   let base: number | null = item.price_minor;
   if (item.variants.length > 0) base = item.variants.find((v) => v.id === line.variant_id)?.price_minor ?? null;
   if (base === null) return null;
@@ -102,15 +116,19 @@ export function unitPrice(item: MenuItemDTO | undefined, line: Pick<DraftLine, '
   return base + mods;
 }
 
-export function toInput(line: DraftLine, item: MenuItemDTO | undefined): CartLineInput {
+export function toInput(line: DraftLine, item: MenuItemDTO | undefined): RecoverLineInput {
+  const weighed = line.measured_grams != null;
   const unit = unitPrice(item, line);
   return {
     item_id: line.item_id,
     variant_id: line.variant_id,
-    quantity: line.quantity,
+    quantity: weighed ? 1 : line.quantity,
     modifiers: line.modifiers.filter((m) => m.option_ids.length > 0),
     note: line.note.trim() || null,
     allergy_note: line.allergy_note || null,
-    expected_unit_minor: unit,
+    // A weighed cut has no price the picker could have shown, so there is
+    // nothing for the server to compare against.
+    expected_unit_minor: weighed ? null : unit,
+    ...(weighed ? { measured: { grams: line.measured_grams! } } : {}),
   };
 }

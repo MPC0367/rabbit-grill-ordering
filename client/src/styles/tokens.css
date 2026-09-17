@@ -259,8 +259,10 @@
   --border-ink: 1px solid var(--rule-ink);
   --border-perf: 1px dashed var(--rule-strong);
   --border-focus-width: 2px;
-  /* masthead double rule as box-shadows: 1px ink, 3px canvas gap, 1px ink @26% */
-  --rule-double: 0 1px 0 var(--rule-ink), 0 4px 0 var(--canvas), 0 5px 0 var(--rule-strong);
+  /* masthead double rule as box-shadows: 1px ink, 3px canvas gap, 1px ink @26%.
+     The second line is translucent, so it is laid over an opaque canvas line:
+     rows scrolling under a sticky header never show through it. */
+  --rule-double: 0 1px 0 var(--rule-ink), 0 4px 0 var(--canvas), 0 5px 0 var(--rule-strong), 0 5px 0 var(--canvas);
   --plate-frame: 0 0 0 3px var(--image-mat), 0 0 0 4px var(--rule);
 
   --shadow-lift: 0 1px 0 rgba(23, 21, 15, 0.05);
@@ -429,7 +431,7 @@
   --border-ctl: 1px solid var(--edge);
   --border-ink: 1px solid var(--rule-ink);
   --border-perf: 1px dashed var(--rule-strong);
-  --rule-double: 0 1px 0 var(--rule-ink), 0 4px 0 var(--canvas), 0 5px 0 var(--rule-strong);
+  --rule-double: 0 1px 0 var(--rule-ink), 0 4px 0 var(--canvas), 0 5px 0 var(--rule-strong), 0 5px 0 var(--canvas);
   --plate-frame: 0 0 0 3px var(--image-mat), 0 0 0 4px var(--rule);
   --focus-ring: 0 0 0 var(--focus-offset) var(--canvas), 0 0 0 calc(var(--focus-offset) + var(--focus-width)) var(--focus);
 }

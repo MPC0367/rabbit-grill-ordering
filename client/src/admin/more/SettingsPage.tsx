@@ -92,9 +92,9 @@ export default function SettingsPage() {
     });
   }, []);
 
-  const { mutate } = res;
+  const { mutate, refresh } = res;
   const view = res.data;
-  const ctx = useMemo<SettingsCtx | null>(() => (view ? { view, apply: (v) => mutate(v), setDirty } : null), [view, mutate, setDirty]);
+  const ctx = useMemo<SettingsCtx | null>(() => (view ? { view, apply: (v) => mutate(v), refresh, setDirty } : null), [view, mutate, refresh, setDirty]);
 
   // Leaving the page with unsaved sections asks first (browser navigation and reload).
   useEffect(() => {

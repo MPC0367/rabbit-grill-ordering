@@ -27,9 +27,41 @@ type Filters = Record<FilterKey, string>;
 const ENTITY_TYPES = [
   'order', 'order_line', 'visit', 'table', 'bill', 'bill_adjustment', 'payment', 'service_request', 'portion_request',
   'guest_session', 'feedback', 'menu_item', 'menu_category', 'modifier_group', 'menu_import', 'settings', 'staff_user', 'report_job',
+  'retention',
 ] as const;
 
-const ACTION_GROUPS = ['order.', 'visit.', 'table.', 'bill.', 'payment.', 'service.', 'portion.', 'menu.', 'ordering.', 'settings.', 'team.', 'report.', 'staff.', 'guest.'] as const;
+const ACTION_GROUPS = ['order.', 'visit.', 'table.', 'bill.', 'payment.', 'service.', 'portion.', 'menu.', 'ordering.', 'settings.', 'team.', 'report.', 'staff.', 'guest.', 'retention.'] as const;
+
+/**
+ * Reasons the server writes in English (a dish leaving the bill, a manager
+ * exception close, the demo accounts going off, the automatic year-end file).
+ * The staff wording after the colon is whatever the person typed and stays as
+ * it is; everything else is said in the reader's language.
+ */
+const SERVER_REASONS: Array<{ re: RegExp; key: string }> = [
+  { re: /^Applies to orders and visits created from now on$/, key: 'audit.reason.futureOnly' },
+  { re: /^Dish rejected:\s*([\s\S]*)$/, key: 'audit.reason.dishRejected' },
+  { re: /^Dish cancelled:\s*([\s\S]*)$/, key: 'audit.reason.dishCancelled' },
+  { re: /^Closed by manager exception:\s*([\s\S]*)$/, key: 'audit.reason.closedException' },
+  { re: /^Demo account switched off when the restaurant went live$/, key: 'audit.reason.demoRetired' },
+  { re: /^Year (\d{4}) completed: automatic final report$/, key: 'audit.reason.autoPdf' },
+  { re: /^Year (\d{4}) completed: automatic final data export$/, key: 'audit.reason.autoCsv' },
+];
+
+function useReasonText() {
+  const { t } = useI18n();
+  return (reason: string | null): string | null => {
+    if (!reason) return null;
+    for (const r of SERVER_REASONS) {
+      const m = r.re.exec(reason);
+      if (!m) continue;
+      const rest = (m[1] ?? '').trim();
+      if (!rest) return t(r.key);
+      return /^\d{4}$/.test(rest) ? t(r.key, { year: rest }) : `${t(r.key)}: ${rest}`;
+    }
+    return reason;
+  };
+}
 
 // ------------------------------------------------------------------ diff
 const MASK = '[hidden]';
@@ -196,6 +228,7 @@ export default function AuditPage() {
   }, [first.fetchedAt]);
 
   const valueText = useValueText();
+  const reasonText = useReasonText();
 
   if (!allowed) {
     return (
@@ -220,24 +253,29 @@ export default function AuditPage() {
       </span>,
     );
     const links: ReactNode[] = [];
+    // Every entry repeats these words, so each one also names its own record
+    // for a screen reader ("Open dish · Dish …a1b2c3").
+    const of = e.entity_id ? `${entityLabel(e.entity_type)} ${shortId(e.entity_id)}` : entityLabel(e.entity_type);
+    const named = (text: string) => <>{text}<span className="sr"> · {of}</span></>;
     if (e.entity_id) {
-      if (e.entity_type === 'table' && can('tables.view')) links.push(<TextLink key="t" href={`/admin/tables/${e.entity_id}`}>{t('audit.link.table')}</TextLink>);
-      if (e.entity_type === 'menu_item' && can('menu.view')) links.push(<TextLink key="m" href={`/admin/menu/items/${e.entity_id}`}>{t('audit.link.item')}</TextLink>);
-      if (e.entity_type === 'settings' && can('settings.manage')) links.push(<TextLink key="s" href={`/admin/settings#${settingsAnchor(e.entity_id)}`}>{t('audit.link.settings')}</TextLink>);
-      if (e.entity_type === 'report_job' && can('reports.view')) links.push(<TextLink key="r" href="/admin/reports">{t('audit.link.reports')}</TextLink>);
-      if (e.entity_type === 'staff_user' && can('team.manage')) links.push(<TextLink key="u" href="/admin/team">{t('audit.link.team')}</TextLink>);
+      if (e.entity_type === 'table' && can('tables.view')) links.push(<TextLink key="t" href={`/admin/tables/${e.entity_id}`}>{named(t('audit.link.table'))}</TextLink>);
+      if (e.entity_type === 'menu_item' && can('menu.view')) links.push(<TextLink key="m" href={`/admin/menu/items/${e.entity_id}`}>{named(t('audit.link.item'))}</TextLink>);
+      if (e.entity_type === 'settings' && can('settings.manage')) links.push(<TextLink key="s" href={`/admin/settings#${settingsAnchor(e.entity_id)}`}>{named(t('audit.link.settings'))}</TextLink>);
+      if (e.entity_type === 'report_job' && can('reports.view')) links.push(<TextLink key="r" href="/admin/reports">{named(t('audit.link.reports'))}</TextLink>);
+      if (e.entity_type === 'staff_user' && can('team.manage')) links.push(<TextLink key="u" href="/admin/team">{named(t('audit.link.team'))}</TextLink>);
       if (applied.entity_id !== e.entity_id) {
         links.push(
           <button key="f" type="button" className="textlink audit-filter" onClick={() => apply({ ...emptyFilters(), entity_type: e.entity_type, entity_id: e.entity_id! })}>
-            {t('audit.link.history')}
+            {named(t('audit.link.history'))}
           </button>,
         );
       }
     }
     if (e.visit_id && applied.visit_id !== e.visit_id) {
+      const visitOf = typeof tag === 'string' ? t('audit.table', { label: tag }) : shortId(e.visit_id);
       links.push(
         <button key="v" type="button" className="textlink audit-filter" onClick={() => apply({ ...emptyFilters(), visit_id: e.visit_id! })}>
-          {t('audit.link.visit')}
+          {t('audit.link.visit')}<span className="sr"> · {visitOf}</span>
         </button>,
       );
     }
@@ -356,7 +394,7 @@ export default function AuditPage() {
                       actorType={e.actor_type}
                       action={actionLabel(e.action)}
                       target={target(e)}
-                      reason={e.reason === 'Applies to orders and visits created from now on' ? t('audit.reason.futureOnly') : e.reason}
+                      reason={reasonText(e.reason)}
                       changes={changesOf(e, valueText, e.entity_type === 'settings' ? e.entity_id : null)}
                     />
                   ))}

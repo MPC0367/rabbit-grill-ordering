@@ -360,6 +360,13 @@ export default function TableDrawer({
           </div>
         ) : null}
 
+        {/* Repeated lockouts: only rotating the PIN lets this table join again (D-S8-07). */}
+        {active && detail.pin_lock_requires_rotation ? (
+          <p className="c5-callout c5-callout--alert c5-pinlock" role="status">
+            {t('tables.access.lockedRotate')}
+          </p>
+        ) : null}
+
         {active ? (
           <GuestAccessPanel
             pin={detail.join_pin}

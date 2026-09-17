@@ -13,6 +13,7 @@ import { performance } from 'node:perf_hooks';
 import { statSync } from 'node:fs';
 import { config } from '../config.ts';
 import { closeDatabase, db, migrate, one, openDatabase, tx } from './index.ts';
+import { seedState, setSeedState } from '../lib/meta.ts';
 import { cutoffHour, getSettings, putSetting } from '../lib/settings.ts';
 import { addDays, businessDate, isoWeekday } from '../../shared/time.ts';
 import { seedCatalog } from './seed/catalog.ts';
@@ -32,11 +33,33 @@ export const INSTRUMENTATION_FROM = '2025-06-01';
 const log = (msg: string) => console.log(`[seed] ${msg}`);
 const secs = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 
+/**
+ * A seed that started and never finished (the process was killed part-way)
+ * leaves a database with a catalog but, say, half a year of history. The
+ * marker in app_meta says which: 'running' until the last step commits
+ * (D-S8-29). Databases seeded before the marker existed have none and are
+ * taken as complete.
+ */
+export class PartialSeedError extends Error {
+  constructor(at: string | null) {
+    super(`This database holds an interrupted demo seed${at ? ` (started ${at})` : ''}. Run "npm run db:reset" and seed again.`);
+    this.name = 'PartialSeedError';
+  }
+}
+
+/** Was a seed interrupted? (null when this database was never seeded here.) */
+export function partialSeed(): { at: string | null } | null {
+  const { state, at } = seedState();
+  return state === 'running' ? { at } : null;
+}
+
 export async function seedIfEmpty(opts: { history: boolean }): Promise<void> {
   if (config.production) {
     console.warn('[seed] refusing to seed fixtures with NODE_ENV=production.');
     return;
   }
+  const interrupted = partialSeed();
+  if (interrupted) throw new PartialSeedError(interrupted.at);
   if ((one<{ n: number }>('SELECT COUNT(*) AS n FROM menu_groups')?.n ?? 0) > 0) return;
 
   // Bulk-load settings for this run only: a large page cache (the random-id
@@ -67,7 +90,10 @@ async function seedAll(opts: { history: boolean }): Promise<void> {
   log(`seeding development fixtures${history ? ` with history ${HISTORY_FROM}..${yesterday}` : ''} (DEVELOPMENT ONLY, every record is flagged as a fixture)`);
 
   // ---- 1. catalog, tables, staff (+ telemetry start marker)
+  // The "seeding" marker is written in the same transaction as the catalog, so
+  // "the catalog has rows" and "a seed was started here" are never out of step.
   const base = tx(() => {
+    setSeedState('running');
     const catalog = seedCatalog(w, rng('catalog'), {
       now,
       availableSince: iso(history ? bangkokMs(HISTORY_FROM, 0) : liveWindowStart),
@@ -132,6 +158,7 @@ async function seedAll(opts: { history: boolean }): Promise<void> {
     `${pick('payments')} payments`, `${pick('service_requests')} service requests`, `${pick('portion_requests')} portion requests`,
     `${pick('analytics_sessions')} analytics sessions`, `${pick('analytics_events')} analytics events`, `${pick('audit_events')} audit rows`,
   ].join(', '));
+  tx(() => setSeedState('complete'));
   const path = config.databasePath;
   try {
     db().exec('PRAGMA wal_checkpoint(TRUNCATE)');
@@ -147,6 +174,12 @@ if (import.meta.main) {
   }
   openDatabase();
   migrate();
+  const interrupted = partialSeed();
+  if (interrupted) {
+    console.error(`[seed] ${new PartialSeedError(interrupted.at).message}`);
+    closeDatabase();
+    process.exit(1);
+  }
   const before = one<{ n: number }>('SELECT COUNT(*) AS n FROM menu_groups')?.n ?? 0;
   if (before > 0) console.log('[seed] the catalog already has data; nothing to do (npm run db:reset to start over).');
   await seedIfEmpty({ history: config.seedHistory });

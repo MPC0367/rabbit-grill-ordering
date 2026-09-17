@@ -16,8 +16,9 @@ import type { StaffContext } from '../lib/auth.ts';
 import { AppError, staleVersion } from '../lib/errors.ts';
 import { emit } from '../lib/events.ts';
 import { getSettings } from '../lib/settings.ts';
+import { config } from '../config.ts';
 import { getTable, publicOrderingState, withinHours, type TableRow } from './guards.ts';
-import { ensureActiveToken, ensureAllTokens, rotateToken } from './qr.ts';
+import { ensureActiveToken, ensureAllTokens, qrBaseIsLocal, rotateToken } from './qr.ts';
 
 type Attention = TableTileDTO['attention'][number];
 type QrState = NonNullable<TableTileDTO['qr']>;
@@ -34,6 +35,8 @@ interface ActiveVisitStats {
   rounds: number;
   unresolved_lines: number;
   ready_lines: number;
+  unresolved_dishes: number;
+  ready_dishes: number;
   unaccepted_rounds: number;
   open_requests: number;
   open_assistance: number;
@@ -59,6 +62,10 @@ const ACTIVE_VISIT_STATS_SQL = `
     (SELECT COUNT(*) FROM order_lines l WHERE l.visit_id = v.id
         AND l.status IN ('submitted','accepted','preparing','almost_done','ready')) AS unresolved_lines,
     (SELECT COUNT(*) FROM order_lines l WHERE l.visit_id = v.id AND l.status = 'ready') AS ready_lines,
+    -- The same two figures in dishes (quantities): what a ticket's buttons count.
+    (SELECT COALESCE(SUM(l.quantity), 0) FROM order_lines l WHERE l.visit_id = v.id
+        AND l.status IN ('submitted','accepted','preparing','almost_done','ready')) AS unresolved_dishes,
+    (SELECT COALESCE(SUM(l.quantity), 0) FROM order_lines l WHERE l.visit_id = v.id AND l.status = 'ready') AS ready_dishes,
     (SELECT COUNT(DISTINCT l.order_id) FROM order_lines l WHERE l.visit_id = v.id AND l.status = 'submitted') AS unaccepted_rounds,
     (SELECT COUNT(*) FROM service_requests s WHERE s.visit_id = v.id AND s.status IN ('sent','acknowledged')) AS open_requests,
     (SELECT COUNT(*) FROM service_requests s WHERE s.visit_id = v.id AND s.status IN ('sent','acknowledged') AND s.type <> 'bill') AS open_assistance,
@@ -114,6 +121,8 @@ function buildTile(t: TableRow, v: ActiveVisitStats | undefined, qr: QrState | u
           rounds: v.rounds,
           unresolved_lines: v.unresolved_lines,
           ready_lines: v.ready_lines,
+          unresolved_dishes: v.unresolved_dishes,
+          ready_dishes: v.ready_dishes,
           unaccepted_rounds: v.unaccepted_rounds,
           open_requests: v.open_requests,
           bill_requested: v.bill_requested_at !== null || v.bill_attention === 1,
@@ -162,7 +171,14 @@ export function listTables(): TablesDTO {
     counts[tile.state] += 1;
     return tile;
   });
-  return { tables: tiles, counts, server_time: nowIso() };
+  return {
+    tables: tiles,
+    counts,
+    server_time: nowIso(),
+    // Printed cards carry this address; a loopback one opens on no phone (D-S8-09).
+    qr_base_url: config.publicBaseUrl,
+    qr_base_is_local: qrBaseIsLocal(),
+  };
 }
 
 // ------------------------------------------------------------------ administration
@@ -301,16 +317,18 @@ export function overview(_staff: StaffContext): OverviewDTO {
        FROM orders o JOIN order_lines l ON l.order_id = o.id JOIN visits v ON v.id = o.visit_id
       WHERE l.status = 'submitted' AND v.status <> 'closed'`,
   )!;
-  const ready = one<{ n: number }>(
-    `SELECT COUNT(*) AS n FROM order_lines l JOIN visits v ON v.id = l.visit_id
+  const ready = one<{ n: number; dishes: number }>(
+    `SELECT COUNT(*) AS n, COALESCE(SUM(l.quantity), 0) AS dishes FROM order_lines l JOIN visits v ON v.id = l.visit_id
       WHERE l.status = 'ready' AND v.status <> 'closed'`,
   )!;
   const requests = one<{ n: number; oldest: string | null }>(
     `SELECT COUNT(*) AS n, MIN(s.created_at) AS oldest FROM service_requests s JOIN visits v ON v.id = s.visit_id
       WHERE s.status IN ('sent','acknowledged') AND v.status <> 'closed'`,
   )!;
-  const portions = one<{ n: number }>(
-    `SELECT COUNT(*) AS n FROM portion_requests p JOIN visits v ON v.id = p.visit_id
+  const portions = one<{ n: number; to_weigh: number }>(
+    `SELECT COUNT(*) AS n,
+            COALESCE(SUM(p.status = 'requested'), 0) AS to_weigh
+       FROM portion_requests p JOIN visits v ON v.id = p.visit_id
       WHERE p.status IN ('requested','quoted') AND v.status <> 'closed'`,
   )!;
   const bills = one<{ n: number }>(`SELECT COUNT(*) AS n FROM visits v WHERE v.status <> 'closed' AND ${BILL_ATTENTION_SQL}`)!;
@@ -328,9 +346,12 @@ export function overview(_staff: StaffContext): OverviewDTO {
     unaccepted_rounds: unaccepted.n,
     oldest_unaccepted_at: unaccepted.oldest,
     ready_lines: ready.n,
+    ready_dishes: ready.dishes,
     open_requests: requests.n,
     oldest_request_at: requests.oldest,
     open_portion_requests: portions.n,
+    // Cuts still waiting for the scale: the badge staff act on first.
+    portions_to_weigh: portions.to_weigh,
     bills_requested: bills.n,
     blockers,
     server_time: nowIso(),

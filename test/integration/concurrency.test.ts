@@ -344,7 +344,9 @@ test('duplicate staff actions on one bill apply once: start checkout, adjustment
     // A discount racing finalize: either it is on the revision or it was refused.
     const b1 = await bill(visit.id);
     const [ra, rf] = await race([
-      () => manager.post(`/api/staff/visits/${visit.id}/adjustments`, { kind: 'discount', amount_minor: -3000, reason: 'Regular guest' }),
+      () => manager.post(`/api/staff/visits/${visit.id}/adjustments`, {
+        kind: 'discount', amount_minor: -3000, reason: 'Regular guest', idempotency_key: key('adj'), bill_version: b1.bill_version,
+      }),
       () => finalizeCall(visit.id, b1.bill_version, 30000),
     ], i);
     let total: number;

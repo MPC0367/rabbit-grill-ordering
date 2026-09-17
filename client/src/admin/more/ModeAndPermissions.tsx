@@ -1,26 +1,94 @@
 // Operating mode (demo / live, with a strong confirmation that counts what
 // stops being orderable) and the role permission matrix (owner-only rows
 // locked; every change is listed and confirmed before it is saved).
-import type { AdminCatalogDTO } from '../../../../shared/dto.ts';
+import type { AdminCatalogDTO, StaffUserDTO } from '../../../../shared/dto.ts';
 import { OWNER_ONLY, PERMISSIONS, ROLES, rolesFor, type Permission, type PermissionOverrides, type Role } from '../../../../shared/permissions.ts';
 import { api } from '../../lib/api.ts';
 import { num } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { Button, ChoiceGroup, Icon, RadioCard } from '../../ui/index.ts';
 import { useStaff } from '../shell/session.tsx';
-import { SettingsSection } from './settingsParts.tsx';
+import { SettingsSection, type ConfirmSpec } from './settingsParts.tsx';
 import { usePlural } from './shared.tsx';
 
 // ------------------------------------------------------------------ operating mode
+/** Active demo staff accounts (published passwords): live mode cannot start with them (D-S8-11). */
+async function activeDemoStaff(): Promise<string[]> {
+  try {
+    const res = await api.get<{ users: StaffUserDTO[] }>('/api/staff/team');
+    return res.users.filter((u) => u.active && u.is_fixture).map((u) => u.username);
+  } catch {
+    // The server refuses the switch and names them itself; the dialog then offers it.
+    return [];
+  }
+}
+
 export function ModeSection() {
   const { t } = useI18n();
-  const { can } = useStaff();
+  const { can, me } = useStaff();
+
+  // A demo account cannot switch the restaurant live: it would sign itself out (D-S8-11).
+  const selfDemo = me.user.is_fixture;
+
+  /** The "switch to live" dialog, with the demo accounts it would switch off. */
+  const liveSpec = (counts: { stop: number; stay: number; start: number } | null, demo: string[]): ConfirmSpec => ({
+    title: t('settings.mode.liveTitle'),
+    tone: 'danger',
+    confirmLabel: demo.length && !selfDemo ? t('settings.mode.demoStaffConfirm') : t('settings.mode.liveConfirm'),
+    extra: demo.length && !selfDemo ? { deactivate_demo_staff: true } : undefined,
+    body: (
+      <div className="mode-confirm">
+        {counts ? (
+          <dl className="mode-counts">
+            <div className={counts.stop ? 'is-alert' : undefined}><dt>{t('settings.mode.stop')}</dt><dd>{num(counts.stop)}</dd></div>
+            <div><dt>{t('settings.mode.stay')}</dt><dd>{num(counts.stay)}</dd></div>
+          </dl>
+        ) : <p>{t('settings.mode.noCounts')}</p>}
+        {demo.length ? (
+          <div className="mode-demo">
+            <p><b>{t('settings.mode.demoStaff')}</b></p>
+            <p>{selfDemo ? t('settings.mode.demoStaffSelf') : t('settings.mode.demoStaffBody')}</p>
+            <ul className="mp-list mode-demo__list">
+              {demo.map((u) => <li key={u}><span className="mode-demo__u" lang="en">{u}</span></li>)}
+            </ul>
+          </div>
+        ) : null}
+        <ul className="mp-list">
+          <li>{t('settings.mode.live1')}</li>
+          <li>{t('settings.mode.live2')}</li>
+          <li>{t('settings.mode.live3')}</li>
+          <li>{t('settings.mode.live4')}</li>
+        </ul>
+        <p className="mp-meta">{t('settings.mode.reviewHint')}</p>
+      </div>
+    ),
+    // The server refuses while a demo account is active; it names them, so the
+    // same dialog can offer to switch them off (D-S8-11).
+    retry: (err) => {
+      const details = err.details as { usernames?: string[]; self?: boolean; can_deactivate?: boolean } | null | undefined;
+      if (err.code !== 'demo_accounts_active' || !details?.usernames?.length) return null;
+      // Only offer the switch when this owner may actually make it (not a demo account, a real owner remains).
+      if (details.self || details.can_deactivate === false) return null;
+      return liveSpec(counts, details.usernames);
+    },
+  });
+
   return (
     <SettingsSection
       id="mode"
       keys={['operating_mode'] as const}
       title={t('settings.mode.title')}
       description={t('settings.mode.d')}
+      refusal={(err) => {
+        if (err.code === 'demo_accounts_active') {
+          const d = err.details as { self?: boolean; real_owner?: boolean } | null | undefined;
+          if (d?.self || selfDemo) return t('settings.mode.demoStaffSelf');
+          if (d?.real_owner === false) return t('settings.mode.demoStaffOwner');
+          return t('settings.mode.demoStaffBody');
+        }
+        if (err.code === 'last_owner') return t('settings.mode.demoStaffOwner');
+        return null;
+      }}
       confirm={async (d, b) => {
         if (d.operating_mode === b.operating_mode) return null;
         let counts: { stop: number; stay: number; start: number } | null = null;
@@ -31,28 +99,7 @@ export function ModeSection() {
           counts = { stop: unverifiedOrderable, stay: cat.review.live_ready, start: demoOnly };
         }
         if (d.operating_mode === 'live') {
-          return {
-            title: t('settings.mode.liveTitle'),
-            tone: 'danger',
-            confirmLabel: t('settings.mode.liveConfirm'),
-            body: (
-              <div className="mode-confirm">
-                {counts ? (
-                  <dl className="mode-counts">
-                    <div className={counts.stop ? 'is-alert' : undefined}><dt>{t('settings.mode.stop')}</dt><dd>{num(counts.stop)}</dd></div>
-                    <div><dt>{t('settings.mode.stay')}</dt><dd>{num(counts.stay)}</dd></div>
-                  </dl>
-                ) : <p>{t('settings.mode.noCounts')}</p>}
-                <ul className="mp-list">
-                  <li>{t('settings.mode.live1')}</li>
-                  <li>{t('settings.mode.live2')}</li>
-                  <li>{t('settings.mode.live3')}</li>
-                  <li>{t('settings.mode.live4')}</li>
-                </ul>
-                <p className="mp-meta">{t('settings.mode.reviewHint')}</p>
-              </div>
-            ),
-          };
+          return liveSpec(counts, can('team.manage') ? await activeDemoStaff() : []);
         }
         return {
           title: t('settings.mode.demoTitle'),

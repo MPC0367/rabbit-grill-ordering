@@ -36,9 +36,9 @@ function catalog(items: MenuItemDTO[]): CatalogDTO {
 }
 
 const latte = item('latte', { th: null, en: 'Latte' }, 'c-coffee', { aliases_th: ['ลาเต้'] });
-const piccolo = item('piccolo-latte', { th: null, en: 'Piccolo Latte' }, 'c-coffee', { aliases: { th: ['พิคโคโล่ ลาเต้'], en: [] } });
+const piccolo = item('piccolo-latte', { th: null, en: 'Piccolo Latte' }, 'c-coffee', { aliases_th: ['พิคโคโล่ ลาเต้'], aliases_en: [] });
 const americano = item('americano', { th: null, en: 'Americano' }, 'c-coffee');
-const ribeye = item('ribeye', { th: 'ริบอาย', en: 'Ribeye' }, 'c-steak', { aliases: ['rib eye'] });
+const ribeye = item('ribeye', { th: 'ริบอาย', en: 'Ribeye' }, 'c-steak', { aliases_en: ['rib eye'] });
 const model = buildMenu(catalog([latte, piccolo, americano, ribeye]));
 
 describe('guest menu search', () => {
@@ -55,12 +55,17 @@ describe('guest menu search', () => {
     assert.equal(hits[0].rank, 0);
   });
 
-  test('accepts every alias shape and ignores blanks', () => {
+  test('reads the reviewed aliases of the menu API, in both languages, ignoring blanks', () => {
     assert.deepEqual(itemAliases(latte), ['ลาเต้']);
     assert.deepEqual(itemAliases(piccolo), ['พิคโคโล่ ลาเต้']);
     assert.deepEqual(itemAliases(ribeye), ['rib eye']);
-    assert.deepEqual(itemAliases(item('x', { th: null, en: 'X' }, 'c-coffee', { aliases_en: ['', '  ', 'ex'] })), ['ex']);
+    assert.deepEqual(
+      itemAliases(item('x', { th: null, en: 'X' }, 'c-coffee', { aliases_th: ['เอ็กซ์'], aliases_en: ['', '  ', 'ex'] })),
+      ['เอ็กซ์', 'ex'],
+    );
     assert.deepEqual(itemAliases(americano), []);
+    // Only the fields the public menu sends count: nothing else is searched.
+    assert.deepEqual(itemAliases(item('y', { th: null, en: 'Y' }, 'c-coffee', { aliases: ['why'], aliases_verified: true })), []);
   });
 
   test('without aliases, Thai text for an English-only dish finds nothing', () => {

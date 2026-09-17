@@ -3,7 +3,7 @@
 // never supplies a total the server trusts.
 import type { CartLineInput } from '../../shared/schemas.ts';
 import type { Bilingual, QuoteDTO, QuoteIssue, QuoteLineDTO } from '../../shared/dto.ts';
-import { allocateGroupPicks, computeBill, lineTotal, priceGroupPicks, type ChargeRule, type Minor } from '../../shared/money.ts';
+import { allocateGroupPicks, computeBill, lineTotal, measuredAmount, priceGroupPicks, type ChargeRule, type Minor } from '../../shared/money.ts';
 import type { PricingType, ReviewStatus, ItemStatus, Station } from '../../shared/status.ts';
 import { businessDate } from '../../shared/time.ts';
 import { many, one } from '../db/index.ts';
@@ -27,6 +27,8 @@ export interface ItemRow {
   published_version: number | null; created_at: string; updated_at: string; updated_by: string | null; version: number;
   /** Tracker wording override; null = derived (see prepKind). */
   prep_kind: PrepKind | null;
+  /** Search aliases as stored: JSON arrays of plain strings, published only when aliases_verified = 1. */
+  aliases_th: string; aliases_en: string; aliases_verified: number;
 }
 
 export interface CategoryRow {
@@ -53,6 +55,37 @@ export interface OptionRow {
 }
 
 export const bi = (th: string | null | undefined, en: string | null | undefined): Bilingual => ({ th: th ?? null, en: en ?? null });
+
+/**
+ * Search aliases as stored (a JSON array of plain strings). Anything else in
+ * the column - a legacy value, a hand-edited row - reads as "no aliases"
+ * rather than breaking the menu.
+ */
+export function parseAliases(stored: string | null | undefined): string[] {
+  if (!stored) return [];
+  try {
+    const value: unknown = JSON.parse(stored);
+    if (!Array.isArray(value)) return [];
+    return value.filter((v): v is string => typeof v === 'string' && v.trim() !== '').map((v) => v.trim());
+  } catch {
+    return [];
+  }
+}
+
+/** Trim, drop blanks and repeats (case-insensitively), keep the order given. */
+export function normalizeAliases(list: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of list) {
+    const value = raw.trim();
+    if (!value) continue;
+    const key = value.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(value);
+  }
+  return out;
+}
 
 export function getItem(id: string): ItemRow | undefined {
   return one<ItemRow>('SELECT * FROM menu_items WHERE id = ?', [id]);
@@ -173,8 +206,11 @@ export interface PricedLine {
   prep_kind: 'cook' | 'prepare';
   /** Snapshot stored on the order line. */
   modifiers_snapshot: QuoteLineDTO['modifiers'];
-  /** Measured-weight line created from a confirmed portion quote (never from a guest cart). */
-  measured?: { grams: number; rate_minor: Minor; rate_basis_grams: number; portion_quote_id: string };
+  /**
+   * Measured-weight line: from a confirmed portion quote (portion_quote_id),
+   * or a weighed cut recovered from a paper ticket (no quote; D-S8-21).
+   */
+  measured?: { grams: number; rate_minor: Minor; rate_basis_grams: number; portion_quote_id: string | null };
 }
 
 export interface PriceCartResult {
@@ -200,7 +236,17 @@ export function prepKind(item: ItemRow, cat: CategoryRow): PrepKind {
   return item.prep_kind ?? cat.prep_kind ?? derivedPrepKind(item, cat);
 }
 
-export function priceCart(lines: CartLineInput[], opts: { charges?: ChargeRule[] } = {}): PriceCartResult {
+export interface PriceCartOptions {
+  charges?: ChargeRule[];
+  /**
+   * Weighed cuts entered from paper (manual recovery only): the grams staff
+   * wrote on the ticket, per line index. The line is then priced at the item's
+   * approved rate instead of being refused as "needs a weighing quote".
+   */
+  measuredGrams?: (index: number) => number | null | undefined;
+}
+
+export function priceCart(lines: CartLineInput[], opts: PriceCartOptions = {}): PriceCartResult {
   const s = getSettings();
   const issues: QuoteIssue[] = [];
   const quoteLines: QuoteLineDTO[] = [];
@@ -223,7 +269,11 @@ export function priceCart(lines: CartLineInput[], opts: { charges?: ChargeRule[]
     if (reason === 'sold_out') issue('sold_out', 'Sold out right now.');
     else if (reason) issue('not_orderable', `Not available to order (${reason}).`);
 
-    if (item.pricing_type === 'measured_weight') {
+    // A weighed cut normally needs a staff weighing; a recovered paper ticket
+    // carries the grams staff already recorded, and is priced at the rate.
+    const grams = opts.measuredGrams?.(index) ?? null;
+    const priceable = item.rate_minor !== null && item.rate_basis_grams !== null;
+    if (item.pricing_type === 'measured_weight' && !(grams !== null && priceable)) {
       issue('measured_weight_needs_quote', 'Staff confirm the portion and price for this cut.');
     }
 
@@ -279,9 +329,15 @@ export function priceCart(lines: CartLineInput[], opts: { charges?: ChargeRule[]
       if (opts.length) pickedGroups.push({ group: g, options: g.options.filter((o) => ids.includes(o.id)), minor });
     }
 
-    const unit = item.pricing_type === 'variant' ? (variant?.price_minor ?? 0) : (item.price_minor ?? 0);
+    const weighed = item.pricing_type === 'measured_weight' && grams !== null && priceable
+      ? { grams, rate_minor: item.rate_minor!, rate_basis_grams: item.rate_basis_grams!, portion_quote_id: null }
+      : undefined;
+    const unit = weighed
+      ? measuredAmount(weighed.grams, weighed.rate_minor, weighed.rate_basis_grams)
+      : item.pricing_type === 'variant' ? (variant?.price_minor ?? 0) : (item.price_minor ?? 0);
     const modifiersMinor = pickedGroups.reduce((sum, g) => sum + g.minor, 0);
-    const qty = Math.max(1, Math.min(99, input.quantity));
+    // One weighed cut is one line: the weight is the quantity.
+    const qty = weighed ? 1 : Math.max(1, Math.min(99, input.quantity));
     const total = lineTotal(unit, modifiersMinor, qty);
 
     // Compare against what the guest saw only when this line HAS a current price:
@@ -312,12 +368,14 @@ export function priceCart(lines: CartLineInput[], opts: { charges?: ChargeRule[]
       variant_name: variant ? bi(variant.name_th, variant.name_en) : null,
       modifiers: snapshot,
       unit_price_minor: unit, modifiers_minor: modifiersMinor, quantity: qty, line_total_minor: total,
+      measured_grams: weighed?.grams ?? null,
     });
     priced.push({
       index, input, item, category: cat, variant, groups: pickedGroups,
       unit_price_minor: unit, modifiers_minor: modifiersMinor, quantity: qty, line_total_minor: total,
       note, allergy_flag: input.allergy_note === true || looksLikeAllergyNote(note),
       prep_kind: prepKind(item, cat), modifiers_snapshot: snapshot,
+      ...(weighed ? { measured: weighed } : {}),
     });
   });
 

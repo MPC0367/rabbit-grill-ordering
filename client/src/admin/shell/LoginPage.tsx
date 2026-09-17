@@ -3,26 +3,29 @@
 // listed only while the restaurant runs in demo mode (public config).
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import type { StaffMeDTO } from '../../../../shared/dto.ts';
-import { TIMEZONE, todayBusinessDate } from '../../../../shared/time.ts';
+import { TIMEZONE } from '../../../../shared/time.ts';
 import { api, ApiError } from '../../lib/api.ts';
 import { useConfig } from '../../lib/config.tsx';
-import { clock, dateLabel } from '../../lib/format.ts';
+import { dateLabel } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { navigate, useRoute } from '../../lib/router.ts';
 import { Button, Icon, LangToggle, TextField, Wordmark } from '../../ui/index.ts';
+import { useBusinessToday } from '../insights/query.ts';
 import { canOpen, isAdminPath, landingFor } from './routes.tsx';
 import { useSessionState } from './session.tsx';
 import './shell.css';
 
 const DEMO_ROLES = ['owner', 'manager', 'cashier', 'floor', 'kitchen'] as const;
 
-interface FormError { code: string; until?: string | null }
+interface FormError { code: string; retryAfterSeconds?: number | null }
 
 export default function LoginPage() {
   const { t, lang } = useI18n();
   const { config } = useConfig();
   const session = useSessionState();
   const { query } = useRoute();
+  // The restaurant's own date (the server's business-day cutoff), not this device's.
+  const businessToday = useBusinessToday();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [reveal, setReveal] = useState(false);
@@ -67,8 +70,11 @@ export default function LoginPage() {
       navigate(target, { replace: true });
     } catch (err) {
       const apiErr = err instanceof ApiError ? err : new ApiError('internal', 0, String(err));
-      const until = (apiErr.details as { until?: string } | null | undefined)?.until ?? null;
-      setError({ code: apiErr.code, until });
+      // Too many attempts (from this address or for this account) answers
+      // 429 rate_limited with how long to wait; a locked account answers the
+      // same way, so nothing here reveals whether a username exists (D-S8-10).
+      const retry = (apiErr.details as { retry_after_seconds?: number } | null | undefined)?.retry_after_seconds ?? null;
+      setError({ code: apiErr.code, retryAfterSeconds: typeof retry === 'number' && retry > 0 ? retry : null });
       setPending(false);
       // Keep what was typed, select the password so a retry replaces it.
       requestAnimationFrame(() => {
@@ -97,7 +103,7 @@ export default function LoginPage() {
         <p className="alogin__motto" lang={lang}>{t('login.motto')}</p>
         <div className="alogin__foot">
           <p className="alogin__date">
-            {dateLabel(todayBusinessDate(), lang, { weekday: true, year: true })}
+            {dateLabel(businessToday, lang, { weekday: true, year: true })}
             <br />
             <span lang="en">{TIMEZONE}</span>
           </p>
@@ -213,8 +219,9 @@ export default function LoginPage() {
 function messageFor(error: FormError, t: (k: string, v?: Record<string, string | number>) => string): string {
   switch (error.code) {
     case 'invalid_credentials': return t('login.error.invalid');
-    case 'account_locked': return error.until ? t('login.error.lockedUntil', { time: clock(error.until) }) : t('login.error.locked');
-    case 'rate_limited': return t('login.error.rateLimited');
+    case 'rate_limited': return error.retryAfterSeconds
+      ? t('login.error.rateLimitedFor', { minutes: Math.max(1, Math.ceil(error.retryAfterSeconds / 60)) })
+      : t('login.error.rateLimited');
     case 'validation_failed': return t('login.error.invalid');
     case 'network_error':
     case 'timeout': return t('login.error.network');

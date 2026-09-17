@@ -20,7 +20,7 @@ import { AppError } from '../lib/errors.ts';
 import { emit } from '../lib/events.ts';
 import { payloadHash } from '../lib/http.ts';
 import { touchReportData } from '../lib/reportdata.ts';
-import { cutoffHour } from '../lib/settings.ts';
+import { cutoffHour, getSettings } from '../lib/settings.ts';
 import { assertCanOrder, getTable, getVisit, type OrderSource, type VisitRow } from './guards.ts';
 import { bi, type PricedLine } from './pricing.ts';
 
@@ -45,6 +45,7 @@ export interface LineRow {
   unit_price_minor: number; modifiers_json: string; modifiers_minor: number; quantity: number;
   measured_grams: number | null; rate_minor: number | null; rate_basis_grams: number | null; portion_quote_id: string | null;
   line_total_minor: number; note: string | null; allergy_flag: number;
+  alcohol: number; requires_staff_confirm: number;
   status: LineStatus; status_reason: string | null;
   submitted_at: string; accepted_at: string | null; preparing_at: string | null; almost_done_at: string | null;
   ready_at: string | null; served_at: string | null; rejected_at: string | null; cancelled_at: string | null;
@@ -220,12 +221,16 @@ export function createOrder(args: CreateOrderArgs): { orderId: string; replayed:
 
   // 3. Lines with full snapshots.
   const lineStatus: LineStatus = manual?.already === 'served' ? 'served' : manual?.already === 'prepared' ? 'ready' : 'submitted';
+  // The owner's "staff confirm alcohol in person" switch as it stands now: the
+  // ticket must keep saying what was asked of the kitchen at the time (D-S8-20).
+  const confirmAlcohol = getSettings().alcohol.staff_confirmation_note;
   const lines = args.priced.map((p, i) => {
     const m = p.measured;
     const quantity = m ? 1 : p.quantity;
     if (m && p.unit_price_minor !== measuredAmount(m.grams, m.rate_minor, m.rate_basis_grams)) {
       throw new Error('measured line amount does not match its weight and rate');
     }
+    const alcohol = p.item.alcohol === 1 || p.category.alcohol === 1;
     return {
       id: newId('oln'),
       order_id: orderId,
@@ -252,6 +257,8 @@ export function createOrder(args: CreateOrderArgs): { orderId: string; replayed:
       line_total_minor: lineTotal(p.unit_price_minor, p.modifiers_minor, quantity),
       note: p.note?.trim() ? p.note.trim() : null,
       allergy_flag: p.allergy_flag ? 1 : 0,
+      alcohol: alcohol ? 1 : 0,
+      requires_staff_confirm: p.item.requires_staff_confirm === 1 || (alcohol && confirmAlcohol) ? 1 : 0,
       status: lineStatus,
       submitted_at: submittedAt,
       // A recovered line records when it was entered as ready/served; the
@@ -413,6 +420,9 @@ function lineDTO(l: LineRow, events: EventJoinRow[], view: OrderView): OrderLine
     allergy_flag: l.allergy_flag === 1,
     station: l.station,
     prep_kind: l.prep_kind,
+    // Snapshots for the kitchen ticket; guests see neither (the menu says what
+    // a dish is, and the guest is the one being asked to confirm).
+    ...(view.kind === 'staff' ? { alcohol: l.alcohol === 1, requires_staff_confirm: l.requires_staff_confirm === 1 } : {}),
     status: l.status,
     status_reason: l.status_reason,
     steps: events.map((e) => ({

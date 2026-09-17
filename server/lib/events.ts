@@ -9,6 +9,7 @@ import { EventEmitter } from 'node:events';
 import type { Context } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { afterCommit, insert, many, one } from '../db/index.ts';
+import { dbEpoch } from './meta.ts';
 import { nowIso } from '../../shared/time.ts';
 import type { Permission } from '../../shared/permissions.ts';
 
@@ -166,7 +167,15 @@ export function sseStream(c: Context, filter: Filter): Response {
       wake?.();
     });
 
-    await stream.writeSSE({ event: 'hello', id: String(cursor), data: JSON.stringify({ cursor, server_time: nowIso(), replay }), retry: 3000 });
+    // `epoch` identifies the database file: a client that reconnects to a
+    // restored or reset database sees it change and starts from this cursor
+    // instead of keeping its own event history (D-K-01).
+    await stream.writeSSE({
+      event: 'hello',
+      id: String(cursor),
+      data: JSON.stringify({ cursor, server_time: nowIso(), replay, epoch: dbEpoch() }),
+      retry: 3000,
+    });
 
     let lastBeat = Date.now();
     while (!closed) {
@@ -203,11 +212,12 @@ export function sseStream(c: Context, filter: Filter): Response {
 }
 
 /** Poll endpoint equivalent for clients that cannot keep a stream open. */
-export function eventsSince(filter: Filter, cursor: number): { cursor: number; events: WireEvent[]; resync: boolean } {
+export function eventsSince(filter: Filter, cursor: number): { cursor: number; events: WireEvent[]; resync: boolean; epoch: string | null } {
   // Same reset as sseStream: a cursor from a newer (pre-restore) database resyncs.
+  const epoch = dbEpoch();
   const latest = latestEventId();
-  if (cursor > latest) return { cursor: latest, events: [], resync: true };
+  if (cursor > latest) return { cursor: latest, events: [], resync: true, epoch };
   const rows = fetchSince(filter, cursor);
-  if (rows.length >= 200) return { cursor: latestEventId(), events: [], resync: true };
-  return { cursor: rows.at(-1)?.id ?? cursor, events: rows.map(toWire), resync: false };
+  if (rows.length >= 200) return { cursor: latestEventId(), events: [], resync: true, epoch };
+  return { cursor: rows.at(-1)?.id ?? cursor, events: rows.map(toWire), resync: false, epoch };
 }

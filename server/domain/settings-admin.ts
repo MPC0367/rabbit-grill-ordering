@@ -156,6 +156,8 @@ export interface SettingsView {
   future_only: string[];
   /** The daily clean-up task that applies settings.retention (D-S8-02). */
   retention_status: RetentionStatus;
+  /** Usernames this request switched off while going live (D-S8-27). */
+  deactivated_demo_staff?: string[];
 }
 
 export function settingsView(): SettingsView {
@@ -177,24 +179,78 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 export const DEACTIVATE_DEMO_STAFF = 'deactivate_demo_staff';
 
 /**
+ * Reserved patch field (not a setting): `{ key: updated_at | null }` for every
+ * key the section edits, as the draft found them. A key saved by someone else
+ * since then answers `stale_version` with the current view and nothing is
+ * written, so two managers editing different sections never overwrite each
+ * other silently (D-S8-26).
+ */
+export const EXPECTED_UPDATED = 'expected_updated';
+
+function assertNotStale(expected: unknown, staff: StaffContext): void {
+  if (expected === undefined || expected === null) return;
+  if (!isPlainObject(expected)) {
+    throw new AppError('validation_failed', 'Some settings are not valid', {
+      issues: [{ path: EXPECTED_UPDATED, message: 'Expected an object of key -> last saved time.', code: 'invalid_type' }],
+    });
+  }
+  const view = settingsView();
+  const conflicts: string[] = [];
+  for (const [key, at] of Object.entries(expected)) {
+    if (!(key in SCHEMAS)) {
+      throw new AppError('validation_failed', 'Some settings are not valid', {
+        issues: [{ path: `${EXPECTED_UPDATED}.${key}`, message: `Unknown setting "${key}".`, code: 'unrecognized_keys' }],
+      });
+    }
+    if (at !== null && typeof at !== 'string') {
+      throw new AppError('validation_failed', 'Some settings are not valid', {
+        issues: [{ path: `${EXPECTED_UPDATED}.${key}`, message: 'Use the saved time, or null for never saved.', code: 'invalid_type' }],
+      });
+    }
+    const current = view.updated[key as Key] ?? null;
+    if ((at ?? null) !== current) conflicts.push(key);
+  }
+  if (conflicts.length) {
+    throw new AppError('stale_version', 'These settings were changed on another device. Showing the latest version.', {
+      keys: conflicts,
+      current: view,
+      // staleVersion() shape, so clients that read `details.current` alone work either way.
+      acting_user: staff.user.display_name,
+    });
+  }
+}
+
+/**
  * Going live with the demo accounts (published passwords) still active is
  * refused (D-S8-11). With DEACTIVATE_DEMO_STAFF the accounts are deactivated
  * and signed out here instead; the acting owner must be a real account and a
  * real active owner must remain.
+ *
+ * The switch is one request, and it is safe to repeat: a patch that sets live
+ * while the restaurant is already live still retires any demo account that is
+ * somehow still active, so a lost answer can simply be sent again (D-S8-27).
+ * Returns the usernames it switched off.
  */
-function retireDemoStaff(deactivate: boolean, staff: StaffContext): void {
+function retireDemoStaff(deactivate: boolean, staff: StaffContext): string[] {
   const demo = many<{ id: string; username: string; role: string }>(
     'SELECT id, username, role FROM staff_users WHERE is_fixture = 1 AND active = 1 ORDER BY username');
-  if (demo.length === 0) return;
+  if (demo.length === 0) return [];
   const usernames = demo.map((u) => u.username);
-  if (!deactivate) {
-    throw new AppError('demo_accounts_active', 'Deactivate the demo staff accounts before switching to live mode.', { usernames });
-  }
-  if (staff.user.is_fixture === 1) {
-    throw new AppError('demo_accounts_active', 'You are signed in with a demo account. Sign in with your own owner account to go live.', { usernames, self: true });
-  }
+  const selfIsDemo = staff.user.is_fixture === 1;
   const realOwners = one<{ n: number }>(
     `SELECT COUNT(*) AS n FROM staff_users WHERE role = 'owner' AND active = 1 AND is_fixture = 0`)?.n ?? 0;
+  if (!deactivate) {
+    // The client offers "Deactivate demo accounts and switch" only when this
+    // request would actually be allowed, so it says why when it would not.
+    throw new AppError('demo_accounts_active', 'Deactivate the demo staff accounts before switching to live mode.', {
+      usernames, self: selfIsDemo, real_owner: realOwners > 0, can_deactivate: !selfIsDemo && realOwners > 0,
+    });
+  }
+  if (selfIsDemo) {
+    throw new AppError('demo_accounts_active', 'You are signed in with a demo account. Sign in with your own owner account to go live.', {
+      usernames, self: true, real_owner: realOwners > 0, can_deactivate: false,
+    });
+  }
   if (realOwners === 0) {
     throw new AppError('last_owner', 'Create an owner account of your own before going live: the demo owner will be switched off.');
   }
@@ -207,6 +263,7 @@ function retireDemoStaff(deactivate: boolean, staff: StaffContext): void {
       before: { active: true }, after: { active: false, sessions_revoked: revoked },
     });
   }
+  return usernames;
 }
 
 /** Validate and apply a settings patch. Runs inside tx(). All keys succeed or none do. */
@@ -214,7 +271,8 @@ export function patchSettings(input: Record<string, unknown>, staff: StaffContex
   const current = getSettings();
   const issues: Array<{ path: string; message: string; code: string }> = [];
   const next = new Map<Key, unknown>();
-  const { [DEACTIVATE_DEMO_STAFF]: deactivateDemo, ...patch } = input;
+  const { [DEACTIVATE_DEMO_STAFF]: deactivateDemo, [EXPECTED_UPDATED]: expectedUpdated, ...patch } = input;
+  assertNotStale(expectedUpdated, staff);
 
   for (const [rawKey, value] of Object.entries(patch)) {
     if (!(rawKey in SCHEMAS)) {
@@ -241,14 +299,21 @@ export function patchSettings(input: Record<string, unknown>, staff: StaffContex
   if (deactivateDemo !== undefined && typeof deactivateDemo !== 'boolean') {
     issues.push({ path: DEACTIVATE_DEMO_STAFF, message: 'Use true or false.', code: 'invalid_type' });
   }
+  const goingLive = next.get('operating_mode') === 'live';
+  if (deactivateDemo === true && !goingLive) {
+    // The switch is part of going live; on its own it would quietly lock the
+    // demo accounts out of a demo restaurant.
+    issues.push({ path: DEACTIVATE_DEMO_STAFF, message: 'Send it with operating_mode: "live".', code: 'custom' });
+  }
   if (issues.length) throw new AppError('validation_failed', 'Some settings are not valid', { issues });
-  if (next.get('operating_mode') === 'live' && current.operating_mode !== 'live') retireDemoStaff(deactivateDemo === true, staff);
+  const retired = goingLive ? retireDemoStaff(deactivateDemo === true, staff) : [];
 
   // Mode and alcohol changes make dishes orderable or not: the availability log
   // must record it, or "least ordered" treats a switched-off dish as unpopular (D-S8-12).
   const orderability = ['operating_mode', 'alcohol'].some((k) => next.has(k as Key) && !same(current[k as Key], next.get(k as Key)));
   const itemIds = orderability ? many<{ id: string }>('SELECT id FROM menu_items').map((r) => r.id) : [];
-  return trackOrderability(itemIds, 'settings', staff.actor, () => applyPatch(current, next, staff));
+  const view = trackOrderability(itemIds, 'settings', staff.actor, () => applyPatch(current, next, staff));
+  return retired.length ? { ...view, deactivated_demo_staff: retired } : view;
 }
 
 function applyPatch(current: Settings, next: Map<Key, unknown>, staff: StaffContext): SettingsView {

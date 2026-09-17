@@ -295,8 +295,13 @@ export function useOrderAlerts({ can, serverTime, onAlert }: OrderAlertOptions):
     return () => { cancelled = true; };
   }, []);
 
-  // Every (re)connect moves the catch-up boundary to "now".
-  useEffect(() => live.onResync(() => { boundary.current = Date.now(); }), [live.onResync]);
+  // Every (re)connect moves the catch-up boundary to "now". After a database
+  // restore or reset the server reuses event ids, so the old floor would
+  // silence real new rounds: take the server's cursor as the new floor.
+  useEffect(() => live.onResync((info) => {
+    boundary.current = Date.now();
+    if (info.reset) floor.current = info.cursor;
+  }), [live.onResync]);
 
   useLiveEvent(['order.created', 'service.updated', 'portion.updated'], (e) => {
     if (floor.current !== null && e.id <= floor.current) return;

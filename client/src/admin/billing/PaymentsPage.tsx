@@ -4,7 +4,7 @@
 // Records are never edited: a correction adds a reversal with a reason.
 import { useEffect, useMemo, useState } from 'react';
 import type { PaymentDTO, PaymentExceptionDTO, PaymentsListDTO, StaffBillDTO, TablesDTO } from '../../../../shared/dto.ts';
-import { addDays, todayBusinessDate } from '../../../../shared/time.ts';
+import { addDays } from '../../../../shared/time.ts';
 import { api, qs } from '../../lib/api.ts';
 import { clock, dateLabel, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
@@ -13,6 +13,7 @@ import {
   Banner, Button, DataTable, DateRangeNav, Dialog, EmptyState, LinkButton, PageHeader, Pill, Price, SectionHeader,
   StatCard, StatGrid, Tag, useToast, type DataColumn,
 } from '../../ui/index.ts';
+import { useBusinessToday } from '../insights/query.ts';
 import { errorText, isAmbiguous, isApiError, pendingKey, useLiveResource, useStaff } from '../tables/shared.ts';
 import { paymentStatusKey } from './useBill.tsx';
 import './billing.css';
@@ -31,6 +32,7 @@ export default function PaymentsPage() {
   const { can } = useStaff();
   const toast = useToast();
   const { query } = useRoute();
+  const businessToday = useBusinessToday();
   const asked = query.get('date');
   const date = asked && DATE_RE.test(asked) ? asked : null;
   const allowed = can('payments.view');
@@ -44,7 +46,9 @@ export default function PaymentsPage() {
   const [reverse, setReverse] = useState<PaymentDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const current = learned ?? todayBusinessDate(0);
+  // The restaurant's business day, from the server's cutoff (D-AD-01); a list
+  // read without a date still wins, because it is the server's own answer.
+  const current = learned ?? businessToday;
   const isToday = !date || date === current;
 
   const activeTableByVisit = useMemo(() => {
@@ -190,6 +194,8 @@ export default function PaymentsPage() {
         </EmptyState>
       ) : (
         <>
+          {/* The stat cards are h3s: a heading above them keeps the outline whole (no h2 gap). */}
+          <h2 className="visually-hidden">{t('payments.summaryTitle')}</h2>
           <StatGrid className="c5-summary">
             <StatCard
               label={t('payments.stat.confirmed')}

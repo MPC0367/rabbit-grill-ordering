@@ -213,6 +213,7 @@ export function useErrorText(): (err: unknown) => string {
   return useCallback((err: unknown) => {
     if (err instanceof ApiError) {
       if (err.code === 'forbidden') return t('catalog.err.forbidden');
+      if (err.code === 'payload_too_large') return t('catalog.err.tooLarge');
       const key = `error.${err.code}`;
       return has(key) ? t(key) : t('error.internal');
     }

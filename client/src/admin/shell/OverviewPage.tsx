@@ -12,7 +12,7 @@ import { useNow } from '../../lib/store.ts';
 import {
   Button, EmptyState, Icon, KeyValue, LinkButton, Skeleton, STATE_SWATCH, type IconName,
 } from '../../ui/index.ts';
-import { useAttention } from './attention.tsx';
+import { portionsToWeigh, readyDishes, useAttention, weighCountIsExact } from './attention.tsx';
 import { useLayoutMode } from './layout-mode.ts';
 import { useOrderingActions, useStaffOrdering } from './ordering.tsx';
 import { useStaff } from './session.tsx';
@@ -125,16 +125,18 @@ function actionCards(
     go: t('overview.go.board'),
     urgent: d.unaccepted_rounds > 0,
   });
+  // Dishes at the pass, the same unit as the ticket buttons and the tiles.
+  const ready = readyDishes(d);
   cards.push({
     id: 'ready',
     icon: 'cloche',
     label: t('overview.card.ready'),
-    value: d.ready_lines,
-    detail: d.ready_lines > 0 ? t('overview.card.readyHint') : t('overview.card.readyNone'),
+    value: ready,
+    detail: ready > 0 ? t('overview.card.readyHint') : t('overview.card.readyNone'),
     // Opens the Ready status directly on tablets and phones (one status at a time).
     href: '/admin/orders?stage=ready',
     go: t('overview.go.board'),
-    urgent: d.ready_lines > 0,
+    urgent: ready > 0,
   });
   if (can('service.handle')) {
     cards.push({
@@ -151,12 +153,18 @@ function actionCards(
     });
   }
   if (can('portions.quote')) {
+    // The same number the Orders badge and the Requests tab show: cuts waiting
+    // for the scale when the server counts them, else every open request.
+    const cuts = portionsToWeigh(d);
+    const exact = weighCountIsExact(d);
     cards.push({
       id: 'portions',
       icon: 'scale',
-      label: t('overview.card.portions'),
-      value: d.open_portion_requests,
-      detail: d.open_portion_requests > 0 ? t('overview.card.portionsHint') : t('overview.card.portionsNone'),
+      label: t(exact ? 'overview.card.portionsToWeigh' : 'overview.card.portions'),
+      value: cuts,
+      detail: cuts > 0
+        ? t(exact ? 'overview.card.portionsWeighHint' : 'overview.card.portionsHint')
+        : t('overview.card.portionsNone'),
       href: '/admin/orders/requests',
       go: t('overview.go.requests'),
       urgent: false,

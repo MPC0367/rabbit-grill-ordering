@@ -100,6 +100,9 @@
 .c5-req__acts .btn { flex: 1 1 140px; }
 :is(.c5-req__main, .c5-req__meta, .c5-req__note):lang(th) { line-height: var(--lh-thai-min); }
 
+/* joining locked until staff rotate the PIN (sits above Guest access) */
+.c5-pinlock { margin-top: 0; margin-bottom: 4px; }
+
 /* checkout dock (drawer foot) */
 .c5-dock { display: grid; gap: 10px; }
 .c5-dock .blockers ul { display: grid; gap: 4px; }
@@ -275,6 +278,9 @@
   .c5-print--a4 .c5-qrcard:nth-child(4n) { break-after: page; page-break-after: always; }
   .c5-print--a6 .c5-qrcard { break-after: page; page-break-after: always; }
   .c5-print--a6 .c5-qrcard:last-child, .c5-print--a4 .c5-qrcard:last-child { break-after: auto; page-break-after: auto; }
+  /* QR base is this computer: the sheet says why instead of printing dead cards */
+  .c5-print--blocked { display: grid !important; gap: 8mm; padding: 20mm; font: var(--fw-semibold) 12pt/1.5 var(--font-ui); }
+  .c5-print--blocked p:not(:first-child) { font-weight: var(--fw-regular); }
   .c5-print .c5-qrcard { box-shadow: none; }
   .c5-print .c5-qrcard__pin { background: none; box-shadow: inset 0 0 0 0.2mm var(--rule-strong); }
 }

@@ -120,28 +120,15 @@ export interface SearchHit {
 
 /**
  * Owner-verified search aliases of a dish (brief 09, 44E): other spellings and
- * transliterations such as "ลาเต้" for Latte. The menu API sends only reviewed
- * ones; the printed Thai and English names are never changed. Accepts
- * `aliases_th` / `aliases_en` arrays, or `aliases` as an array or {th, en}.
+ * transliterations such as "ลาเต้" for Latte. The public menu carries only
+ * reviewed ones (MenuItemDTO.aliases_th / aliases_en); the printed Thai and
+ * English names are never changed.
  */
 export function itemAliases(item: MenuItemDTO): string[] {
-  const x = item as MenuItemDTO & {
-    aliases?: ReadonlyArray<string> | { th?: ReadonlyArray<string> | null; en?: ReadonlyArray<string> | null } | null;
-    aliases_th?: ReadonlyArray<string> | null;
-    aliases_en?: ReadonlyArray<string> | null;
-  };
   const out: string[] = [];
-  const add = (list: unknown) => {
-    if (!Array.isArray(list)) return;
+  for (const list of [item.aliases_th, item.aliases_en]) {
+    if (!Array.isArray(list)) continue;
     for (const a of list) if (typeof a === 'string' && a.trim()) out.push(a);
-  };
-  add(x.aliases_th);
-  add(x.aliases_en);
-  if (Array.isArray(x.aliases)) add(x.aliases);
-  else if (x.aliases && typeof x.aliases === 'object') {
-    const a = x.aliases as { th?: unknown; en?: unknown };
-    add(a.th);
-    add(a.en);
   }
   return out;
 }

@@ -37,11 +37,16 @@ export function staffUserDTO(u: StaffUserRow): StaffUserDTO {
 
 function meDTO(c: Context<AppEnv>): StaffMeDTO {
   const s = staffOf(c);
+  const settings = getSettings();
   return {
     user: staffUserDTO(s.user),
     permissions: s.permissions,
     landing: DEFAULT_LANDING[s.user.role],
-    operating_mode: getSettings().operating_mode,
+    operating_mode: settings.operating_mode,
+    // The owner's alert-sound default for devices that never chose one
+    // (D-FX-OPS-01). Sent twice so either name works on the client.
+    sound_default: settings.notifications.sound_default,
+    notifications: { sound_default: settings.notifications.sound_default },
   };
 }
 

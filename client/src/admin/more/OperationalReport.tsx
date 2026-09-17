@@ -95,7 +95,7 @@ export default function OperationalReport({ includeDemo }: { includeDemo: boolea
   const fx = includeDemo ? '1' : '0';
   const path = `/api/staff/stats/kpis${qs({ from: range.from, to: range.to, include_fixture: fx, ...want })}`;
   const res = useLiveResource<KpiView>(path, { topics: TOPICS, debounceMs: 2500 });
-  // Guest feedback: stop asking once the server says it does not offer it to this account.
+  // Guest feedback: stop asking once the server says this account may not read it.
   const [fbOff, setFbOff] = useState(false);
   const feedback = useLiveResource<FeedbackListDTO>(
     fbOff ? null : `/api/staff/feedback${qs({ from: range.from, to: range.to, include_fixture: fx })}`,
@@ -158,7 +158,8 @@ export default function OperationalReport({ includeDemo }: { includeDemo: boolea
   const [roundsBusy, setRoundsBusy] = useState(false);
   const roundsCsv = `/api/staff/stats/export.csv${qs({
     view: 'orders', rows: 'order', period: 'custom', from: range.from, to: range.to, include_fixture: fx,
-    ...(options ? { table_id: want.table_id, staff_id: want.staff_id } : {}),
+    // The same filters as the figures, so the exported rounds match what is on screen.
+    ...(options ? { table_id: want.table_id, category_id: want.category_id, staff_id: want.staff_id } : {}),
   })}`;
 
   return (

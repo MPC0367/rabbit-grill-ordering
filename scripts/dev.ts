@@ -5,10 +5,12 @@
 //     starts, so saving a server file cannot interrupt the ~15 s seed. Skipped
 //     with SEED_DEMO=0; SEED_HISTORY=0 skips only the synthetic year.
 //  2. API. `node --watch server/main.ts` on 127.0.0.1:API_PORT. Only the Vite
-//     proxy talks to it, so it is not reachable from the network.
+//     proxy talks to it, so it is not reachable from the network. It runs with
+//     TRUST_PROXY_HOPS=1 (whatever .env says): Vite is exactly one proxy and
+//     adds X-Forwarded-For, so rate limits see each phone's own address.
 //  3. Web. Vite on HOST:PORT (0.0.0.0 unless HOST is set, so phones on the same
-//     Wi-Fi can open it), proxying /api and /files, serving only the files the
-//     browser app needs (scripts/vite-dev.ts).
+//     Wi-Fi can open it), proxying /api and /files with X-Forwarded-For,
+//     serving only the files the browser app needs (scripts/vite-dev.ts).
 //
 // QR cards print PUBLIC_BASE_URL. When it is not set, this script uses
 // http://<this computer's LAN address>:PORT, because a phone cannot open
@@ -80,6 +82,10 @@ start('api', ['--watch-path=server', '--watch-path=shared', '--watch-preserve-ou
   SERVE_CLIENT: '0',
   // Seeding already happened above; a watch restart must never start it.
   SEED_DEMO: '0',
+  // The Vite proxy is the only client and appends the phone's address to
+  // X-Forwarded-For (scripts/vite-dev.ts). A higher value would let a phone
+  // choose its own address by sending the header itself.
+  TRUST_PROXY_HOPS: '1',
 });
 start('web', [resolve(ROOT, 'scripts/vite-dev.ts')], { PORT, API_PORT, HOST });
 
@@ -89,6 +95,10 @@ for (const a of lan) say(`same Wi-Fi      http://${a.address}:${PORT}   (${a.nam
 say(`QR cards        ${publicBaseUrl}${explicitBase ? '   (PUBLIC_BASE_URL)' : lan[0] ? '   (PUBLIC_BASE_URL not set: first LAN address above)' : ''}`);
 if (isLoopbackUrl(publicBaseUrl)) say('warning: QR cards point at this computer only. Phones cannot open them; set PUBLIC_BASE_URL=http://<LAN address>:' + PORT);
 say(`api             http://127.0.0.1:${API_PORT}   (local only, reached through the web port)`);
+const configuredHops = envValue('TRUST_PROXY_HOPS', dotenv);
+if (configuredHops !== undefined && configuredHops !== '1') {
+  say(`TRUST_PROXY_HOPS=${configuredHops} is not used here: the development API always sits behind one proxy (Vite), so it runs with 1.`);
+}
 
 function shutdown(code = 0) {
   if (stopping) return;

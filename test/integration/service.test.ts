@@ -14,6 +14,9 @@ before(async () => {
   // Each simulated guest device joins from its own address (the join limit is per address).
   srv = await startServer({ env: { TRUST_PROXY_HOPS: '1' } });
   for (const role of ROLES) staff[role] = await srv.staff(role);
+  // The repeat-request cooldown (D-S8-23) is off for the tests that work
+  // through a request's whole life in seconds; its own test switches it on.
+  assert.equal((await staff.owner.patch('/api/staff/settings', { service_cooldown_seconds: 0 })).status, 200);
 });
 after(async () => { await srv?.stop(); });
 

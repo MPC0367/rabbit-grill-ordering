@@ -63,8 +63,12 @@ function Redirect({ to }: { to: string }) {
 
 function SignedIn() {
   const { me, can } = useStaff();
+  const session = useSessionState();
   return (
-    <LiveProvider key={me.user.id} url="/api/staff/events">
+    // The staff stream ends only after it has re-checked /me itself (D-S8-08):
+    // the session is gone, or the account was deactivated or demoted. Ask once
+    // more here so the gate shows the sign-in form instead of a dead workspace.
+    <LiveProvider key={me.user.id} url="/api/staff/events" onEnded={() => { void session.check(); }}>
       <ToastProvider>
         <AttentionProvider enabled={can('orders.view')}>
           <OrderingProvider>

@@ -3,6 +3,7 @@
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { Hono } from 'hono';
+import { z } from 'zod';
 import type { AppEnv } from '../app.ts';
 import { tx } from '../db/index.ts';
 import { audit } from '../lib/audit.ts';
@@ -10,8 +11,9 @@ import { requireStaff, staffOf } from '../lib/auth.ts';
 import { AppError } from '../lib/errors.ts';
 import { body, query } from '../lib/http.ts';
 import { hit, LIMITS } from '../lib/ratelimit.ts';
-import { CreateStaffBody, IdSchema, ReportJobBody, SetPasswordBody, SettingsPatchBody, UpdateStaffBody } from '../../shared/schemas.ts';
+import { CreateStaffBody, IdSchema, IsoDateSchema, ReportJobBody, SetPasswordBody, SettingsPatchBody, UpdateStaffBody } from '../../shared/schemas.ts';
 import { AuditQuery, listAudit } from '../domain/audit-view.ts';
+import { listFeedback } from '../domain/feedback.ts';
 import { enqueueReport, jobDTOById, reportFile, reportYears, retryReport } from '../domain/reports.ts';
 import { patchSettings, settingsView } from '../domain/settings-admin.ts';
 import { createStaff, listTeam, revokeStaffSessions, setStaffPassword, updateStaff } from '../domain/team.ts';
@@ -22,6 +24,13 @@ function idParam(value: string): string {
   if (!IdSchema.safeParse(value).success) throw new AppError('not_found', 'Not found');
   return value;
 }
+
+/** GET /api/staff/feedback?from&to&include_fixture (business dates, inclusive). */
+const FeedbackListQuery = z.object({
+  from: IsoDateSchema,
+  to: IsoDateSchema,
+  include_fixture: z.enum(['0', '1']).default('0'),
+});
 
 function mutationLimit(staffId: string): void {
   hit(`staff-mutation:${staffId}`, LIMITS.staffMutation);
@@ -72,6 +81,14 @@ export const adminStaff = new Hono<AppEnv>()
         ...(file.sha256 ? { ETag: `"${file.sha256}"`, 'X-Content-SHA256': file.sha256 } : {}),
       },
     });
+  })
+
+  // ---------------------------------------------------------------- guest feedback
+  // Read-only, for the operational report. Never pushed on the live stream:
+  // ratings and comments are not a queue anyone works.
+  .get('/feedback', requireStaff('reports.view'), (c) => {
+    const q = query(c, FeedbackListQuery);
+    return c.json(listFeedback({ from: q.from, to: q.to, include_fixture: q.include_fixture === '1' }));
   })
 
   // ---------------------------------------------------------------- team

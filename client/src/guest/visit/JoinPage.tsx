@@ -11,17 +11,18 @@ import { navigate } from '../../lib/router.ts';
 import { Button, Card, Icon, Skeleton, TextLink, cx, useToast, type IconName } from '../../ui/index.ts';
 import { useGuestSession } from '../shell/session.tsx';
 import { detailOf, errorWords, rememberTable, retryAfterSeconds } from './lib.ts';
-import { PIN_MIN, PinInput } from './PinInput.tsx';
+import { PIN_MAX, PIN_MIN, PinInput } from './PinInput.tsx';
 import './visit.css';
 
 /**
- * The code length for this visit, when the server says it (QrResolveDTO.pin_digits:
- * the length of the visit's actual code, 4 to 8). Unknown: the field takes 4 to 8
- * digits and waits for the Join button.
+ * The code length for this visit: QrResolveDTO.pin_digits, the length of the
+ * visit's actual code (4 to 8). null when the visit has no PIN yet, or an
+ * older server does not say: the field then takes 4 to 8 digits and waits for
+ * the Join button (D-G-03).
  */
 function pinLengthOf(info: QrResolveDTO | null): number | null {
-  const n = (info as (QrResolveDTO & { pin_digits?: number | null }) | null)?.pin_digits;
-  return typeof n === 'number' && Number.isInteger(n) && n >= 4 && n <= 8 ? n : null;
+  const n = info?.pin_digits;
+  return typeof n === 'number' && Number.isInteger(n) && n >= PIN_MIN && n <= PIN_MAX ? n : null;
 }
 
 type Phase =
@@ -113,10 +114,13 @@ export default function JoinPage({ token }: { token: string }) {
           setPin('');
           break;
         case 'pin_locked': {
+          setPin('');
+          // Third lockout in a visit: no time to wait for. The form stays open for
+          // the new code staff issue when they rotate the PIN (D-S8-07).
+          if (staffUnlock(e)) { setBlockedUntil(null); break; }
           const until = detailOf<string>(e, 'until');
           const secs = retryAfterSeconds(e);
           const at = until ? new Date(until).getTime() : secs ? Date.now() + secs * 1000 : null;
-          setPin('');
           if (at && Number.isFinite(at)) setBlockedUntil(at);
           break;
         }
@@ -281,7 +285,7 @@ export default function JoinPage({ token }: { token: string }) {
             length={pinLength}
             label={pinLength ? t('join.pinLabel', { n: pinLength }) : t('join.pinLabelAny')}
             describedBy={`${leadId} ${msgId}`}
-            error={Boolean(joinError) && !blocked}
+            error={Boolean(joinError) && !blocked && !(joinError && staffUnlock(joinError))}
             disabled={blocked || joining}
           />
           <div id={msgId} aria-live="polite" className="vjoin__msg">
@@ -337,6 +341,11 @@ function StateCard({
   );
 }
 
+/** The code is locked until staff issue a new one (no time given). */
+function staffUnlock(error: ApiError): boolean {
+  return error.code === 'pin_locked' && detailOf<boolean>(error, 'staff_unlock_required') === true;
+}
+
 function JoinMessage({ error, blockedUntil, id, pinLength }: { error: ApiError; blockedUntil: number | null; id?: string; pinLength: number | null }) {
   const { t, has } = useI18n();
   const format = pinLength ? t('join.pinFormat', { n: pinLength }) : t('join.pinFormatAny');
@@ -350,6 +359,11 @@ function JoinMessage({ error, blockedUntil, id, pinLength }: { error: ApiError; 
       break;
     }
     case 'pin_locked':
+      if (staffUnlock(error)) {
+        main = t('join.lockedStaffTitle');
+        sub = t('join.lockedStaffBody');
+        break;
+      }
       main = t('join.lockedTitle');
       sub = blockedUntil ? t('join.lockedBody', { time: clock(new Date(blockedUntil).toISOString()) }) : t('join.lockedBodyNoTime');
       break;

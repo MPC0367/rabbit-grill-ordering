@@ -10,6 +10,7 @@ import { ApiError } from '../../lib/api.ts';
 import { useConfig } from '../../lib/config.tsx';
 import { clock, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
+import { useNow } from '../../lib/store.ts';
 import {
   Button, Icon, Leader, ListRow, Price, Sheet, Skeleton, StatusPill, TextArea, useToast,
   type IconName, type ListRowProps,
@@ -17,8 +18,8 @@ import {
 import { AnalyticsNotice } from '../shell/AnalyticsNotice.tsx';
 import { useGuestLiveState, useOnline } from '../shell/hooks.ts';
 import { useGuestSession } from '../shell/session.tsx';
-import { useServiceRequests, useVisitResource } from './hooks.ts';
-import { closeThenNavigate, detailOf, errorWords } from './lib.ts';
+import { sentAt, useServiceRequests, useVisitResource } from './hooks.ts';
+import { closeThenNavigate, detailOf, errorWords, retryAfterSeconds } from './lib.ts';
 import NoAccessPanel from './NoAccessPanel.tsx';
 import './visit.css';
 
@@ -56,12 +57,15 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
   const liveState = useGuestLiveState();
   const online = useOnline();
   const toast = useToast();
+  const now = useNow(1_000);
   const svc = useServiceRequests(visitId);
   const bill = useVisitResource<GuestBillDTO>('/api/guest/bill', ['bill.', 'visit.', 'order.', 'line.']);
   const [view, setView] = useState<View>('list');
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [unreachable, setUnreachable] = useState(false);
+  /** Per type: when the server said this one may be sent again (ms). */
+  const [askAgainAt, setAskAgainAt] = useState<Partial<Record<ServiceType, number>>>({});
   const headRef = useRef<HTMLHeadingElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
   const listTopRef = useRef<HTMLDivElement>(null);
@@ -69,6 +73,19 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
 
   const enabled = ORDER.filter((s) => (services.length ? services : config?.services ?? []).includes(s));
   const offline = !online || liveState === 'offline' || unreachable;
+
+  // The restaurant's wait before the same request may be sent again (Settings >
+  // Services, D-S8-23): counted from when the last request of that type was
+  // sent, and never applied to asking for the bill. The server is the
+  // authority - its refusal carries retry_after_seconds and wins. A server that
+  // does not send the setting, or a zero, means nothing is held back here.
+  const setting = config?.service_cooldown_seconds;
+  const cooldownMs = typeof setting === 'number' && setting > 0 ? Math.round(setting * 1000) : 0;
+  const waitSeconds = (type: ServiceType): number => {
+    const sent = type === 'bill' ? null : sentAt(svc.slots.get(type)?.last ?? null);
+    const until = Math.max(sent !== null && cooldownMs > 0 ? sent + cooldownMs : 0, askAgainAt[type] ?? 0);
+    return Math.max(0, Math.ceil((until - now) / 1000));
+  };
 
   // Moving between the list and a request: keep focus inside the sheet, on the new view.
   const firstView = useRef(true);
@@ -83,9 +100,17 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
     return errorWords(t, has, err);
   };
 
-  const failed = (err: unknown) => {
+  const failed = (type: ServiceType, err: unknown) => {
     if (err instanceof ApiError && (err.code === 'visit_closed' || err.code === 'visit_access_revoked' || err.code === 'visit_access_required')) return;
     if (err instanceof ApiError && err.ambiguous) setUnreachable(true);
+    // "Not yet": the restaurant's wait between two of the same request. The
+    // server says how long, and the row counts it down from here.
+    const wait = err instanceof ApiError ? retryAfterSeconds(err) : null;
+    if (wait !== null) {
+      setAskAgainAt((prev) => ({ ...prev, [type]: Date.now() + wait * 1000 }));
+      setError(t('help.cooldownFailed', { n: wait }));
+      return;
+    }
     setError(`${t('help.failed')} · ${describe(err)}`);
   };
 
@@ -103,7 +128,7 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
       setNote('');
       if (view !== 'list') setView('list');
     } catch (err) {
-      failed(err);
+      failed(type, err);
     }
   };
 
@@ -124,6 +149,7 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
     const active = slot?.active ?? null;
     const done = slot?.lastDone ?? null;
     const doneAt = done ? done.completed_at ?? done.created_at : null;
+    const wait = waitSeconds(type);
     let sub: string = type === 'call_staff' ? t('help.sub.call_staff', { label }) : t(`help.sub.${type}`);
     let trailing: ListRowProps['trailing'];
     if (active) {
@@ -131,8 +157,10 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
         ? t(type === 'call_staff' ? 'help.acknowledgedCall' : 'help.acknowledged')
         : t('help.sent', { time: clock(active.created_at) });
       trailing = <StatusPill kind="service" status={active.status} size="sm" />;
-    } else if (doneAt && Date.now() - new Date(doneAt).getTime() < RECENT_MS) {
-      sub = t('help.done', { time: clock(doneAt) });
+    } else if (doneAt && now - new Date(doneAt).getTime() < RECENT_MS) {
+      sub = wait > 0 ? t('help.doneWait', { time: clock(doneAt), n: wait }) : t('help.done', { time: clock(doneAt) });
+    } else if (wait > 0) {
+      sub = t('help.cooldown', { n: wait });
     }
     if (svc.busy === type) trailing = <span className="vsvc__busy" role="status" aria-label={t('common.sending')} />;
     const opens = COMPOSE.has(type) || type === 'bill';
@@ -142,8 +170,8 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
       title: t(`service.${type}`),
       sub,
       trailing,
-      // Bill stays open while requested: it leads to the bill.
-      disabled: (Boolean(active) && type !== 'bill') || svc.busy !== null,
+      // Bill stays open while requested and while it waits: it leads to the bill.
+      disabled: ((Boolean(active) || wait > 0) && type !== 'bill') || svc.busy !== null,
       onClick: () => {
         if (type === 'bill') { setError(null); setView('bill'); return; }
         if (COMPOSE.has(type)) { setError(null); setNote(''); setView(type as View); return; }
@@ -218,6 +246,8 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
         ) : bill.loading ? <Skeleton shape="block" height={56} /> : null}
         {requestedAt ? (
           <p className="vnote vnote--ok" role="status"><Icon name="check-c" /><span className="vnote__body">{t('help.billAlready', { time: clock(requestedAt) })}</span></p>
+        ) : waitSeconds('bill') > 0 ? (
+          <p className="vnote" role="status"><Icon name="info" /><span className="vnote__body">{t('help.cooldown', { n: waitSeconds('bill') })}</span></p>
         ) : null}
         {error ? <p className="vnote vnote--alert" role="alert"><Icon name="alert" /><span className="vnote__body">{error}</span></p> : null}
       </div>
@@ -228,7 +258,7 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
       </div>
     ) : (
       <div className="vsheet__foot">
-        <Button variant="primary" size="lg" icon="receipt" loading={svc.busy === 'bill'} onClick={() => void sendNow('bill')}>{t('service.bill')}</Button>
+        <Button variant="primary" size="lg" icon="receipt" loading={svc.busy === 'bill'} disabled={waitSeconds('bill') > 0} onClick={() => void sendNow('bill')}>{t('service.bill')}</Button>
         <Button variant="outline" size="lg" onClick={() => goBill()}>{t('help.billReview')}</Button>
       </div>
     );
@@ -250,12 +280,15 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
           rows={3}
           help={t('help.noteHelp')}
         />
+        {waitSeconds(type) > 0 ? (
+          <p className="vnote" role="status"><Icon name="info" /><span className="vnote__body">{t('help.cooldown', { n: waitSeconds(type) })}</span></p>
+        ) : null}
         {error ? <p className="vnote vnote--alert" role="alert"><Icon name="alert" /><span className="vnote__body">{error}</span></p> : null}
       </div>
     );
     footer = (
       <div className="vsheet__foot vsheet__foot--one">
-        <Button variant="primary" size="lg" loading={svc.busy === type} onClick={() => void sendNow(type, note)}>
+        <Button variant="primary" size="lg" loading={svc.busy === type} disabled={waitSeconds(type) > 0} onClick={() => void sendNow(type, note)}>
           {t(`help.send.${type}`)}
         </Button>
       </div>

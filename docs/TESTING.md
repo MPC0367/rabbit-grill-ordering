@@ -1,50 +1,51 @@
 # Testing
 
-The ordering platform has three test layers. Brief section 31 asks for this split: automated integration tests for authorization, money, state transitions and idempotency; end-to-end tests for the critical browser journeys; and visual inspection at phone, tablet and desktop widths.
+The ordering platform has three test layers, plus one QA tool for the printed report. Brief section 31 asks for this split: automated integration tests for authorization, money, state transitions and idempotency; end-to-end tests for the critical browser journeys; and visual inspection at phone, tablet and desktop widths.
 
 | Layer | Command | What runs |
 | --- | --- | --- |
-| Unit and integration | `npm test` | Pure modules (money, Bangkok time, board placement, search, live cursor), and real server processes over HTTP with temporary SQLite files |
+| Unit and integration | `npm test` | Pure modules (money, Bangkok time, board placement, search, live cursor, recovery drafts), and real server processes over HTTP with temporary SQLite files |
 | Browser end-to-end | `npm run e2e` | Real Edge or Chrome sessions (several at once) against one seeded instance: [below](#browser-end-to-end-suite-npm-run-e2e) |
 | Visual QA | `npm run shots` | Screens at 320–1440 px in both languages, audited in the page, plus a contact sheet for review: [below](#visual-qa-npm-run-shots) |
+| PDF pages | `npm run pdf:pages` | Pages of a generated annual PDF rendered to PNG for a person to look at: [below](#pdf-pages-npm-run-pdfpages) |
 
 **Everything here is local.** It ran on one Windows 11 laptop (Node 24.20.0, Microsoft Edge), on `localhost` and the laptop's LAN address. No real phone, restaurant Wi-Fi, https proxy or hosted server has been tested. None of these results is a production deployment check.
 
 ## Latest result
 
-Runs of 2026-09-17 and 18 (Bangkok), taken after the docs-and-tooling fixes while the other review-fix streams were still landing. Each run tested the working tree as it was at that moment.
+Runs of 2026-09-18 (Bangkok), after the second review round landed in every area. Each run tested the working tree as it was at that moment.
 
 | Run | Command | Tests | Pass | Fail | Skipped | Duration |
 | --- | --- | --- | --- | --- | --- | --- |
-| Unit + integration | `node --test --test-concurrency=1 "test/unit/**/*.test.ts" "test/integration/**/*.test.ts"` | 217 | 216 | 0 | 1 | 100.6 s |
-| Browser end-to-end | `node test/e2e/run.ts --port 8771 --keep` (dev path, full synthetic year) | 12 | 12 | 0 | 0 | 283 s |
-| Browser end-to-end, repeated after the last suite change | `node test/e2e/run.ts --port 8771` | 12 | 12 | 0 | 0 | 282 s |
-| Browser end-to-end, production path | `node test/e2e/run.ts --port 8771 --prod --no-history` | 12 | 11 | 1 | 0 | 249 s |
-| same, rerun of the failed parts | `… --prod --no-history --only files,a` | 2 | 2 | 0 | (10 not selected) | 33 s |
-| Visual QA | `node test/visual/shots.ts --port 8771` | 172 captures | 0 failures | | | 545 s |
+| Unit + integration (run twice, same result) | `node --test --test-concurrency=1 "test/unit/**/*.test.ts" "test/integration/**/*.test.ts"` | 245 | 245 | 0 | 0 | 104.3 s / 103.8 s |
+| Unit only | `npm run test:unit` | 58 | 58 | 0 | 0 | 0.2 s |
+| Browser end-to-end | `node test/e2e/run.ts --port 8811` (dev path, full synthetic year) | 12 | 12 | 0 | 0 | 286 s |
+| Browser end-to-end, production path | `node test/e2e/run.ts --port 8811 --prod --no-history` (build + precompress + seed + `npm start`) | 12 | 12 | 0 | 0 | 246 s |
+| Visual QA | `node test/visual/shots.ts --port 8811` | 172 captures | 0 failures | | 43 audit notes | 570 s |
 | Types | `npm run typecheck` | whole project | clean | | | |
+| PDF pages | `npm run pdf:pages -- var/reports/2025/rpt_….pdf --pages 1,2,260,last --text` (and 3–4) | 6 pages | rendered and reviewed | | | 5 s |
+
+The previous round's runs (2026-09-17 and the early hours of the 18th) were 217 tests with one conditional skip, the same 12 journeys, and a production-path run whose one failure was the suite's own (QR cards on `localhost`); that is fixed and the production path now passes in full.
 
 Details:
 
-- The e2e run used a fresh seeded instance started through `npm run dev` (instance log in `var/e2e/e2e/app.log`). Earlier runs that day failed because of the suite, not the product:
-  - kitchen tablets now default to the Kitchen station, so a journey could not advance bar dishes;
-  - the pause check read a field that exists in both states;
-  - browser offline emulation does not drop an open event stream;
-  - the file-exposure probes used paths that do not exist, and those get the app page.
-
-  Those were fixed (D-DT-04).
-- On the production path (`--prod`: `vite build`, `npm run seed`, `npm start`), the one failure was the suite's own. The test instance printed QR cards for `localhost`, and journey a correctly rejected that. The instance now uses the LAN address, as a restaurant install would, and the rerun passed. The same run checked that the built bundles are served, while source maps and missing bundles answer 404. Once, journey b also saw the board show Ready while the guest page stayed on Almost done past its 12 s wait. It has passed on every run since (a partial run of files, a, b and realtime, two full dev-path runs and the production-path run), but it is worth watching.
+- The e2e run used a fresh seeded instance started through `npm run dev` (instance log in `var/e2e/e2e/app.log`). Suite problems found in the first round (the kitchen tablet's station default, a pause check reading a field that exists in both states, offline emulation not dropping an open stream, file probes using paths that do not exist) were fixed then (D-DT-04) and have not returned.
+- The production path (`--prod`) now runs both build steps (`vite build`, then `scripts/precompress.ts`), seeds and starts `npm start` with QR cards on the LAN address, and passed in full. It also checks that the staff bundle arrives Brotli-encoded from its precompressed sibling (512,530 → 83,262 bytes), that a client accepting no compression gets the plain bytes, and that source maps and missing bundles answer 404 (D-DT-07).
+- Journey b failed once in the first round (the board showed Ready while the guest page stayed on Almost done past its 12 s wait). It has passed on every run since, including both runs above, but it is worth watching.
+- The development proxy was checked by hand: ten failed joins from `localhost` used up that address's budget (the next answered `429`), a forged `X-Forwarded-For` did not escape it, and the LAN address had its own budget (D-DT-06).
+- An interrupted seed was simulated by flipping the marker: `npm run seed` and `npm run dev` both refused the database and named `npm run db:reset`, and `npm run dev` started nothing (D-S8-29).
 - The visual run's audit notes are listed under [Visual QA](#visual-qa-npm-run-shots).
-- The annual report was checked separately. A 2025 PDF of the full synthetic year (`npm run jobs -- report --year 2025 --fixture --html <dir>`) came out at 520 pages and 14.4 MB in 31 s. Its print-rendered HTML was reviewed page by page: cover, year overview and appendix A, with Thai text shaped and repeated table headers. This laptop has no PDF rasteriser, so the PDF pages themselves were not viewed. `reports.test.ts` checks the PDF structure and its embedded fonts.
+- The annual report was checked separately. A 2025 PDF of the full synthetic year (`npm run jobs -- report --year 2025 --fixture --html <dir>`) came out at 520 pages and 14.4 MB in 31 s. Its print-rendered HTML was reviewed page by page: cover, year overview and appendix A, with Thai text shaped and repeated table headers. `reports.test.ts` checks the PDF structure and its embedded fonts. Pages of the PDF file itself were then rasterised and looked at with `npm run pdf:pages` (see [PDF pages](#pdf-pages-npm-run-pdfpages)).
 - The backup was checked by hand. `npm run jobs -- backup --out … --with-reports` copied a 144 MB seeded database (with its WAL) to a 138 MB file in 0.6 s while nothing else was using it. `PRAGMA integrity_check` returned `ok`, row counts matched, and a second run refused to overwrite the file. A full restore was not exercised.
-- The production entry was checked by hand. `npm start` on an empty database did not seed: `demo-owner` sign-in answered 401. It warned about `NODE_ENV` and the localhost QR address. `npm run admin:create` with `RG_ADMIN_PASSWORD` then created an owner who could sign in (200).
+- The production entry was checked by hand. `npm start` on an empty database did not seed: `demo-owner` sign-in answered 401. It warned about `NODE_ENV` and the localhost QR address. `npm run admin:create` with `RG_ADMIN_PASSWORD` then created an owner who could sign in (200). Repeated this round on a LAN address: sign-in over plain http set a non-Secure cookie and worked (`COOKIE_SECURE` unset follows the base URL, D-S8-09), and the same asset answered 80,491 bytes Brotli, 103,798 gzip or 494,805 plain by `Accept-Encoding`, each with its own ETag.
+- Every npm script was run: `dev`, `build`, `start`, `typecheck`, `db:reset`, `seed`, `admin:create`, `jobs` (list, `retention --dry-run`, `backup --with-reports`, `aggregates`, `expire-quotes`), `assets` (131 files unchanged), `i18n:check`, `test`, `test:unit`, `e2e`, `shots` and `pdf:pages`.
 
 ## How to run
 
 Prerequisites:
 
-- Node 24 or newer, and `npm ci`
-- For the PDF tests and both browser suites, an installed Edge or Chrome. It is found in the standard install paths, or at `BROWSER_PATH`.
+- Node 24 or newer, and `npm ci` (which installs `pdfjs-dist`, used by `npm run pdf:pages`)
+- For the PDF tests, both browser suites and `npm run pdf:pages`, an installed Edge or Chrome. It is found in the standard install paths, or at `BROWSER_PATH`.
 
 ```powershell
 Set-Location C:\Users\marky\NOVA\rabbit-grill\ordering
@@ -60,6 +61,8 @@ npm run e2e -- --prod         # build + seed + npm start instead of npm run dev
 
 npm run shots                 # screenshots + audit + test/visual/out/index.html, ~10 min
 npm run shots -- guest states --port 8771 --strict
+
+npm run pdf:pages -- var/reports/2025/rpt_XXXX.pdf --pages 1-3,last   # PDF pages as PNG
 ```
 
 - **Use PowerShell (or any normal desktop shell) on Windows.** `reports.test.ts` and both browser suites launch the browser, and some sandboxed shells cannot. When the report job fails with `browser_unavailable`, the two PDF tests call `t.skip` with the reason instead of failing.
@@ -87,7 +90,7 @@ How it works:
 
 | Test | Brief | What it proves |
 | --- | --- | --- |
-| dev server (`files`) | 29 | From localhost and the LAN address, the dev server refuses the instance database (also with `?raw` / `?import`), its WAL file, `server/`, `scripts/`, `package.json`, `.env.example` and `data-src/` (403). It still serves `shared/` and the fonts. The API port is not reachable from the network (D-DT-01). With `--prod`, it instead checks that bundles are served while source maps and missing bundles get 404. |
+| dev server (`files`) | 29 | From localhost and the LAN address, the dev server refuses the instance database (also with `?raw` / `?import`), its WAL file, `server/`, `scripts/`, `package.json`, `.env.example` and `data-src/` (403). It still serves `shared/` and the fonts. The API port is not reachable from the network (D-DT-01). With `--prod`, it instead checks that bundles are served while source maps and missing bundles get 404, and that a bundle is sent from its precompressed Brotli copy while a client that accepts no compression gets the plain file (D-DT-07). |
 | a | 31 #1, 07, 10, 13 | Floor staff seat a free table and read the PIN. The QR card URL is a LAN address, not localhost, and never carries the PIN. The guest scans the QR, types the PIN, sees "Welcome … Table 05" and the table tag, quick-adds a dish, sees a hot variant marked unavailable, and chooses iced plus a paid bean (฿110) with a note. They send from Your order via review, land on Track with the reference and the new round highlighted, and the server holds 3 lines. |
 | b | 31 #1, 14, 19, 35 | A kitchen tablet (set to all stations) sees the new ticket emphasised. Accept → Start → Almost done → Ready each reach the guest's Track live, and the guest page never reloads. The board stays silent with sound off. |
 | c | 44A | The weighed cut has no Add button, only a weigh request. Track shows it waiting. Staff quote 420 g on the Requests tab. The guest sees the quote live with the server amount ฿2,058 and confirms. A portion round appears on the board. |
@@ -133,16 +136,16 @@ Not automated in the browser:
 
 Page errors, missing translation keys and overflow fail the run. The other notes are for a person to judge, and fail the run only with `--strict`.
 
-**Latest run** (2026-09-18, 00:00–00:09 Bangkok): 172 captures, 0 failures, 43 audit notes. None is a failure. They are for the client stream to decide:
+**Latest run** (2026-09-18, 02:12–02:22 Bangkok, after the second review round): 172 captures, 0 failures, 43 audit notes. None is a failure. They are for the client stream to decide, and they are the same known list as the round before:
 
-- Your order's slip subtitle has a Thai line height of 1.30 at 320 px (`slip__sub`).
-- Dish-name buttons are 27 px tall; the photo and the Add button beside them are full-size targets (`dish__open`, 7 notes).
-- Month-view chart bars are 26 px wide (`wbc__hit`, 24 notes). They are keyboard-reachable, and the table equivalent lists every day.
-- The metric definition buttons on Engagement are 32 px (`defbtn`).
-- The item editor's language toggle is 38 px tall.
-- The board's status filter on a 390 px phone is 42 px tall.
+- Your order's slip subtitle has a Thai line height of 1.30 at 320 px (`slip__sub`, 1).
+- Dish-name buttons are 27 px tall; the photo and the Add button beside them are full-size targets (`dish__open`, 7).
+- Month-view chart bars are 26 px wide (`wbc__hit`, 24). They are keyboard-reachable, and the table equivalent lists every day.
+- The metric definition buttons on Engagement are 32 px (`iconbtn defbtn`, 4).
+- The item editor's language toggle is 38 px tall (`BUTTON`, 3: Both / ไทย / EN).
+- The board's status segments on a 390 px phone are 42 px tall (`is-attn` and `BUTTON`, 4, both languages) — including the new "New · n" emphasis.
 
-The first run of the day, with the earlier audit, reported 352 notes. Most of them were hit areas that padding already widens, text containing only the baht sign, and screen-reader-only text. The audit was corrected, not the app.
+An earlier run in the first round reported 352 notes with the audit as it then was. Most were hit areas that padding already widens, text containing only the baht sign, and screen-reader-only text. The audit was corrected, not the app.
 
 **Reviewed by eye** (not a pixel diff):
 
@@ -153,6 +156,23 @@ The first run of the day, with the earlier audit, reported 352 notes. Most of th
 - the annual report pages listed above
 
 They match the design system: paper and charcoal surfaces, Thai shaping, compact masthead with table tag, five-group staff navigation on phones.
+
+## PDF pages (`npm run pdf:pages`)
+
+The annual report is HTML printed to PDF by the headless browser, so its structure is checked by `reports.test.ts` and its layout was reviewed as print-rendered HTML. `scripts/pdf-pages.ts` closes the last step: it renders pages of a **finished PDF file** to PNG, so the printed pages themselves can be looked at.
+
+```powershell
+npm run pdf:pages -- var/reports/2025/rpt_XXXX.pdf                      # pages 1-3 and the last page
+npm run pdf:pages -- <file.pdf> --pages 1-3,40,260,last --scale 2 --text
+npm run pdf:pages -- <file.pdf> --pages all --out var/scratch/review
+```
+
+- It runs **pdf.js** (`pdfjs-dist`, a devDependency pinned to an exact version) inside the same installed Edge or Chrome as the other browser tooling (`scripts/browser.ts`). A tiny HTTP server on `127.0.0.1` serves one page, the PDF and the pdf.js files from `node_modules`; nothing is downloaded and nothing else is served.
+- Output: `<out>/p001.png` (default `var/pdf-pages/<pdf name>/`), plus `p001.txt` with `--text`. The text comes from pdf.js, which keeps Thai; `pdftotext` drops it.
+- It is a QA tool, not an assertion: it fails only when the PDF cannot be opened or a page cannot be rendered. Judging a page is a person's job.
+- Windows note: this needs a normal desktop shell, like the other browser suites.
+
+**Checked this way** (2026-09-18, the 520-page synthetic 2025 report, pages 1, 2, 3, 4, 260 and 520, with `--text`): the cover prints the wordmark, the Thai subtitle, the FINAL badge and the scope block; the contents and "read this first" page lists all nine sections and the appendices; the year overview prints its figures with their Thai captions and the "labelled precisely" money row; "Orders over time" draws its monthly and weekly bar charts with their legends, month table and New Year note; an appendix page in landscape repeats its column headers and shows Thai dish names, the ฿ sign and "PAGE 260 OF 520"; the last page carries the notes and the report-version table. The extracted text kept the Thai. So the PDF's own pages, not only its HTML, have now been seen (brief 41).
 
 ## How the harness works
 
@@ -190,7 +210,8 @@ Test counts are for the latest run; the whole suite takes about 100 s. Per-file 
 | `test/unit/board-model.test.ts` | 6 | Orders board placement: a round sits in its least-advanced column, ready dishes still reach the Ready column, and the station filter is respected (D-C4b-01, D-FX-OPS-01). |
 | `test/unit/guest-menu-search.test.ts` | 6 | Guest search: Thai and English names, verified aliases, categories, and normalisation that never alters Thai. |
 | `test/unit/guest-limits.test.ts` | 1 | The guest bundle's copies of request bounds match the zod schemas. |
-| `test/unit/live-cursor.test.ts` | 8 | Live client cursor and duplicate handling, including a database restore (D-K-01). |
+| `test/unit/live-cursor.test.ts` | 10 | Live client cursor and duplicate handling, including a database restore and the server's `epoch` (D-K-01, D-S8-31). |
+| `test/unit/recover-draft.test.ts` | 9 | Two admin-ops rules that decide what reaches the server: a weighed cut entered from a paper ticket (grams, approved rate, one cut per line, D-S8-21) and the staff-confirmation flags a ticket reads off its own line (D-S8-20). |
 | `test/integration/smoke.test.ts` | 1 | Harness check: the server boots with fixtures and a guest can order. |
 | `test/integration/journey.test.ts` | 3 | Scenarios 1 and 2 end to end. Details under Brief 31 below. |
 | `test/integration/access.test.ts` | 19 | Table access and visit isolation: QR code, PIN, lockout, rate limits, QR rotation, disabled tables, leaving, session expiry, revocation, CSRF and secrets in logs. Also scenario 5 (queries, mutations and subscriptions) and scenario 6. |
@@ -205,6 +226,7 @@ Test counts are for the latest run; the whole suite takes about 100 s. Per-file 
 | `test/integration/insights.test.ts` | 16 | Brief 37, 38 and 43: rounds, visits and diners; shared phones; weekly bars; comparisons; New Year weeks; year clipping; rankings; availability; measured-weight servings and grams; fixture filtering; stats permissions. |
 | `test/integration/engagement.test.ts` | 16 | Brief 39 and 43: retried telemetry deduplicated, the active-chunk cap, active time versus seated time, the midnight split, opt-out, public and dining sessions, the grace window, the rate limit, funnel attribution, QR adoption, financial KPI gating, ordering while analytics is down or off. Scroll depth on the menu page only (D-S8-05); add rate per session (D-S8-06). |
 | `test/integration/reports.test.ts` | 9 | Brief 40, 41 and 43 (details under Brief 43 below). Report labels per scope (D-S8-13). |
+| `test/integration/round2.test.ts` | 17 | The second review round's server work, endpoint by endpoint: feedback for 30 minutes after checkout and its eligibility, a revoked phone getting no window, the owner's feedback list and its permission (D-S8-22); `pin_digits` on a QR resolve (D-S8-24); the alert-sound default on `/me`, cuts waiting for the scale and ready dishes on the overview, and the alcohol / staff-confirm snapshot on an order line (D-S8-20); whether printed QR cards would open on a phone (D-S8-09); a weighed cut recovered from paper (D-S8-21); the repeat-request cooldown (D-S8-23); a settings section refusing to save over an unseen change (D-S8-26); going live retiring the demo accounts (D-S8-27); report filters and what they do not narrow (D-S8-25); search aliases only after review (D-S8-28); the stream's database `epoch` (D-S8-31); an interrupted seed detected (D-S8-29); and a bare server start never seeding (D-S8-30). |
 | `test/integration/hardening.test.ts` | 16 | Review fixes: bill adjustments (D-S8-01); payment history in the annual snapshot (D-S8-03); the retention task (D-S8-02); body size limits and the local-QR warning (D-S8-09); revoked access mid-stream and mid-upload (D-S8-08); PIN lockout escalation (D-S8-07); sign-in and join budgets (D-S8-10); demo accounts in live mode (D-S8-11); the availability log (D-S8-12); server-side price hiding (D-S8-17). |
 
 ## Brief 31: acceptance scenarios
@@ -307,7 +329,9 @@ Brief 43 checks that are only partly proven:
   Noto Sans Thai, Oswald and Cormorant; no system fallback) and real Thai
   text. The snapshot tests check the report data (coverage and totals). The
   printed layout was reviewed from the print-rendered HTML of a full-year
-  report (see Latest result). The PDF pages themselves were not rasterised.
+  report (see Latest result), and four pages of the PDF file itself were
+  rasterised and looked at (`npm run pdf:pages`). No automated test compares
+  rendered pages, and no full 520-page read-through was done.
 - **The "service not frozen" check.** It only runs when the test catches the
   job while it is generating. The test prints which case happened. In runs 2
   and 3 of the earlier session, an order went through in 15 ms while the PDF was generating, and in the latest run in 24 ms.
@@ -349,18 +373,18 @@ These are documented by the tests as current behaviour, or reported without an a
 - **Refund after checkout.** It is reported as a refund, not as a payment exception or unpaid (D-S8-04).
 - **Retention.** A daily task now applies the retention settings (D-S8-02, `hardening.test.ts`).
 - **Browser suites and scenario 13.** `npm run e2e` and `npm run shots` exist (D-DT-04).
+- **Weighing note visible to guests.** It was listed as a possible leak; it is deliberate. The note staff write with a weighed-cut quote is addressed to that guest and is shown under "From the restaurant" / "ข้อความจากร้าน" (`portion.staffNote`), in the staff member's own words (brief 44A).
 
 **Still open**
 
-- **Weighing note visible to guests.** The guest's portion quote includes the staff weighing note (`quote.note`). This may be intentional (brief 44A).
 - **Exception close from Dining.** A manager's exception close from a table still in Dining answers `invalid_transition`: the table must be moved to Checking out first. This is a product question (`billing.test.ts`).
 - **Over-long active-time chunk.** The brief says reject it. The server follows D-S6-08: 120 s to 24 h is capped at 120 s, and longer than that, longer than the session, or 0 is rejected. The test follows D-S6-08.
 - **Opt-out attribution.** Attribution uses the session's *current* opt-out flag, so opting back in under the same session id would attribute earlier rounds after the fact. The browser client always starts a new session (D-C3-01).
 - **CSV consistency.** The annual `engagement_events.csv` includes `visit_id`; the dashboard raw-events CSV omits it (D-S6-12).
 - **PDF size.** A 20-page PDF for a year with no orders is about 7.4 MB, because font subsets are embedded repeatedly. The full synthetic 2025 is 520 pages and 14.4 MB.
 - **`divRoundHalfUp(-4, 10)` returns `-0`.** It serialises as `0`.
-- **Conditional skips.** `insights.test.ts` "the current week is compared…" skips from 23:58 to 00:01 Bangkok time; it skipped in the latest run, which crossed that window. The two PDF tests in `reports.test.ts` skip if no Edge or Chrome can be launched; they ran.
-- **Visual audit notes.** Some notes need a person's decision. The first run flagged Your order's slip subtitle at 320 px with a Thai line height of 1.30 (`slip__sub`). The list from the latest run is in `test/visual/out/report.json`.
+- **Conditional skips.** `insights.test.ts` "the current week is compared…" skips from 23:58 to 00:01 Bangkok time; nothing skipped in the latest runs (0 skipped), but a run crossing midnight will skip it. The two PDF tests in `reports.test.ts` skip if no Edge or Chrome can be launched; they ran.
+- **Visual audit notes.** Some notes need a person's decision: the six kinds listed under [Visual QA](#visual-qa-npm-run-shots). The full list from the latest run is in `test/visual/out/report.json`.
 - **Not covered by any suite:**
   - a lost submit response in the browser
   - the on-screen keyboard over notes

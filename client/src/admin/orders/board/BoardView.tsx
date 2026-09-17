@@ -1,8 +1,8 @@
 // The live fulfilment board (brief 19, 35; DESIGN §8.2, §10.16-10.18):
 // floor strip, toolbar, five columns (one filtered list on tablets and
 // phones), counted actions, the ⋯ details panel and Finish order.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CatalogDTO, OrderLineDTO, StaffOrderDTO, TablesDTO } from '../../../../../shared/dto.ts';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { OrderLineDTO, StaffOrderDTO, TablesDTO } from '../../../../../shared/dto.ts';
 import type { LineStatus } from '../../../../../shared/status.ts';
 import { clock } from '../../../lib/format.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
@@ -25,7 +25,7 @@ import {
   type Placement, type SortKey,
 } from './model.ts';
 import { OrderDetails } from './OrderDetails.tsx';
-import { linesCarryConfirm, OrderTicket } from './OrderTicket.tsx';
+import { OrderTicket } from './OrderTicket.tsx';
 import { ReadyPartList, type ReadyPart } from './ReadyParts.tsx';
 import { ServedList } from './ServedList.tsx';
 import { useNewRoundAlerts } from './alerts.ts';
@@ -105,6 +105,16 @@ export default function BoardView() {
   const narrow = useMedia('(max-width: 1199px)');
   const phone = useMedia('(max-width: 767px)');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // The filter row is hidden behind a button on phones. Rotating a tablet (or
+  // any resize across 768px) must not pull it out from under the person using
+  // it: keep it open while it holds the focus. This runs before the browser
+  // decides to blur a hidden element, so the focus survives the change.
+  const filtersRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!phone || filtersOpen) return;
+    const active = document.activeElement;
+    if (active && filtersRef.current?.contains(active)) setFiltersOpen(true);
+  }, [phone, filtersOpen]);
 
   const res = useResource<OrdersResponse>('/api/staff/orders?scope=active', { topics: ['order.', 'line.'], intervalMs: SAFETY_REFRESH_MS });
   const canTables = can('tables.view');
@@ -112,11 +122,6 @@ export default function BoardView() {
     topics: ['table.', 'visit.', 'order.', 'line.', 'service.', 'portion.', 'bill.'],
     intervalMs: SAFETY_REFRESH_MS,
   });
-  // Lines carry their own staff-confirmation snapshot once the server sends it;
-  // until then the live menu's alcohol flag stands in (D-FX-OPS-02).
-  const needMenu = Boolean(res.data) && !res.data!.orders.every((o) => linesCarryConfirm(o.lines));
-  const menu = useResource<CatalogDTO>(needMenu ? '/api/public/menu' : null, { topics: ['menu.'] });
-  const alcoholItems = useMemo(() => new Set((menu.data?.items ?? []).filter((i) => i.alcohol).map((i) => i.id)), [menu.data]);
 
   const actions = useBoardActions(res);
 
@@ -388,7 +393,6 @@ export default function BoardView() {
       fresh={fresh.has(r.order.id)}
       busy={busyOf(actions.busy[r.order.id])}
       conflict={actions.conflicts[r.order.id] ?? null}
-      alcoholItems={alcoholItems}
       showMoney={can('orders.view_bill_values')}
       can={can}
       onAdvance={onAdvance}
@@ -550,8 +554,8 @@ export default function BoardView() {
         </div>
       ) : null}
 
-      {!phone || filtersOpen ? (
-      <div id="ob-filters">
+      {/* Always mounted so a resize keeps the filters' state and focus. */}
+      <div id="ob-filters" ref={filtersRef} hidden={phone && !filtersOpen}>
       <BoardToolbar
         stationCounts={stationCounts}
         station={station}
@@ -568,7 +572,6 @@ export default function BoardView() {
         onQuery={setSearch}
       />
       </div>
-      ) : null}
 
       {res.stale ? (
         <Banner

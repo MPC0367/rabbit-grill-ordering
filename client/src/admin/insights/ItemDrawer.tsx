@@ -28,6 +28,7 @@ export function ItemDrawer({ row, ps, includeFixture, image, onClose }: {
   const d = item.data;
   const th = row.name.th;
   const cat = pick(row.category);
+  const namePick = pick(row.name);
 
   const lead = image ? (
     <span className="plate insx-drawer__plate" aria-hidden="true">
@@ -40,7 +41,7 @@ export function ItemDrawer({ row, ps, includeFixture, image, onClose }: {
       {th && row.name.en ? <span className="en" lang="en">{row.name.en}</span> : null}
       {th && row.name.en ? ' · ' : null}
       <span lang={cat.lang}>{cat.text}</span>
-      {pick(row.name).fallback ? <> · {t('common.enOnly')}</> : null}
+      {namePick.fallback ? <> · {t(namePick.lang === 'en' ? 'common.enOnly' : 'insights.thOnly')}</> : null}
     </>
   );
 

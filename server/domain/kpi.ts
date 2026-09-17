@@ -2,7 +2,11 @@
 // sample; totals are labelled submitted / accepted / finalized / paid and are
 // never called "revenue". Payment figures are only filled in for callers with
 // reports.financial. Definitions: docs/DECISIONS.md D-S6-10.
-import type { KpiDTO } from '../../shared/dto.ts';
+//
+// Optional table / category / staff filters (D-S8-25): a figure is narrowed
+// only when it supports every active filter, otherwise it covers everything
+// and is named in `unfiltered` (see kpi-filters.ts).
+import type { KpiDTO, KpiFigureKey } from '../../shared/dto.ts';
 import { divRoundHalfUp } from '../../shared/money.ts';
 import { SERVICE_TYPES, type ServiceType } from '../../shared/status.ts';
 import { bangkokParts, nowIso } from '../../shared/time.ts';
@@ -12,8 +16,12 @@ import {
   CHARGEABLE_SQL, acceptanceSeconds, businessHours, distribution, fixtureSql, resolvePeriod, secondsBetween,
   type StatsParams,
 } from './aggregates.ts';
+import {
+  anyFilter, figureFilters, filterOptions, lineFilter, orderFilter, paymentFilter, requestFilter, resolveFilters,
+  unfilteredFigures, visitFilter, type KpiFilterInput, type KpiFilters,
+} from './kpi-filters.ts';
 
-export interface KpiParams extends StatsParams {
+export interface KpiParams extends StatsParams, KpiFilterInput {
   /** Caller holds reports.financial (payment exceptions and paid totals). */
   financial?: boolean;
 }
@@ -30,42 +38,67 @@ export function kpis(q: KpiParams): KpiDTO {
   const range = { from, to };
   const fo = fixtureSql('o', include);
 
+  // Requested filters, validated against real records. `on(figure)` gives the
+  // filters that figure may use: all of them, or none at all.
+  const filters = resolveFilters(q);
+  const on = (figure: KpiFigureKey): KpiFilters => figureFilters(filters, figure);
+
   // ---- QR adoption: visits seated in range that ordered through a channel
   // where the QR was usable (any round other than manual recovery) and had at
   // least one customer-origin round.
+  const adoptionF = visitFilter(on('qr_adoption'));
   const adoption = one<{ eligible: number; adopted: number }>(
     `SELECT COALESCE(SUM(eligible), 0) AS eligible, COALESCE(SUM(eligible AND adopted), 0) AS adopted FROM (
        SELECT v.id,
               MAX(o.source IN ('guest', 'staff', 'portion_quote')) AS eligible,
               MAX(o.source = 'guest' OR (o.source = 'portion_quote' AND o.guest_session_id IS NOT NULL)) AS adopted
          FROM visits v INDEXED BY visits_seated_date JOIN orders o ON o.visit_id = v.id
-        WHERE v.seated_business_date BETWEEN :from AND :to AND ${fixtureSql('v', include)}
-        GROUP BY v.id)`, range)!;
+        WHERE v.seated_business_date BETWEEN :from AND :to AND ${fixtureSql('v', include)}${adoptionF.sql}
+        GROUP BY v.id)`, { ...range, ...adoptionF.params })!;
 
   // ---- Guest order time: per visit, join of the guest session that placed the
   // visit's first guest round -> that round.
+  const timeF = orderFilter(on('guest_order_time'));
   const orderTimes = many<{ s: string; j: string }>(
     `SELECT o.submitted_at AS s, gs.created_at AS j
        FROM orders o JOIN guest_sessions gs ON gs.id = o.guest_session_id
-      WHERE o.source = 'guest' AND o.business_date BETWEEN :from AND :to AND ${fo}
+      WHERE o.source = 'guest' AND o.business_date BETWEEN :from AND :to AND ${fo}${timeF.sql}
         AND NOT EXISTS (SELECT 1 FROM orders p WHERE p.visit_id = o.visit_id AND p.source = 'guest'
                          AND (p.submitted_at < o.submitted_at OR (p.submitted_at = o.submitted_at AND p.id < o.id)))`,
-    range,
+    { ...range, ...timeF.params },
   ).map((r) => secondsBetween(r.j, r.s)).filter((s) => s >= 0);
   const orderTime = distribution(orderTimes);
 
   // ---- Round values (current line statuses; charges and bill adjustments excluded).
   // INDEXED BY keeps the per-round GROUP BY on the date range (see stats.ts).
+  // A category filter counts that category's dishes only, in the rounds that have them.
+  const valuesF = lineFilter(on('average_order_value'));
   const values = one<{ submitted: number; accepted: number; rounds: number }>(
     `SELECT COALESCE(SUM(sub), 0) AS submitted, COALESCE(SUM(acc), 0) AS accepted, COALESCE(SUM(n > 0), 0) AS rounds FROM (
        SELECT o.id, SUM(l.line_total_minor) AS sub,
               SUM(CASE WHEN l.status IN ${CHARGEABLE_SQL} THEN l.line_total_minor ELSE 0 END) AS acc,
               SUM(CASE WHEN l.status IN ${CHARGEABLE_SQL} THEN 1 ELSE 0 END) AS n
          FROM orders o INDEXED BY orders_business_date JOIN order_lines l ON l.order_id = o.id
-        WHERE o.business_date BETWEEN :from AND :to AND ${fo}
-        GROUP BY o.id)`, range)!;
+        WHERE o.business_date BETWEEN :from AND :to AND ${fo}${valuesF.sql}
+        GROUP BY o.id)`, { ...range, ...valuesF.params })!;
+  // The submitted/accepted totals are their own figure; they are only equal to
+  // the values above when both use the same filters.
+  const totalsF = lineFilter(on('totals'));
+  const totals = valuesF.sql === totalsF.sql
+    ? values
+    : one<{ submitted: number; accepted: number; rounds: number }>(
+      `SELECT COALESCE(SUM(sub), 0) AS submitted, COALESCE(SUM(acc), 0) AS accepted, COALESCE(SUM(n > 0), 0) AS rounds FROM (
+         SELECT o.id, SUM(l.line_total_minor) AS sub,
+                SUM(CASE WHEN l.status IN ${CHARGEABLE_SQL} THEN l.line_total_minor ELSE 0 END) AS acc,
+                SUM(CASE WHEN l.status IN ${CHARGEABLE_SQL} THEN 1 ELSE 0 END) AS n
+           FROM orders o INDEXED BY orders_business_date JOIN order_lines l ON l.order_id = o.id
+          WHERE o.business_date BETWEEN :from AND :to AND ${fo}${totalsF.sql}
+          GROUP BY o.id)`, { ...range, ...totalsF.params })!;
 
   // ---- Finalized bills: the current (non-superseded) revision, by its finalize date.
+  // Bills belong to a table and a party, never to one dish category or one
+  // person, so table is the only filter these figures take.
+  const billF = visitFilter(on('average_table_value'));
   const revisions = many<{ id: string; total_minor: number; business_date: string; visit_status: string; settled: number | null; refunded: number | null }>(
     `SELECT r.id, r.total_minor, r.business_date, v.status AS visit_status,
             (SELECT p.amount_minor FROM payments p
@@ -76,8 +109,8 @@ export function kpis(q: KpiParams): KpiDTO {
        FROM bills b
        JOIN bill_revisions r ON r.id = b.current_revision_id
        JOIN visits v ON v.id = b.visit_id
-      WHERE r.status IN ('payable', 'settled') AND r.business_date BETWEEN :from AND :to AND ${fixtureSql('r', include)}`,
-    range,
+      WHERE r.status IN ('payable', 'settled') AND r.business_date BETWEEN :from AND :to AND ${fixtureSql('r', include)}${billF.sql}`,
+    { ...range, ...billF.params },
   );
   const finalizedTotal = revisions.reduce((s, r) => s + r.total_minor, 0);
 
@@ -104,24 +137,32 @@ export function kpis(q: KpiParams): KpiDTO {
         exceptions.value_minor += Math.abs(r.total_minor - r.settled);
       }
     }
+    const paidF = paymentFilter(on('totals'));
     paid = one<{ v: number }>(
       `SELECT COALESCE(SUM(p.amount_minor), 0) AS v FROM payments p
         WHERE p.kind = 'settlement' AND p.status = 'confirmed' AND p.business_date BETWEEN :from AND :to
-          AND ${fixtureSql('p', include)}`, range)!.v;
+          AND ${fixtureSql('p', include)}${paidF.sql}`, { ...range, ...paidF.params })!.v;
   }
 
   // ---- Operational errors: rounds with a rejected line or a correction.
-  const submittedRounds = one<{ n: number }>(`SELECT COUNT(*) AS n FROM orders o WHERE o.business_date BETWEEN :from AND :to AND ${fo}`, range)!.n;
+  const errF = lineFilter(on('operational_errors'));
+  const errOrderF = orderFilter(on('operational_errors'));
+  const submittedRounds = one<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM orders o WHERE o.business_date BETWEEN :from AND :to AND ${fo}${errOrderF.sql}`,
+    { ...range, ...errOrderF.params })!.n;
   const errorRows = [
     ...many<{ order_id: string; reason: string }>(
       `SELECT l.order_id, ${reasonSql('l.status_reason')} AS reason
          FROM order_lines l JOIN orders o ON o.id = l.order_id
-        WHERE l.status = 'rejected' AND o.business_date BETWEEN :from AND :to AND ${fo}`, range)
+        WHERE l.status = 'rejected' AND o.business_date BETWEEN :from AND :to AND ${fo}${errF.sql}`,
+      { ...range, ...errF.params })
       .map((r) => ({ ...r, kind: 'rejected' as const })),
     ...many<{ order_id: string; reason: string }>(
       `SELECT e.order_id, ${reasonSql('e.reason')} AS reason
          FROM line_events e JOIN orders o ON o.id = e.order_id
-        WHERE e.kind = 'correction' AND o.business_date BETWEEN :from AND :to AND ${fo}`, range)
+         JOIN order_lines l ON l.id = e.line_id
+        WHERE e.kind = 'correction' AND o.business_date BETWEEN :from AND :to AND ${fo}${errF.sql}`,
+      { ...range, ...errF.params })
       .map((r) => ({ ...r, kind: 'corrected' as const })),
   ];
   const errorRounds = new Set(errorRows.map((r) => r.order_id));
@@ -137,44 +178,52 @@ export function kpis(q: KpiParams): KpiDTO {
   // ---- Staff response: rounds to first acceptance; service requests to the first
   // staff response. Staff completion stamps acknowledged_at (D-21); a bill request
   // completed by checkout has none and is not a response, so it is left out.
-  const accept = distribution(acceptanceSeconds(from, to, include));
+  const accept = distribution(acceptanceSeconds(from, to, include, orderFilter(on('accept'))));
+  const ackF = requestFilter(on('ack'));
   const ack = distribution(many<{ c: string; r: string }>(
     `SELECT s.created_at AS c,
             COALESCE(s.acknowledged_at, CASE WHEN s.close_reason IS NULL THEN s.completed_at END) AS r
        FROM service_requests s
-      WHERE s.business_date BETWEEN :from AND :to AND ${fixtureSql('s', include)}
-        AND COALESCE(s.acknowledged_at, CASE WHEN s.close_reason IS NULL THEN s.completed_at END) IS NOT NULL`, range)
+      WHERE s.business_date BETWEEN :from AND :to AND ${fixtureSql('s', include)}${ackF.sql}
+        AND COALESCE(s.acknowledged_at, CASE WHEN s.close_reason IS NULL THEN s.completed_at END) IS NOT NULL`,
+    { ...range, ...ackF.params })
     .map((x) => secondsBetween(x.c, x.r)).filter((s) => s >= 0));
 
   // ---- Cancellations (lines) by reason.
+  const cancelF = lineFilter(on('cancellations'));
   const cancellations = many<{ reason: string; count: number; value_minor: number }>(
     `SELECT ${reasonSql('l.status_reason')} AS reason, COUNT(*) AS count, COALESCE(SUM(l.line_total_minor), 0) AS value_minor
        FROM order_lines l JOIN orders o ON o.id = l.order_id
-      WHERE l.status = 'cancelled' AND o.business_date BETWEEN :from AND :to AND ${fo}
-      GROUP BY reason`, range)
+      WHERE l.status = 'cancelled' AND o.business_date BETWEEN :from AND :to AND ${fo}${cancelF.sql}
+      GROUP BY reason`, { ...range, ...cancelF.params })
     .map((r) => ({ reason: r.reason, count: r.count, value_minor: r.value_minor }))
     .sort(sortCount);
 
   // ---- Rounds by Bangkok hour (recovered paper orders use their original time).
+  const hourF = orderFilter(on('hourly'));
   const hours = new Map(businessHours(clock.cutoff).map((h) => [h, 0]));
   for (const r of many<{ at: string }>(
     `SELECT COALESCE(o.manual_original_time, o.submitted_at) AS at FROM orders o
-      WHERE o.business_date BETWEEN :from AND :to AND ${fo}`, range)) {
+      WHERE o.business_date BETWEEN :from AND :to AND ${fo}${hourF.sql}`, { ...range, ...hourF.params })) {
     const h = bangkokParts(r.at).hour;
     hours.set(h, (hours.get(h) ?? 0) + 1);
   }
 
   // ---- Current open bills: active visits with chargeable lines and no settled bill.
+  const openF = visitFilter(on('open_bills'));
   const openBills = one<{ n: number }>(
     `SELECT COUNT(*) AS n FROM visits v
-      WHERE v.status <> 'closed' AND ${fixtureSql('v', include)}
+      WHERE v.status <> 'closed' AND ${fixtureSql('v', include)}${openF.sql}
         AND EXISTS (SELECT 1 FROM order_lines l WHERE l.visit_id = v.id AND l.status IN ${CHARGEABLE_SQL})
-        AND NOT EXISTS (SELECT 1 FROM bills b WHERE b.visit_id = v.id AND b.status = 'settled')`)!.n;
+        AND NOT EXISTS (SELECT 1 FROM bills b WHERE b.visit_id = v.id AND b.status = 'settled')`,
+    openF.params)!.n;
 
   // ---- Service requests by type (enabled types always listed).
+  const reqF = requestFilter(on('service_requests'));
   const requestCounts = new Map(many<{ type: ServiceType; n: number }>(
     `SELECT s.type, COUNT(*) AS n FROM service_requests s
-      WHERE s.business_date BETWEEN :from AND :to AND ${fixtureSql('s', include)} GROUP BY s.type`, range).map((r) => [r.type, r.n]));
+      WHERE s.business_date BETWEEN :from AND :to AND ${fixtureSql('s', include)}${reqF.sql} GROUP BY s.type`,
+    { ...range, ...reqF.params }).map((r) => [r.type, r.n]));
   const enabled = getSettings().services;
   const serviceRequests = SERVICE_TYPES
     .filter((t) => enabled[t] || requestCounts.has(t))
@@ -199,7 +248,7 @@ export function kpis(q: KpiParams): KpiDTO {
       ack_median_s: ack.median, ack_p90_s: ack.p90,
       accept_sample: accept.sample, ack_sample: ack.sample,
     },
-    totals: { submitted_minor: values.submitted, accepted_minor: values.accepted, finalized_minor: finalizedTotal, paid_minor: financial ? paid : 0 },
+    totals: { submitted_minor: totals.submitted, accepted_minor: totals.accepted, finalized_minor: finalizedTotal, paid_minor: financial ? paid : 0 },
     cancellations,
     hourly: [...hours].map(([hour, rounds]) => ({ hour, rounds })),
     open_bills: openBills,
@@ -211,5 +260,8 @@ export function kpis(q: KpiParams): KpiDTO {
     error_rounds: errorRounds.size,
     financial_visible: financial,
     generated_at: nowIso(),
+    filters,
+    filter_options: filterOptions(filters, include),
+    unfiltered: anyFilter(filters) ? unfilteredFigures(filters) : [],
   };
 }

@@ -94,7 +94,12 @@ export interface BoardStatusSwitchProps {
   className?: string;
 }
 
-/** Tablet and phone: choose the one status column to show (New · Accepted · Preparing · Almost done · Ready). */
+/**
+ * Tablet and phone: choose the one status column to show (New · Accepted ·
+ * Preparing · Almost done · Ready). Rounds still to accept carry the same
+ * weight as the ink "New" column head: "New · 3" is an ink chip, and its
+ * spoken name says what the number is.
+ */
 export function BoardStatusSwitch({ counts, value, onChange, className }: BoardStatusSwitchProps) {
   const { t } = useI18n();
   return (
@@ -104,7 +109,18 @@ export function BoardStatusSwitch({ counts, value, onChange, className }: BoardS
         label={t('common.board.status')}
         value={value}
         onChange={onChange}
-        options={BOARD_STAGES.map((s) => ({ value: s, label: t(`common.staff.status.${s}`), count: counts[s] ?? 0 }))}
+        options={BOARD_STAGES.map((s) => {
+          const count = counts[s] ?? 0;
+          const label = t(`common.staff.status.${s}`);
+          const waiting = s === 'submitted' && count > 0;
+          return {
+            value: s,
+            label,
+            count,
+            emphasis: waiting,
+            ariaLabel: waiting ? `${label} · ${t('common.board.waitingAccept', { n: count })}` : undefined,
+          };
+        })}
       />
     </div>
   );

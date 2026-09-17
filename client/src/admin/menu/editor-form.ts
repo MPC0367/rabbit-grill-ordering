@@ -1,6 +1,7 @@
 // Item editor form model (C6): text inputs <-> AdminItemDTO, the minimal
 // PATCH body (only what changed), price-change detection and validation.
 import type { AdminItemDTO } from '../../../../shared/dto.ts';
+import { ALIAS_MAX, ALIASES_PER_ITEM } from '../../../../shared/schemas.ts';
 import type { PricingType, Station } from '../../../../shared/status.ts';
 import { bahtTextToMinor, intText, minorToBahtText } from './model.tsx';
 
@@ -20,6 +21,10 @@ export interface ItemForm {
   desc_th: string;
   desc_en: string;
   desc_verified: boolean;
+  /** Search aliases as typed: one per line or separated by commas (never printed). */
+  aliases_th: string;
+  aliases_en: string;
+  aliases_verified: boolean;
   category_id: string;
   pricing_type: PricingType;
   price: string;
@@ -35,6 +40,8 @@ export interface ItemForm {
   note_max: string;
   max_qty: string;
   station: Station;
+  /** Guest wording while the kitchen works on it; empty = the category default (D-S8-18). */
+  prep_kind: '' | 'cook' | 'prepare';
   alcohol: boolean;
   requires_staff_confirm: boolean;
   modifier_group_ids: string[];
@@ -68,6 +75,9 @@ export function formOf(item: AdminItemDTO): ItemForm {
     desc_th: item.description_admin.th ?? '',
     desc_en: item.description_admin.en ?? '',
     desc_verified: item.desc_verified,
+    aliases_th: (item.aliases_th ?? []).join(', '),
+    aliases_en: (item.aliases_en ?? []).join(', '),
+    aliases_verified: item.aliases_verified ?? false,
     category_id: item.category_id,
     pricing_type: item.pricing_type,
     price: minorToBahtText(item.price_minor),
@@ -83,6 +93,7 @@ export function formOf(item: AdminItemDTO): ItemForm {
     note_max: String(item.note_max),
     max_qty: String(item.max_qty),
     station: item.station,
+    prep_kind: item.prep_kind_override ?? '',
     alcohol: item.alcohol,
     requires_staff_confirm: item.requires_staff_confirm,
     modifier_group_ids: [...item.modifier_group_ids],
@@ -92,6 +103,16 @@ export function formOf(item: AdminItemDTO): ItemForm {
 }
 
 const orNull = (s: string): string | null => (s.trim() ? s.trim() : null);
+
+/** Typed aliases -> the list the API takes: one per line or comma separated, no blanks, no repeats. */
+export function aliasList(text: string): string[] {
+  const out: string[] = [];
+  for (const part of text.split(/[\n,]/)) {
+    const a = part.trim().replace(/\s+/g, ' ');
+    if (a && !out.includes(a)) out.push(a);
+  }
+  return out;
+}
 
 export type FormErrors = Partial<Record<string, string>>;
 
@@ -133,6 +154,15 @@ export function buildPatch(form: ItemForm, base: AdminItemDTO, opts: { canReview
   text('desc_th');
   text('desc_en');
   if (opts.canReview && form.desc_verified !== was.desc_verified) { body.desc_verified = form.desc_verified; changed.push('desc_verified'); }
+
+  // Search aliases (D-S8-28): a plain list, never printed, published only once a reviewer approves them.
+  for (const k of ['aliases_th', 'aliases_en'] as const) {
+    const now = aliasList(form[k]);
+    if (now.length > ALIASES_PER_ITEM) errors[k] = t('catalog.editor.aliasTooMany', { n: ALIASES_PER_ITEM });
+    else if (now.some((a) => a.length > ALIAS_MAX)) errors[k] = t('catalog.editor.aliasTooLong', { n: ALIAS_MAX });
+    else if (JSON.stringify(now) !== JSON.stringify(aliasList(was[k]))) { body[k] = now; changed.push(k); }
+  }
+  if (opts.canReview && form.aliases_verified !== was.aliases_verified) { body.aliases_verified = form.aliases_verified; changed.push('aliases_verified'); }
   if (form.category_id !== was.category_id) { body.category_id = form.category_id; changed.push('category_id'); }
 
   // pricing
@@ -206,6 +236,7 @@ export function buildPatch(form: ItemForm, base: AdminItemDTO, opts: { canReview
   if (maxQty === undefined || maxQty === null) errors.max_qty = t('catalog.groups.numberRule', { min: 1, max: 99 });
   else if (maxQty !== intText(was.max_qty, 1, 99)) { body.max_qty = maxQty; changed.push('max_qty'); }
   if (form.station !== was.station) { body.station = form.station; changed.push('station'); }
+  if (form.prep_kind !== was.prep_kind) { body.prep_kind = form.prep_kind || null; changed.push('prep_kind'); }
   if (form.alcohol !== was.alcohol) { body.alcohol = form.alcohol; changed.push('alcohol'); }
   if (form.requires_staff_confirm !== was.requires_staff_confirm) { body.requires_staff_confirm = form.requires_staff_confirm; changed.push('requires_staff_confirm'); }
   if (form.modifier_group_ids.join('|') !== was.modifier_group_ids.join('|')) { body.modifier_group_ids = form.modifier_group_ids; changed.push('modifier_group_ids'); }
@@ -230,6 +261,7 @@ export function fieldValue(form: ItemForm, key: string, t: T, groupName: (id: st
   if (key === 'category_id') return categoryName(form.category_id);
   if (key === 'pricing_type') return t(`catalog.pricing.${form.pricing_type}`);
   if (key === 'station') return t(`catalog.station.${form.station}`);
+  if (key === 'prep_kind') return form.prep_kind ? t(`catalog.prep.${form.prep_kind}`) : t('catalog.prep.auto');
   if (key === 'price' || key === 'rate') return v ? `฿${String(v)}` : '—';
   if (typeof v === 'boolean') return v ? t('common.yes') : t('common.no');
   return typeof v === 'string' && v.trim() ? v : '—';

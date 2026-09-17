@@ -9,6 +9,7 @@
 // form steps aside with a calm note, and says so when words were lost.
 import { useEffect, useId, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../../lib/api.ts';
+import { clock } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { Button, Card, Icon, SegmentedControl, TextArea, announce } from '../../ui/index.ts';
 import { attemptKey, errorWords, setVisitFlag, settleKey, settleUnlessAmbiguous, visitFlag } from './lib.ts';
@@ -57,6 +58,25 @@ export function hasUnsentFeedback(visitId: string): boolean {
   return Boolean(d && !d.sent && (d.rating || d.comment.trim()));
 }
 
+/**
+ * The visit of the draft this tab is keeping, when the session itself is gone:
+ * a reload right after checkout leaves the ended page without a visit id, and
+ * the words the guest typed would otherwise be unreachable. This tab keeps at
+ * most one draft; an old one is ignored (the API stops taking it anyway).
+ */
+export function keptFeedbackVisit(maxAgeMs = 30 * 60_000): string | null {
+  try {
+    for (let i = 0; i < window.sessionStorage.length; i++) {
+      const k = window.sessionStorage.key(i);
+      if (!k?.startsWith(DRAFT_PREFIX)) continue;
+      const visitId = k.slice(DRAFT_PREFIX.length);
+      const d = readFeedbackDraft(visitId);
+      if (d && !d.sent && (d.rating || d.comment.trim()) && Date.now() - d.at <= maxAgeMs) return visitId;
+    }
+  } catch { /* private mode */ }
+  return null;
+}
+
 export function feedbackSent(visitId: string): boolean {
   return visitFlag(visitId, 'feedback') || readFeedbackDraft(visitId)?.sent === true;
 }
@@ -73,7 +93,12 @@ function markSent(visitId: string): void {
 }
 
 // ------------------------------------------------------------------ form
-export function FeedbackForm({ visitId, onClosed }: { visitId: string; onClosed?: (lostDraft: boolean) => void }) {
+export function FeedbackForm({ visitId, until, onClosed }: {
+  visitId: string;
+  /** End of the grace period after checkout (from the eligibility endpoint), when there is one. */
+  until?: string | null;
+  onClosed?: (lostDraft: boolean) => void;
+}) {
   const { t, has } = useI18n();
   const [initial] = useState(() => readFeedbackDraft(visitId));
   const [rating, setRating] = useState<Rating>(initial?.rating ?? '');
@@ -155,7 +180,10 @@ export function FeedbackForm({ visitId, onClosed }: { visitId: string; onClosed?
   return (
     <Card as="section" className="vfeedback" aria-labelledby={titleId}>
       <h2 id={titleId}>{t('feedback.title')}</h2>
-      <p className="vfeedback__lead">{t('feedback.lead')}</p>
+      <p className="vfeedback__lead">
+        {t('feedback.lead')}
+        {until ? <><br />{t('feedback.until', { time: clock(until) })}</> : null}
+      </p>
       <form onSubmit={submit} noValidate className="vfeedback__form">
         <fieldset>
           <legend>{t('feedback.rating')} <small className="meta">{t('common.optional')}</small></legend>

@@ -12,6 +12,7 @@ import { config } from '../config.ts';
 import { tx } from '../db/index.ts';
 import { clearGuestCookie, guestOf, issueGuestCookie, requireGuest, requireStaff, resolveGuest, staffOf, type GuestContext } from '../lib/auth.ts';
 import { AppError } from '../lib/errors.ts';
+import { getSettings } from '../lib/settings.ts';
 import { body, clientIp } from '../lib/http.ts';
 import { assertUnderLimit, hit, LIMITS } from '../lib/ratelimit.ts';
 import {
@@ -160,7 +161,13 @@ export const tablesStaff = new Hono<AppEnv>()
     });
     const cards = await Promise.all(rows.map(async (r) => ({ ...r, svg: await qrSvg(r.url) })));
     // qr_base_is_local: PUBLIC_BASE_URL points at this computer, so printed cards would not open on phones.
-    return c.json({ cards, qr_base_url: config.publicBaseUrl, qr_base_is_local: qrBaseIsLocal() });
+    // pin_required: a card printed while PINs are off must not tell guests to ask for a table code.
+    return c.json({
+      cards,
+      qr_base_url: config.publicBaseUrl,
+      qr_base_is_local: qrBaseIsLocal(),
+      pin_required: getSettings().join.pin_required,
+    });
   })
 
   .patch('/tables/:id', requireStaff(), async (c) => {

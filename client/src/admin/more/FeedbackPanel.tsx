@@ -1,9 +1,9 @@
 // Guest feedback in the operational report (brief 15, 26): the ratings and
-// comments guests leave before checkout, read-only, for the chosen range.
-// Data: GET /api/staff/feedback (reports.view). The panel stays hidden while
-// the server does not offer that endpoint, so nothing is shown as working
-// before it is. Feedback is never pushed on the live stream; the list is
-// refetched when the range changes and when visits change.
+// comments guests leave from their phone, read-only, for the chosen range.
+// Data: GET /api/staff/feedback (reports.view, D-S8-22). Only a permission
+// refusal hides the panel; anything else is a failed read the reader can
+// retry. Feedback is never pushed on the live stream, so the list is refetched
+// when the range changes and when visits change.
 import { useState } from 'react';
 import type { ApiError } from '../../lib/api.ts';
 import { dateTime, num } from '../../lib/format.ts';
@@ -16,9 +16,13 @@ import { langOf, useErrorWords } from './shared.tsx';
 const FIRST = 6;
 const SCORES = [5, 4, 3, 2, 1] as const;
 
-/** The server does not offer feedback to this account (older server, or no permission). */
+/**
+ * The endpoint exists (D-S8-22); only a permission answer hides the panel, so
+ * a viewer whose role loses reports.view mid-session sees nothing rather than
+ * an error they cannot act on. Anything else is shown as a failed read.
+ */
 export function feedbackUnavailable(error: ApiError | null): boolean {
-  return error?.code === 'not_found' || error?.code === 'forbidden';
+  return error?.code === 'forbidden';
 }
 
 export function FeedbackPanel({ res }: { res: Resource<FeedbackListDTO> }) {

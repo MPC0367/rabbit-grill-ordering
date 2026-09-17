@@ -10,12 +10,18 @@ openDatabase();
 const applied = migrate();
 if (applied.length) console.log(`[db] applied ${applied.join(', ')}`);
 
-if (config.seedDemo) {
-  if (config.production) {
-    console.warn('[seed] SEED_DEMO is ignored in production.');
-  } else {
-    const { seedIfEmpty } = await import('./db/seed.ts');
-    await seedIfEmpty({ history: config.seedHistory });
+// Demo fixtures are seeded only when SEED_DEMO says so (D-S8-30); an
+// interrupted seed is reported whether or not this process would seed.
+{
+  const { partialSeed, seedIfEmpty } = await import('./db/seed.ts');
+  const interrupted = partialSeed();
+  if (interrupted) {
+    console.warn(`[seed] WARNING: this database holds an interrupted demo seed${interrupted.at ? ` (started ${interrupted.at})` : ''}.`
+      + ' Its fixture history is incomplete. Run "npm run db:reset" and seed again.');
+  }
+  if (config.seedDemo) {
+    if (config.production) console.warn('[seed] SEED_DEMO is ignored in production.');
+    else if (!interrupted) await seedIfEmpty({ history: config.seedHistory });
   }
 }
 

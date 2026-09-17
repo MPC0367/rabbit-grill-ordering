@@ -41,6 +41,17 @@ export interface ServerCursor {
   since?: number;
   /** Database identity, when the server sends one. */
   epoch?: string | null;
+  /**
+   * The server is stating where this page stands (`hello`, the `resync`
+   * event, a poll answered with `resync: true`), so its cursor is taken as
+   * it is instead of only moving ours forward.
+   */
+  authoritative?: boolean;
+  /**
+   * `hello` only: the server replayed from this page's own Last-Event-ID, so
+   * its cursor is ours, not its newest event - a lower one is not a restore.
+   */
+  replay?: boolean;
 }
 
 /**
@@ -54,12 +65,12 @@ export function syncCursor(s: LiveCursor, server: ServerCursor): boolean {
   const epoch = server.epoch ?? null;
   const epochChanged = epoch !== null && s.epoch !== null && epoch !== s.epoch;
   if (epoch !== null) s.epoch = epoch;
-  const behind = cursor < (server.since ?? s.cursor);
+  const behind = !server.replay && cursor < (server.since ?? s.cursor);
   if (epochChanged || behind) {
     s.cursor = cursor;
     s.seen = new Set();
     return true;
   }
-  if (cursor > s.cursor) s.cursor = cursor;
+  if (server.authoritative || cursor > s.cursor) s.cursor = cursor;
   return false;
 }

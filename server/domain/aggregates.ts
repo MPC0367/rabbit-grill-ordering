@@ -498,13 +498,19 @@ export function refreshAggregates(fromDate?: string, toDate?: string, opts: { no
  * waited for acceptance: guest, staff-assisted and portion rounds. Recovered
  * paper rounds are excluded; they carry no acceptance time (D-25, D-S6-05).
  */
-export function acceptanceSeconds(from: string, to: string, include: boolean): number[] {
+export function acceptanceSeconds(
+  from: string,
+  to: string,
+  include: boolean,
+  /** Optional report filter: a ` AND ...` fragment on `o` and the parameters it uses (kpi-filters.ts). */
+  extra: { sql: string; params: Record<string, unknown> } = { sql: '', params: {} },
+): number[] {
   return many<{ s: string; a: string | null }>(
     `SELECT o.submitted_at AS s,
             COALESCE(o.first_accepted_at, (SELECT MIN(l.accepted_at) FROM order_lines l WHERE l.order_id = o.id)) AS a
        FROM orders o
-      WHERE o.business_date BETWEEN :from AND :to AND o.source <> 'manual_recovery' AND ${fixtureSql('o', include)}`,
-    { from, to },
+      WHERE o.business_date BETWEEN :from AND :to AND o.source <> 'manual_recovery' AND ${fixtureSql('o', include)}${extra.sql}`,
+    { from, to, ...extra.params },
   )
     .filter((r) => r.a !== null)
     .map((r) => secondsBetween(r.s, r.a as string))

@@ -9,7 +9,7 @@ How to use this list: work top to bottom with the owner. Tick a box when the ans
 ## 0. Before you start
 
 - [ ] **Owner account.** Create it with `npm run admin:create` on an empty database. Add one account per staff member in **More → Team** (see [OPERATIONS.md](OPERATIONS.md#first-admin)). **Blocks live.**
-- [ ] **No demo accounts.** No `demo-*` account is active. Deactivate them in **More → Team**. The app refuses to switch to live mode while one is active. **Blocks live.**
+- [ ] **No demo accounts.** No `demo-*` account is active. Deactivate them in **More → Team**, or let **Settings → Operating mode** do it: switching to live is refused while one is active, and the screen then offers "Deactivate demo accounts and switch", which retires them, signs them out and switches in one step. It is refused if you are signed in as a demo account yourself, so create your own owner first. **Blocks live.**
 - [ ] **Operating mode.** Stay in *demo* while you work through this list, then switch to *live* in **More → Settings → Operating mode** as the last step. In live mode only owner-verified items can be ordered.
 
 ## 1. Restaurant identity
@@ -43,6 +43,7 @@ In **Menu → Review**, the review queue shows these counters live. Only an **ow
 - [ ] **14 Thai dish names are our reference site's translation, not printed by you**: Prime Rib, the 7 sides, the 2 desserts and the 4 avocado dishes. Approve them or replace them (question 15).
 - [ ] **Thai spellings kept as printed** (question 17), and **English spellings kept as printed** (question 18).
 - [ ] **Thai category labels.** None are printed. Every Thai category label is our translation, and five categories have none (question 19).
+- [ ] **Search words (optional).** A dish can carry other spellings and nicknames guests may type (up to 12 each in Thai and English) in the item editor. Printed names never change, and guests search an alias only after an owner review — so they are safe to collect from staff and approve later.
 - [ ] **Guest messages you want to change**, for example the pause message. These are in **Settings → Ordering**, in both languages.
 
 ## 4. Prices and portions
@@ -79,15 +80,16 @@ In **Menu → Review**, the review queue shows these counters live. Only an **ow
 ## 8. Tables and QR cards
 
 - [ ] **Table names and count.** The demo has 12 tables labelled 01–12. That is not your floor plan. Create your real tables (and zones, if wanted) in **Tables → Manage tables & QR**.
-- [ ] **QR base address** (`PUBLIC_BASE_URL`): the LAN address or https domain guests will use. Print cards only after it is final (see [OPERATIONS.md](OPERATIONS.md)).
+- [ ] **QR base address** (`PUBLIC_BASE_URL`): the LAN address or https domain guests will use. Print cards only after it is final (see [OPERATIONS.md](OPERATIONS.md)). The print page warns when the address would only work on the computer running the app, so cards are never printed with a link no phone can open.
 - [ ] **Card placement** and a process for replacing a card when its QR is rotated.
-- [ ] **Join PIN policy.** Proposed: PIN required, 4 digits, and 5 wrong tries lock the visit for 5 minutes. A second lockout lasts 15 minutes, and a third holds until staff rotate the PIN. **Settings → Joining a table**.
+- [ ] **Join PIN policy.** Proposed: PIN required, 4 digits (4–8 allowed), and 5 wrong tries lock the visit for 5 minutes. A second lockout lasts 15 minutes, and a third holds until staff rotate the PIN. Changing the length affects the next visits seated; a party already seated keeps the code it was given, and the join screen asks for exactly that many digits. **Settings → Joining a table**.
 - [ ] **After checkout** the table becomes Available at once (brief 36). A "Needs clearing" step is not built. Say if you need it.
 
 ## 9. Service policies
 
 - [ ] **Guest service buttons.** Proposed on: Call staff, Request the bill, Ask to change an order, Ask about allergies. Proposed off: Water, Utensils, until you confirm you offer them (D-16). **Settings → Guest services**.
-- [ ] **Repeat-request cooldown.** Proposed: 45 seconds.
+- [ ] **Repeat-request cooldown.** Proposed: 45 seconds. The server holds a repeat of the same request type for this long (a reloaded phone cannot get around it), asking for the bill is never held back, and 0 switches the wait off.
+- [ ] **Feedback after the meal.** A guest may still send the short rating for **30 minutes** after checkout, from the page already open on their phone. Nothing else is possible after checkout. The ratings are in **More → Reports**, and comments are removed by the retention rule below.
 - [ ] **Opening hours.** Stored as 11:00–21:00, closed Wednesday, taken from third-party listings and **not enforced** (`hours_verified: false`, D-17). Confirm them, then decide whether ordering should close outside hours. **Settings → Ordering**.
 - [ ] **Business day cutoff.** Proposed: 00:00. Change it in **Settings → Business day** if service runs past midnight.
 - [ ] **Estimated wait.** None is shown unless staff set one when pausing. Confirm that you want it optional.
@@ -113,7 +115,7 @@ In **Menu → Review**, the review queue shows these counters live. Only an **ow
 ## 12. Analytics, privacy and retention
 
 - [ ] **Analytics notice and opt-out.** Engagement measurement is on by default, guests see a short notice, and each browser can opt out. Confirm the wording, or switch analytics off (**Settings → Menu analytics**). No legal compliance claim is made.
-- [ ] **Retention periods** (**Settings → Data retention**). Proposed: guest notes 400 days, feedback 730, raw analytics 400, audit 2,555. A daily task applies them: note and comment text is removed, raw events are deleted after their daily totals are kept, and old audit entries are deleted. Orders, bills and payments are never deleted. Confirm the periods before live use.
+- [ ] **Retention periods** (**Settings → Data retention**). Proposed: guest notes 400 days, feedback 730, raw analytics 400, audit 2,555. A daily task applies them: note and comment text is removed, raw events are deleted after their daily totals are kept (per-dish daily counts stay), and old audit entries are deleted. Orders, bills and payments are never deleted. The screen shows when the task last ran and how far raw events have been removed. Confirm the periods before live use.
 - [ ] **Backups.** Where they are kept, and who can read them. They contain staff password hashes and guest notes.
 
 ## 13. The 21 open questions from the source audit

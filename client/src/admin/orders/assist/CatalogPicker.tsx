@@ -3,7 +3,7 @@
 // note) under the dish being added. Weighed cuts go to the weighing queue.
 import { useMemo, useState } from 'react';
 import type { CatalogDTO, MenuItemDTO } from '../../../../../shared/dto.ts';
-import { allocateGroupPicks } from '../../../../../shared/money.ts';
+import { allocateGroupPicks, measuredAmount } from '../../../../../shared/money.ts';
 import { money } from '../../../lib/format.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
 import {
@@ -15,7 +15,12 @@ import { newUid, unitPrice, type DraftLine } from './draft.ts';
 
 type Group = 'food' | 'drinks';
 
-/** Reasons a paper order may still record (the food was already ordered). */
+/**
+ * A paper order already happened, so a dish that sold out or whose category
+ * was paused since then can still be recorded (D-S8-19). Nothing else can: the
+ * server re-checks every line with those two states ignored, and an unverified
+ * dish or one whose price is not approved is never recorded at that price.
+ */
 const RECOVERABLE = new Set(['sold_out', 'paused']);
 
 export interface PortionAsk { preferredGrams: number | null; note: string }
@@ -54,10 +59,19 @@ export function CatalogPicker({ catalog, mode, counts, onAdd, onPortion, portion
   }, [catalog, cats, category, q]);
 
   const allowed = (item: MenuItemDTO): { ok: boolean; reason: string | null } => {
-    if (item.pricing_type === 'measured_weight') return { ok: mode === 'assist', reason: mode === 'recover' ? t('recover.noWeighed') : null };
+    const priced = item.pricing_type === 'measured_weight'
+      // A recovered cut is priced at the approved rate; without one, nothing may be recorded.
+      ? item.rate_minor !== null && item.rate_basis_grams !== null
+      : unitPrice(item, { variant_id: item.variants[0]?.id ?? null, modifiers: [] }) !== null;
+    if (item.pricing_type === 'measured_weight' && mode === 'recover') {
+      return priced ? { ok: true, reason: t('recover.weighedHint') } : { ok: false, reason: t('assist.reason.price_pending') };
+    }
+    if (item.pricing_type === 'measured_weight') return { ok: true, reason: null };
     if (item.orderable) return { ok: true, reason: null };
     const why = item.unavailable_reason ?? 'not_orderable';
-    if (mode === 'recover' && RECOVERABLE.has(why) && unitPrice(item, { variant_id: item.variants[0]?.id ?? null, modifiers: [] }) !== null) {
+    // Sold out or paused now: the paper ticket still counts, as long as the
+    // dish has an approved price (the server checks the rest again).
+    if (mode === 'recover' && RECOVERABLE.has(why) && priced) {
       return { ok: true, reason: t(`assist.reason.${why}`) };
     }
     return { ok: false, reason: t(`assist.reason.${why}`) };
@@ -147,9 +161,10 @@ export function CatalogPicker({ catalog, mode, counts, onAdd, onPortion, portion
                         icon="scale"
                         aria-expanded={isOpen}
                         aria-disabled={locked || pState === 'sending' || undefined}
+                        aria-label={mode === 'recover' ? t('recover.weighNamed', { name: n.text }) : undefined}
                         onClick={() => setOpen(isOpen ? null : item.id)}
                       >
-                        {pState === 'sent' ? t('assist.weighSent') : t('assist.weighOpen')}
+                        {mode === 'recover' ? t('recover.weighEnter') : pState === 'sent' ? t('assist.weighSent') : t('assist.weighOpen')}
                       </Button>
                     ) : needsChooser ? (
                       <Button variant="secondary" size="staff" icon={isOpen ? 'chev-d' : 'plus'} aria-expanded={isOpen}
@@ -171,7 +186,19 @@ export function CatalogPicker({ catalog, mode, counts, onAdd, onPortion, portion
                     )}
                   </span>
                 </div>
-                {isOpen && measured ? (
+                {isOpen && measured && mode === 'recover' ? (
+                  <RecoverWeightForm
+                    item={item}
+                    onCancel={() => setOpen(null)}
+                    onAdd={(g) => {
+                      onAdd({ uid: newUid(), item_id: item.id, variant_id: null, quantity: 1, modifiers: [], note: '', allergy_note: false, measured_grams: g });
+                      setOpen(null);
+                      setFlash(item.id);
+                      setTimeout(() => setFlash(null), 1200);
+                    }}
+                  />
+                ) : null}
+                {isOpen && measured && mode === 'assist' ? (
                   <PortionAskForm
                     sent={pState === 'sent'}
                     sending={pState === 'sending'}
@@ -303,6 +330,56 @@ function Chooser({ item, onAdd, onCancel }: { item: MenuItemDTO; onAdd: (line: D
       <div className="ao-choose__foot">
         <Stepper value={qty} onChange={setQty} min={1} max={item.max_qty || 20} label={t('common.qtyOf', { name: n.text })} variant="plain" />
         <Button variant="secondary" size="staff" icon="plus" iconBold priceMinor={unit !== null ? unit * qty : undefined} onClick={add}>
+          {t('assist.addLine')}
+        </Button>
+        <Button variant="ghost" size="staff" onClick={onCancel}>{t('common.cancel')}</Button>
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ weighed cut from a paper ticket
+
+/**
+ * Paper recovery (D-S8-21): the cut was weighed during the outage, so staff
+ * enter the grams from the ticket and the line is priced at the approved rate.
+ * One cut is one line; a second cut is entered again.
+ */
+function RecoverWeightForm({ item, onAdd, onCancel }: { item: MenuItemDTO; onAdd: (grams: number) => void; onCancel: () => void }) {
+  const { t } = useI18n();
+  const [grams, setGrams] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const g = grams ? Number(grams) : null;
+  const amount = g !== null && g > 0 && item.rate_minor !== null && item.rate_basis_grams !== null
+    ? measuredAmount(g, item.rate_minor, item.rate_basis_grams)
+    : null;
+  return (
+    <div className="ao-choose ao-choose--weigh">
+      <p className="ao-choose__lede"><Icon name="scale" size="sm" /> {t('recover.weighLede')}</p>
+      <TextField
+        density="staff"
+        label={t('recover.weighLabel')}
+        help={item.rate_minor !== null ? t('assist.rate', { amount: money(item.rate_minor), n: item.rate_basis_grams ?? 100 }) : undefined}
+        inputMode="numeric"
+        suffix={t('requests.quote.unit')}
+        value={grams}
+        error={error ?? undefined}
+        onChange={(e) => { setGrams(e.currentTarget.value.replace(/[^\d]/g, '').slice(0, 4)); setError(null); }}
+      />
+      <p className="ao-choose__ok" aria-live="polite">
+        {amount !== null ? t('recover.weighAmount', { amount: money(amount) }) : ''}
+      </p>
+      <div className="ao-choose__foot">
+        <Button
+          variant="secondary"
+          size="staff"
+          icon="plus"
+          iconBold
+          onClick={() => {
+            if (g === null || g < 1 || g > 10_000) { setError(t('recover.weighRange')); return; }
+            onAdd(g);
+          }}
+        >
           {t('assist.addLine')}
         </Button>
         <Button variant="ghost" size="staff" onClick={onCancel}>{t('common.cancel')}</Button>

@@ -1625,3 +1625,544 @@ those two states ignored; anything else (not verified, price pending, not
 published, out of season, alcohol off) sends the order to review. An
 unverified dish, or one whose new price awaits approval, is never recorded
 from paper at that price.
+
+## Docs and tooling: review round 2
+
+**D-DT-06 · The development proxy tells the API which phone is calling.**
+`npm run dev` serves phones through Vite and proxies `/api` to the API, so
+every request reached the API as `127.0.0.1`: one guest typing wrong PINs, or
+one busy table, used up the join and sign-in budgets of the whole restaurant
+Wi-Fi (D-S8-10 counts by address).
+- `scripts/vite-dev.ts` adds `xfwd: true` to every proxy entry
+  `vite.config.ts` defines (a `config` hook, so it holds whatever keys that
+  file uses), and `scripts/dev.ts` starts the API with `TRUST_PROXY_HOPS=1`.
+  `vite.config.ts` sets `xfwd` on its own entries too (D-K2-11), so a bare
+  `npx vite` behaves the same; the hook stays as the guarantee for whatever
+  that file defines next.
+- The value in `.env` is deliberately ignored in development: the API there
+  always sits behind exactly one proxy, and a higher number would let a phone
+  choose its own address by sending `X-Forwarded-For` itself. `npm run dev`
+  prints a line when a different value was configured.
+- Checked on this laptop: 10 failed joins from `localhost` used that address's
+  budget (11th and 12th answered `429 rate_limited`), the same request with a
+  forged `X-Forwarded-For: 9.9.9.9` still answered 429 (the proxy appends the
+  real address last, and hops=1 reads the last one), and the first attempt from
+  the LAN address answered the ordinary `404 qr_invalid`.
+- `npm start` is unchanged: `TRUST_PROXY_HOPS` there is the operator's, and
+  the default 0 is right for a server phones reach directly.
+
+**D-DT-07 · The build precompresses the bundles.**
+`npm run build` is `vite build` followed by `scripts/precompress.ts`, which
+writes a `.br` and a `.gz` beside every text asset above 1 KB in `dist/assets`
+(Brotli quality 11, gzip 9; a sibling is kept only when it is smaller, and
+stale siblings are removed first). The server already prefers such a sibling
+(D-S8-09), so the one restaurant process no longer compresses the same bundle
+for every guest, and phones get the maximum ratio: the staff bundle goes from
+494,805 bytes to 80,491 (gzip on the fly gave 103,798). Skipping the step only
+costs speed. `npm run e2e -- --prod` builds the same two steps and checks that
+a bundle arrives Brotli-encoded and that a client accepting no compression
+still gets the plain bytes.
+
+**D-DT-08 · The annual PDF is now checked as pages, not only as HTML.**
+`npm run pdf:pages -- <file.pdf> [--pages 1-3,40,last] [--scale] [--text]`
+(`scripts/pdf-pages.ts`) renders pages of a finished PDF to PNG with pdf.js
+inside the same headless Edge or Chrome the rest of the tooling uses. A
+local-only HTTP server serves one page, the PDF and the pdf.js files from
+`node_modules`; nothing is downloaded, and `--text` writes each page's text,
+which keeps Thai where `pdftotext` drops it.
+- `pdfjs-dist` is a devDependency at an exact version (6.3.289), like every
+  other dependency.
+- It asserts nothing beyond "the file opens and the page renders": judging a
+  printed page is a person's job. Four pages of the 520-page synthetic 2025
+  report were looked at this way (cover, an appendix page in landscape, the
+  last page); TESTING.md records what they showed.
+
+## Round 2: guest screens on the real server fields
+
+**D-G2-01 · The join screen takes this visit's code length (completes D-G-03).**
+`QrResolveDTO.pin_digits` is now sent, so the boxes, the auto-submit, the
+lead, the field label and the "enter all N digits" message follow the visit's
+own code (checked with a six-digit code: six boxes, "รหัส 6 หลัก", joining on
+the last digit). The 4-to-8 fallback stays for a visit with no code yet, where
+the server sends null.
+
+**D-G2-02 · A third wrong-code lockout asks for a new code instead of a clock.**
+`pin_locked` with `staff_unlock_required` and no `until` (D-S8-07) shows
+"ขอรหัสใหม่จากพนักงาน · ใส่รหัสผิดหลายรอบ รหัสเดิมของโต๊ะนี้ใช้ต่อไม่ได้แล้ว"
+and, unlike a timed lockout, leaves the field open and unmarked: the way out is
+the code staff issue when they rotate the PIN, and the guest types it on the
+same screen. Checked end to end: third lockout, staff rotate, the new code
+joins without a reload.
+
+**D-G2-03 · Feedback after checkout follows the server's window (completes D-G-01).**
+The ended page reads `GET /api/guest/feedback/eligibility`
+(`{ eligible, submitted, until }`, D-S8-22): it offers the form only while the
+API would accept it, says how long ("ส่งได้ถึง 01:59"), and at `until` asks
+the API again rather than trusting the phone's clock (if the API still says
+yes, it waits at least another 15 seconds). `submitted` shows the thank-you.
+An unknown outcome - no network, a timeout - keeps the form and the draft,
+because sending is what settles it. The old 404 fallback to the session probe
+is gone: the endpoint is part of the API now.
+
+**D-G2-04 · The ended page still knows the visit after a reload.**
+A reload in the seconds after checkout answered `410 visit_closed` before this
+tab had loaded its session, and the ended mark was overwritten with a
+session-less one: the page could then name neither the table nor the visit its
+feedback draft belongs to, so typed words were dropped with no word about it.
+The session provider now keeps the remembered visit when it has none of its
+own, and, as a last resort, the ended page takes the visit id from the one
+draft this tab is keeping (unsent, under 30 minutes old). Checked: reload
+inside the window brings the form and the draft back; after it, the page says
+the feedback could not be sent.
+
+**D-G2-05 · The service sheet honours the repeat-request wait (D-S8-23).**
+A refusal (`rate_limited` with `retry_after_seconds`, reason
+`service_cooldown`) disables that one request and counts down in its row -
+"เรียบร้อยแล้ว 01:28 · ขอใหม่ได้ในอีก 41 วินาที" - instead of reading as a
+failure. The public config now carries `service_cooldown_seconds`, so the row
+also holds itself back from the moment the last request of that type was sent,
+by the server's own rule (never for asking for the bill): the second tap does
+not even leave the phone. Zero, or a server that sends no value, means nothing
+is held back here and the server's answer alone decides.
+
+**D-G2-06 · Menu search reads only the aliases the menu API publishes.**
+`aliases_th` / `aliases_en` on `MenuItemDTO` (the reviewed ones only)
+replace the tolerant shapes the client accepted while the field did not exist;
+`test/unit/guest-menu-search.test.ts` now also asserts that nothing else on an
+item is searched. Checked against the real menu API: a reviewed Thai
+alias finds an English-only drink, an unreviewed one finds nothing, because the
+server never sends it.
+
+## Round 2: server fields the screens already read
+
+**D-S8-20 · A ticket carries its own facts, and tiles count dishes.**
+- Order lines snapshot `alcohol` and `requires_staff_confirm` (the item's flag,
+  or alcohol while the owner's confirmation note is on) when the round is sent,
+  and staff views carry both. Turning the note off, or editing the dish, never
+  rewrites a ticket the kitchen already has. Guest views do not carry them: the
+  menu says what a dish is, and the guest is the one being asked to confirm.
+  Migration 011 backfills old lines from today's menu, which is the best
+  available answer for rounds taken before the snapshot existed.
+- A tile's visit adds `ready_dishes` and `unresolved_dishes`, and the overview
+  adds `ready_dishes`: quantities, which is what a ticket's buttons count
+  ("Mark served · 3"). The `*_lines` figures stay as they were, so nothing
+  changes meaning under a screen that has not switched yet.
+- The overview adds `portions_to_weigh` (cuts still `requested`), a subset of
+  `open_portion_requests`: the badge staff act on first.
+- `/api/staff/auth/me` carries the owner's `sound_default` (and
+  `notifications.sound_default`, so either name works on the client).
+- `GET /api/staff/tables` carries `qr_base_url` and `qr_base_is_local`, like
+  the print batch already did (D-S8-09), so the table screen can warn before
+  anyone prints cards that open on no phone. The print batch also says
+  `pin_required`: a card printed while PINs are off must not tell guests to
+  ask for a table code.
+
+**D-S8-21 · Weighed cuts can be recovered from paper.**
+An outage ticket may include a cut that was weighed at the counter, so a
+recovery line takes `measured: { grams }`: the line is priced at the item's
+approved rate (grams x rate / basis, half-up), quantity 1, with no portion
+quote behind it. Grams on a dish that is not sold by weight, or a quantity
+other than 1, answer `422 validation_failed` on `lines.N.measured` /
+`lines.N.quantity` (codes `not_measured_weight`, `one_cut_per_line`); a weighed
+cut with no grams still answers `cart_changed` with
+`measured_weight_needs_quote`, as before. The weights are part of the ticket's
+identity: the same paper reference with a different weight is a conflict, not a
+second order. What already applied still applies: an unverified dish, or one
+whose new price awaits approval, is never recorded from paper (D-S8-19).
+
+**D-S8-22 · Feedback outlives checkout by half an hour.**
+Checkout closes the visit and revokes every phone at the table, which left no
+window at all for the one thing a guest may still want to do. For 30 minutes
+after `closed_at`, a session that CHECKOUT ended (not one staff revoked, and
+not one whose guest left) may still `POST /api/guest/feedback`, and
+`GET /api/guest/feedback/eligibility` answers `{ eligible, submitted, until }`
+so the ended page offers the form only while the API would take it. Every other
+route keeps answering `visit_closed`, and the cookie - which now grants nothing
+but feedback - is kept until the window closes, then cleared by the next
+request. Still one entry per guest session.
+Staff read the result through `GET /api/staff/feedback?from&to&include_fixture`
+(`reports.view`): counts, the mean, the 1-5 distribution, how many carried a
+comment, and up to 500 entries newest first (`truncated` past that) with the
+table each party sat at. Demo data is excluded unless asked for, comments
+removed by retention read as null, and feedback is never pushed on the live
+stream: it is not a queue anyone works.
+
+**D-S8-23 · The repeat-request wait is the server's rule.**
+`service_cooldown_seconds` was left to the guest screen (D-21), so a reloaded
+phone could page staff again at once. A guest request of a type whose last
+request was sent less than that long ago now answers `429 rate_limited` with
+`{ reason: 'service_cooldown', type, retry_after_seconds, available_at }`.
+Asking for the bill is never held back, staff-created requests never are, and 0
+turns it off. The active-request rule (D-21) still answers first, so a double
+tap still returns the request already waiting. The value is in the public
+config, so the sheet can hold a row back before it sends.
+
+**D-S8-24 · A QR resolve says how long this visit's PIN is.**
+`QrResolveDTO.pin_digits` carries the length of the visit's actual code (4-8),
+or null when no PIN is asked for or the visit has none yet: the join screen can
+then draw the right number of boxes instead of guessing from a setting that may
+have changed since the party sat down. The code itself is never sent.
+
+**D-S8-25 · Report filters: a figure is narrowed, or plainly unfiltered.**
+`/api/staff/stats/kpis` (and `export.csv?view=orders&rows=order`) accept
+`table_id`, `category_id` and `staff_id`, and echo `filters`, `filter_options`
+(tables, categories and staff, so a manager needs no `team.manage` to filter by
+a colleague) and `unfiltered`. Not every figure can follow every filter: a bill
+belongs to a table but not to a dish category, and "how fast were requests
+answered" belongs to the person who answered. A figure is narrowed only when it
+supports EVERY active filter; otherwise it is computed with no filter at all
+and named in `unfiltered`, so a number is either exactly what the filter line
+claims or marked as covering everything. Table narrows every figure; category
+narrows the line figures (values, errors, cancellations, hourly, acceptance);
+staff narrows acceptance (`line_events.actor_id`) and the service-request
+figures (a new `acknowledged_by_id`, backfilled from the audit trail, because
+a display name can be edited). Payment figures follow the table only:
+"recorded by this person" would hide unpaid bills from the very figure whose
+job is to show them. An unknown id is refused, not ignored.
+
+**D-S8-26 · Settings sections save on the version they were drawn from.**
+A PATCH may carry `expected_updated`: `{ key: updated_at | null }` for each key
+the section edits. Any key saved since answers `409 stale_version` with
+`{ keys, current }` (the whole current view) and nothing is written, so two
+managers editing different sections never overwrite each other and the one who
+is behind sees what changed. Without the field the PATCH behaves as before.
+
+**D-S8-27 · Going live and the demo accounts are one request.**
+`deactivate_demo_staff: true` belongs with `operating_mode: 'live'`: on its own
+it answers `422`. Refusing to go live (`demo_accounts_active`) now also says
+`self` (the acting owner is itself a demo account), `real_owner` and
+`can_deactivate`, so the screen offers "Deactivate demo accounts and switch"
+only when that request would be allowed. The answer lists
+`deactivated_demo_staff`. Sending the same request again is safe: a patch that
+sets live while the restaurant is already live still retires any demo account
+that is somehow still active.
+
+**D-S8-28 · Menu search aliases are reviewed before guests search them.**
+`menu_items.aliases_th` / `aliases_en` (JSON arrays, up to 12 per dish, 60
+characters each) hold other spellings and nicknames; printed names never
+change. They reach `MenuItemDTO` only once `aliases_verified` is set, which
+needs `menu.review` - an edit by anyone else clears it, like a description
+(D-S1.2). The admin catalog carries the drafts plus the flag, so the editor can
+show what is waiting. The CSV export and import carry both columns
+(`|`-separated), and an imported list always lands unreviewed.
+
+**D-S8-29 · An interrupted demo seed is detectable.**
+`app_meta.seed_state` is written 'running' in the same transaction as the
+catalog and 'complete' after the last step. `npm run seed` and `npm run dev`
+refuse a database whose seed never finished and say to reset it; the server
+warns at start. Databases seeded before the marker have none and are taken as
+complete.
+
+**D-S8-30 · A bare server start never invents demo data.**
+`config.seedDemo` now defaults to OFF: `node server/main.ts` against a
+restaurant database can no longer create demo staff (published passwords),
+fixture visits or a synthetic year. `npm run dev` and `npm run seed` set
+`SEED_DEMO=1` explicitly, so development is unchanged (D-DT-03).
+
+**D-S8-31 · The live stream says which database it is (completes D-K-01).**
+`app_meta.db_epoch` is a random value written when the database is created. The
+SSE `hello` and every poll answer carry it, so a client that reconnects to a
+restored or reset database - where event ids start again, possibly above its
+own cursor - sees the epoch change and starts from the server's cursor instead
+of keeping a history that no longer exists.
+
+## Round 2: admin data (Insights, Reports, Settings, Audit, Menu editor)
+
+**D-AD2-01 · Every settings save carries a version check.**
+A section sends `expected_updated` (each key it edits -> the `updated` time its
+draft started from, null when never saved). The server answers 409
+`stale_version` with the whole current view and writes nothing (D-S8-26); the
+section then shows that version, keeps the draft, says "Not saved: someone
+saved this section first" and offers "Load the saved version". A save
+elsewhere that stored the same values still moves the stamp, so the section
+notices it and no longer overwrites silently. `SettingsSection` also takes
+`refusal(err)`, a section's own words for an answer the generic error line
+cannot explain, and a `ConfirmSpec` may carry `extra` fields and a `retry` that
+replaces the open dialog with what the refusal asks for.
+
+**D-AD2-02 · Going live offers to switch the demo accounts off.**
+The confirmation lists the active demo staff accounts (read from
+`/api/staff/team`) and its button becomes "Deactivate demo accounts and
+switch", which sends `deactivate_demo_staff: true` (D-S8-11). The offer is made
+only when this owner may make it: a demo account cannot switch the restaurant
+live, and the dialog says so instead. A refusal that names accounts the screen
+did not know about re-opens the same dialog with them; `self` and
+`real_owner: false` answers are spoken as "sign in with your own owner account"
+and "create an owner account of your own first".
+
+**D-AD2-03 · Data retention shows what the clean-up task did, and what it keeps.**
+Under the section: when the task last ran and the business date raw menu events
+are removed through (`retention_status`, D-S8-02). Each field says what
+survives: note text goes but "a note existed" and the allergy flag stay,
+comment text goes but ratings (and the average) stay, per-dish daily counts
+stay when raw events go. The Engagement page's retention note now says the
+clean-up removed those days rather than guessing they might be gone.
+
+**D-AD2-04 · Report labels are decided inside the viewer's own scope.**
+`nextLabel()` filters the year's files by `financial` (reports.financial) and,
+for a data export, `raw_events` (reports.export_raw) as well as demo data, so a
+manager's first non-financial copy of a completed year is its own "Final" and
+needs no reason (D-S8-13); the revision number still counts every file of that
+kind and year. The data-export button names its next label like the PDF one,
+and the action buttons wrap at 320 px instead of widening the card.
+
+**D-AD2-05 · Engagement counts are divided by what they were measured over.**
+Scroll depth is a share of `scroll_sessions`, the sessions that opened the menu
+page (D-S8-05), and the card says so. The item note gives the per-session add
+rate (D-S8-06) and warns that Seen and Adds are event counts, so the two are
+never read as a fraction of each other.
+
+**D-AD2-06 · The menu editor sets the tracker wording and the search words.**
+A dish and a category each take "Wording while it is being made" (Automatic ·
+by category and station / Currently cooking / Currently preparing, D-S8-18);
+when the dish follows the default, the help line names what guests read now.
+Search words are typed as a comma or line separated list (up to 12, 60
+characters each, never printed) with the reviewer's "guests may search with
+them" switch beside them (D-S8-28); the import column list carries
+`aliases_th` / `aliases_en`, and a CSV that is too large is answered with
+"split it into smaller files" rather than the generic error.
+
+**D-AD2-07 · Repeated audit controls name their own record, and server English is translated.**
+"Open dish", "History of this record" and "Everything for this visit" repeat on
+every entry, so each carries the record (or the table) as hidden text. Reasons
+the server writes in English - a dish leaving the bill, a manager exception
+close, a demo account switched off, the automatic year-end file - are shown in
+the reader's language, with the staff wording after the colon left exactly as
+it was typed. The clean-up run and a voided adjustment have their own labels,
+and both are filterable.
+
+**D-AD2-08 · The "other language" marker names the language it is in.**
+A dish printed only in Thai is marked "Thai name only" on an English screen,
+not "English name as printed on the restaurant's menu"; Menu Stats, the dish
+drawer and the Engagement table all decide it from the language actually shown.
+
+## Round 2: admin operations (tables, billing, orders board, shell)
+
+**D-OPS2-01 · One adjustment attempt, one row, and a way back out.**
+The adjustment dialog sends `idempotency_key` and `bill_version` (D-S8-01,
+both now required by the schema). The key is kept in device storage until the
+server gives a definitive answer, so a retry after a lost answer replays the
+same attempt instead of discounting twice; an answer of `idempotency_mismatch`
+says the earlier attempt was recorded and asks the manager to check the bill.
+`bill_version` is the version the dialog's numbers came from, not whatever
+arrived a moment ago: a change from another device shows a notice with the new
+total, and the next press applies the adjustment to that bill (the same wording
+the server's `stale_version` answer produces). The running bill lists each
+adjustment with who added it, when and why, and `billing.adjust` may void one
+while the bill is open (`POST /visits/:id/adjustments/:adj/void`, bill version
+plus a reason, idempotent, so a lost answer is simply retried). Voided
+adjustments - by a manager or because their dish left the bill - stay under
+"Voided adjustments" with who, when and why.
+
+**D-OPS2-02 · A refund after checkout is stated on the bill, not implied.**
+When `payment_state` is `refunded` the staff bill prints "Paid, then refunded
+฿X after checkout" with the reason, who recorded it and when (from `refund`),
+beside the state pill. The revision stays settled: the bill is history, not
+unpaid (D-S8-04).
+
+**D-OPS2-03 · Paper recovery takes weighed cuts and knows whose ticket it is.**
+In recover mode a dish sold by weight asks for the grams written on the paper
+and prices them at the approved rate (`measured.grams`, D-S8-21) - the same
+arithmetic as the server, shown before the line is added; one cut is one line,
+so quantity stays 1 and two cuts never stack. The picker mirrors the recovery
+rule (D-S8-19): only "sold out" and "category paused" are recoverable, and only
+with an approved price; anything else says why it cannot be recorded. The
+`original_time` errors are answered on the field: a ticket dated before the
+previous party at that table checked out names that checkout time, and a
+re-used paper reference names the order it belongs to.
+
+**D-OPS2-04 · The staff screens read the server's own counts and snapshots.**
+Food at the pass is counted in dishes (`ready_dishes`) on the tiles and the
+Overview, like the ticket buttons; the cuts badge uses `portions_to_weigh`
+(waiting for the scale) and says so. Tickets take `requires_staff_confirm` and
+`alcohol` from each order line (D-S8-20) and the board no longer loads the
+public menu. The rail, the sign-in page and the Payments day follow the
+server's business-day cutoff through `useBusinessToday()` (D-AD-01). The alert
+floor restarts from the server's cursor after a database restore, so recycled
+event ids still chime.
+
+**D-OPS2-05 · Wording that matches what the system now does.**
+Sign-in errors never mention a locked account: too many attempts answer `429
+rate_limited`, and the page says how long to wait (D-S8-10). A table tile shows
+"Joining locked" when its visit is PIN-locked, and the drawer says when only
+rotating the PIN will unlock it (`pin_lock_requires_rotation`, D-S8-07). The QR
+sheet refuses to print while `qr_base_is_local`: a banner names the address,
+the Print button and the SVG downloads are disabled, and printing from the
+browser menu prints that notice instead of cards nobody could scan (D-S8-09).
+Neither the seating dialog nor the printed card states a PIN length any more,
+and the card's "ask staff for the table code" line is left out when the
+restaurant does not use one.
+
+**D-OPS2-06 · One h1 per staff page, and filters that survive a rotation.**
+The workspace header title is a paragraph on the pages that print their own h1
+(the More sub-pages and the QR sheet) and an h1 everywhere else, so route focus
+still lands on the page heading. The Payments summary cards sit under a
+visually hidden "Summary" heading. The orders board keeps its filter row
+mounted and hides it with `hidden` on phones, and a resize that would hide it
+while it holds the keyboard focus opens it instead.
+
+## Round 2: UI kit, client lib and the dev server
+
+**D-K2-01 · The poll fallback says it is polling, and keeps trying the stream.**
+`useLive()` now reports `transport: 'stream' | 'poll'`. After four stream
+failures the client used to poll every 5 s for good (a server restart longer
+than about 12 s triggered nothing else) while every indicator still read
+"Live". The poll loop now re-opens the stream as a trial (30 s, then 60 s,
+then every 2 minutes) and keeps polling until that trial says hello; the
+staff pill and the Track pill read "อัปเดตทุก 5 วินาที" / "Updating every 5s"
+with the dash shape, never "Live", while polling. A poll that is answered
+counts as a sync, so the time beside the state keeps up. Checked on the
+running app: four stream errors put it on the 5-second loop within 2 s, the
+trial 30 s later took over and polling stopped
+(`var/scratch/fix-kit2/polling.ts`).
+
+**D-K2-02 · The stream's own health, not the browser's opinion.**
+`online` no longer waits for four failures: a stream that is OPEN goes
+straight back to 'live' and refetches, a CONNECTING one reports
+'reconnecting', and with no stream the client polls at once. Every delivered
+event also sets 'live', so a blip the stream survived cannot leave ordering
+blocked (D-G-04's provider half, widened). An SSE comment never reaches JS,
+so the client watches for a named `ping` event instead: once the server sends
+one, three times the announced interval (at least 45 s) of silence counts as
+a dead stream and it reconnects. Until a server sends pings the watchdog
+stays disarmed - a quiet 50 s stream was left alone in testing. **Server
+side:** `event: ping` on the 15-second wake, and `ping_ms` in the hello data,
+are still to be added (server/lib/events.ts).
+
+**D-K2-03 · A staff stream that ends asks /me before believing it.**
+The server ends a staff stream with `access {state:'ended'}` (signed out,
+deactivated) or `{state:'changed'}` (same person, other permissions). The
+client reconnects on 'changed' - the old stream would never carry the new
+topics - and on 'ended' re-checks `GET /api/staff/auth/me`: a 401 or 403
+means the session really is gone (state 'ended', `onEnded`), while a session
+that is still valid reconnects, at most three times. A poll answered 401 for
+staff ends the same way. Checked: taking `reports.view` from the manager role
+mid-stream reconnected within 2 s and kept the pill live; signing out from
+the page ended it and the shell showed the sign-in form.
+
+**D-K2-04 · The live client reports a server outage itself.**
+`useLive().outage` is `{ since }` once reads keep failing for more than 8 s
+with the device online (a gateway answer, a timeout, no answer), and null the
+moment anything answers. The shell no longer needs to guess from
+'reconnecting' alone. Every connection indicator carries `data-outage` while
+it is set. Checked by refusing every API request to a page: the mark appeared
+after about 13 s and cleared on the first answer.
+
+**D-K2-05 · The server's cursor is taken as it is, not as a maximum.**
+`syncCursor` gained `authoritative` (hello, the `resync` event, a poll
+answered with `resync`) and `replay` (a hello that replayed from this page's
+own Last-Event-ID). An authoritative cursor is taken even when it is lower;
+a lower one without a replay still means the database was restored, and then
+the seen ids are cleared as before. Covered by two more cases in
+`test/unit/live-cursor.test.ts`.
+
+**D-K2-06 · Repeated buttons carry a name, and the actor gets a line.**
+A board of tickets and a grid of tiles repeat one word ("Details",
+"Accept · 5"). `TicketAction` and `TileAction` now take `ariaLabel`, and
+without one the kit composes "Accept · 5, table 07, round 2" - the visible
+label first (WCAG 2.5.3), then what it acts on (2.4.6). The ⋯ button and the
+conflict "Review" link are named the same way. Pass `ariaLabel: null` to keep
+the bare label. In a ticket's per-line status row, who recorded the step is
+now a line of its own ("โดย Demo Kitchen"), so a staff name no longer wraps
+mid-name after "Ready · 19:46". `WorkspaceHeader` takes `titleAs`, so a page
+that prints its own h1 can make the workspace title a paragraph.
+
+**D-K2-07 · "New · 3" carries the weight of the New column.**
+A segmented option can ask for `emphasis`: its count becomes an ink chip.
+The board status switch sets it while rounds wait to be accepted, matching
+the ink head of the New column, and names that segment "New · 3 waiting to be
+accepted".
+
+**D-K2-08 · The toast steps out of the way of the focused control.**
+The toast region moves to the top of the screen when it would cover whatever
+has just taken keyboard focus, and closes if it would cover it at both edges
+(WCAG 2.4.11). It clears any pinned top bar. This was the last case of the
+obscured-focus finding: the 4-second welcome toast sat over the rows being
+tabbed through, and at 320x256 over most of the page.
+
+**D-K2-09 · Shared copy: honest steps, plain words.**
+`track.step.received` / `confirmed` are "ส่งถึงร้านแล้ว" and "ร้านยืนยันแล้ว"
+(two different facts, not two names for one), `status.submitted` is
+"รอพนักงานยืนยัน", and a rejection no longer blames the kitchen in English.
+"Staff are on their way" was a promise nobody made: an acknowledged request
+now reads "Seen by staff". The Thai portion copy drops the paperwork word
+"ใบเสนอ" and `common.honestStatus` drops "ระบบไม่เดาเวลา"; the staff header
+says "อัปเดต 19:52" instead of "ซิงก์". New: `conn.polling`,
+`track.step.confirmedAt` / `readyAt` (optional "Confirmed 19:41" lines),
+`common.ticket.by`, `common.ticket.actionAria`, `common.tile.actionAria`,
+`common.board.waitingAccept`.
+
+**D-K2-10 · The double rule is opaque wherever it is used.**
+`--rule-double` lays its translucent second line over an opaque canvas line,
+so rows scrolling under a sticky header never show through it (the fix the
+guest masthead had made for itself).
+
+**D-K2-11 · `vite.config.ts` protects a bare `npx vite`.**
+The file-serving allow-list and deny-list that `npm run dev` sets
+(scripts/vite-dev.ts) are in the config file too, so `npx vite` does not hand
+out the database, `server/`, `scripts/`, `data-src/`, `test/`, `docs/`,
+`package.json` or `.env.example` over `/@fs/` on the LAN. Checked against a
+bare `npx vite`: 403 for each of those, 200 for `client/`, `shared/`,
+`public/` and `node_modules/`. Both proxy entries set `xfwd: true`, so the API
+behind them (`TRUST_PROXY_HOPS=1`) sees each phone's own address. Production
+source maps are built as `hidden`: no `sourceMappingURL` is emitted, so
+nothing asks the server for a map it refuses to serve.
+
+**D-DT-09 · What the delivery documents claim after round 2.**
+The second review round added endpoints and fields in every area, so the four
+delivery documents were re-checked against the code and the runs, not against
+the review notes:
+- **API.md** now carries every round-1 and round-2 change: the adjustment void
+  endpoint and its idempotency and version fields, the bill's `payment_state`
+  and `refund`, the guest feedback window and its eligibility route, the
+  owner's feedback list (its `from` / `to` are required), `pin_digits`, the
+  alert-sound default, `portions_to_weigh` and the dish counts, the order
+  line's `alcohol` / `requires_staff_confirm` / `prep_kind` / `money_hidden`,
+  paper recovery with `measured.grams`, the service cooldown, search aliases,
+  the settings version check and the demo-account switch, `retention_status`,
+  the KPI filters, and three new sections: Live events (`hello` with `epoch`,
+  `access` states), Report filters, and Limits, sizes and refusals (the 413
+  caps and every rate limit). Each claim was checked against the running
+  server, which is how the required `from` / `to` and the extra `pin_required`
+  on the QR card batch were found.
+- **TESTING.md** lists this round's runs (245 unit and integration tests, both
+  browser suites including the production path, 172 captures), the two new
+  test files, and `npm run pdf:pages`. The stale open gaps are gone: the
+  weighing note, paper recovery of unapproved prices, refunds after checkout
+  and the polling fallback after a restore are all settled.
+- **FEATURE-MATRIX.md** and **OWNER-CHECKLIST.md** were updated where the
+  product actually changed (tickets, PIN length, service cooldown, feedback
+  after checkout, aliases, demo accounts, retention status, QR warning, report
+  filters), and nowhere else. What is still only "Implemented", still owner
+  content, or still deferred is unchanged and still says so.
+- The honesty rule from D-DT-05 stands: every "Verified" names a test, a
+  journey, a capture or a rendered page, and all of it is local.
+
+**D-RV2-01 · Round-2 re-verification: the six areas' work holds together.**
+Everything the six area agents landed was re-checked as one tree, not six:
+`npm run typecheck` and `npm run build` clean, `node scripts/i18n-check.ts`
+with no missing keys, 245 unit and integration tests green (105 s), all 12
+`npm run e2e` journeys green (282 s), 172 captures from `npm run shots` with
+no failures and the same 43 known audit notes, and a production smoke on a
+copy of a seeded database (`npm run build` + `NODE_ENV=production npm start`).
+The cross-area contracts the client already coded against were exercised end
+to end against a running instance, not read off the types: a 6-digit PIN
+(`pin_digits` 6 -> six boxes over one field, "รหัส 6 หลัก"), feedback inside
+the 30-minute post-checkout window (eligibility `{eligible, submitted, until}`,
+`until` about 30 min, every other guest route still `visit_closed`, one entry
+per session), the owner's feedback panel (`from`/`to` required, demo data out
+unless asked), KPI `filters` / `filter_options` / `unfiltered` including the
+CSV export and a refused unknown id, an adjustment sent twice with one
+`idempotency_key` (one adjustment, unchanged total), `idempotency_mismatch`,
+`stale_version`, the void endpoint and the "Voided adjustments" list, a refund
+after checkout (`payment_state: 'refunded'` with amount, reason, who and
+when, shown on the bill and on Payments), a paper ticket with a 380 g cut
+priced at the approved rate (one cut per line, replay vs conflict on the
+grams, `not_measured_weight`, `one_cut_per_line`, `before_previous_party`),
+the QR print block while `qr_base_is_local` (Print disabled, no SVG
+downloads, the base URL named), the owner's alert-sound default on
+`/api/staff/auth/me`, and search by a reviewed alias (drafts stay out of the
+guest menu). One copy fix was made here and nothing else: the Thai
+`settings.retention.d` said "ไม่ถูกลบ", the only warning the i18n checker
+still printed; it now reads "ระบบไม่เคยลบออร์เดอร์ บิล และการรับเงิน", so the
+checker is silent. Scripts and screenshots: `var/scratch/reverify2/`.

@@ -149,9 +149,11 @@ export function TicketLine({
   const { t, lang } = useI18n();
   const label = t(`common.staff.status.${status}`);
   const finished = status === 'served' || status === 'cancelled' || status === 'rejected';
+  // The actor is on a line of its own: staff names are long and used to wrap
+  // mid-name in the middle of "Ready · 19:46 · Ploy Chaiwong".
   const statusParts = finished
-    ? [statusAt ? `${label} ${statusAt}` : label, reason, actor]
-    : [label, statusAt, actor];
+    ? [statusAt ? `${label} ${statusAt}` : label, reason]
+    : [label, statusAt];
   const hasSec = Boolean(secondary) || Boolean(noThaiName);
   const struck = status === 'served' ? 'is-served' : status === 'cancelled' || status === 'rejected' ? 'is-cancelled' : null;
   return (
@@ -196,7 +198,8 @@ export function TicketLine({
         {showStatus && status !== 'submitted' ? (
           <p className={cx('line__st', LINE_TONE[status])}>
             <Ico name={LINE_ICON[status]} />
-            {statusParts.filter(Boolean).join(' · ')}
+            <span>{statusParts.filter(Boolean).join(' · ')}</span>
+            {actor ? <span className="line__by" lang={lang}>{t('common.ticket.by', { name: actor })}</span> : null}
           </p>
         ) : null}
       </div>
@@ -258,7 +261,12 @@ export interface TicketAction {
   onClick?: () => void;
   busy?: boolean;
   disabled?: boolean;
-  ariaLabel?: string;
+  /**
+   * Accessible name. Defaults to "Accept · 5, table 07, round 2": a board of
+   * tickets otherwise repeats one word (WCAG 2.4.6), and a description is not
+   * a name. Pass null to keep the visible label alone.
+   */
+  ariaLabel?: string | null;
 }
 
 export interface TicketProps extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
@@ -296,7 +304,7 @@ export interface TicketProps extends Omit<HTMLAttributes<HTMLElement>, 'children
   label?: string;
 }
 
-function ActionButton({ action, variant, disabled }: { action: TicketAction; variant: 'primary' | 'outline'; disabled: boolean }) {
+function ActionButton({ action, variant, disabled, name }: { action: TicketAction; variant: 'primary' | 'outline'; disabled: boolean; name?: string }) {
   const off = disabled || action.disabled;
   return (
     <Button
@@ -307,7 +315,7 @@ function ActionButton({ action, variant, disabled }: { action: TicketAction; var
       count={action.count}
       loading={action.busy}
       aria-disabled={off || undefined}
-      aria-label={action.ariaLabel}
+      aria-label={name}
       onClick={action.onClick}
     >
       {action.label}
@@ -339,6 +347,12 @@ export const Ticket = forwardRef<HTMLElement, TicketProps>(function Ticket(
     allergy ? t('common.ticket.ariaAllergy') : null,
   ].filter(Boolean).join(lang === 'th' ? ' ' : ', ');
   const blocked = Boolean(conflict);
+  // Every ticket on the board offers "Accept" or "Mark ready": the name says
+  // which ticket, with the visible label first (WCAG 2.4.6, 2.5.3).
+  const named = (action: string) => t('common.ticket.actionAria', { action, table, round });
+  const actionName = (a: TicketAction) => (a.ariaLabel === null
+    ? undefined
+    : a.ariaLabel ?? named(a.count != null ? `${a.label} · ${a.count}` : a.label));
 
   return (
     <article
@@ -380,7 +394,9 @@ export const Ticket = forwardRef<HTMLElement, TicketProps>(function Ticket(
           <Ico name="refresh" size="sm" />
           <span>{t('common.ticket.conflict', { name: conflict.by, time: conflict.at })}</span>
           {conflict.onReview ? (
-            <button type="button" className="textlink" onClick={conflict.onReview}>{t('common.ticket.review')}</button>
+            <button type="button" className="textlink" aria-label={named(t('common.ticket.review'))} onClick={conflict.onReview}>
+              {t('common.ticket.review')}
+            </button>
           ) : null}
         </div>
       ) : null}
@@ -399,15 +415,15 @@ export const Ticket = forwardRef<HTMLElement, TicketProps>(function Ticket(
 
       {primary || secondary || onMore ? (
         <div className="ticket__actions">
-          {primary ? <ActionButton action={primary} variant="primary" disabled={blocked} /> : null}
-          {secondary ? <ActionButton action={secondary} variant="outline" disabled={blocked} /> : null}
+          {primary ? <ActionButton action={primary} variant="primary" disabled={blocked} name={actionName(primary)} /> : null}
+          {secondary ? <ActionButton action={secondary} variant="outline" disabled={blocked} name={actionName(secondary)} /> : null}
           {onMore ? (
             <IconButton
               icon="more"
               variant="framed"
               size="staff"
               opensDialog
-              label={moreLabel ?? (stage === 'submitted' ? t('common.ticket.detailsReject') : t('common.ticket.details'))}
+              label={moreLabel ?? named(stage === 'submitted' ? t('common.ticket.detailsReject') : t('common.ticket.details'))}
               onClick={onMore}
             />
           ) : null}

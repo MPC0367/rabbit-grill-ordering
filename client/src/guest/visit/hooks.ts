@@ -83,6 +83,15 @@ const ACTIVE = new Set(['sent', 'acknowledged']);
 export interface ServiceSlot {
   active: ServiceRequestDTO | null;
   lastDone: ServiceRequestDTO | null;
+  /** Most recent request of this type, whatever state it is in: the cooldown runs from when it was sent. */
+  last: ServiceRequestDTO | null;
+}
+
+/** When a request was sent, in ms, or null when there is none. */
+export function sentAt(req: ServiceRequestDTO | null): number | null {
+  if (!req) return null;
+  const ms = new Date(req.created_at).getTime();
+  return Number.isFinite(ms) ? ms : null;
 }
 
 export interface SendResult {
@@ -102,7 +111,8 @@ export function useServiceRequests(visitId: string | null) {
     const map = new Map<ServiceType, ServiceSlot>();
     const list = [...(r.data?.requests ?? [])].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     for (const req of list) {
-      const slot = map.get(req.type) ?? { active: null, lastDone: null };
+      const slot = map.get(req.type) ?? { active: null, lastDone: null, last: null };
+      if (!slot.last) slot.last = req;
       if (ACTIVE.has(req.status) && !slot.active) slot.active = req;
       if (req.status === 'completed' && !slot.lastDone) slot.lastDone = req;
       map.set(req.type, slot);

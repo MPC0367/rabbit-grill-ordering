@@ -253,7 +253,7 @@ test('copied permanent QR: the token alone reveals nothing private and cannot jo
 
   const scan = await resolveQr(photo, t.token);
   assert.equal(scan.status, 200);
-  assert.deepEqual(scan.body, { table_label: 'Copied QR', state: 'ready', pin_required: true, already_joined: false });
+  assert.deepEqual(scan.body, { table_label: 'Copied QR', state: 'ready', pin_required: true, already_joined: false, pin_digits: 4 });
 
   expectError(await joinQr(photo, t.token), 401, 'pin_required');
   expectError(await joinQr(photo, t.token, ''), 401, 'pin_required', 'an empty PIN is no PIN');
@@ -320,7 +320,7 @@ test('a table with no open visit resolves to no_open_visit and refuses joins, in
   const t = await newTable('Empty Table');
   const d = device();
   const scan = await resolveQr(d, t.token);
-  assert.deepEqual(scan.body, { table_label: 'Empty Table', state: 'no_open_visit', pin_required: true, already_joined: false });
+  assert.deepEqual(scan.body, { table_label: 'Empty Table', state: 'no_open_visit', pin_required: true, already_joined: false, pin_digits: null });
   expectError(await joinQr(d, t.token), 409, 'no_open_visit');
   expectError(await joinQr(d, t.token, '1234'), 409, 'no_open_visit');
 
@@ -333,7 +333,7 @@ test('a table with no open visit resolves to no_open_visit and refuses joins, in
   assert.equal(done.body.table.state, 'available');
 
   const after = await resolveQr(guest.clone(), t.token);
-  assert.deepEqual(after.body, { table_label: 'Empty Table', state: 'no_open_visit', pin_required: true, already_joined: false });
+  assert.deepEqual(after.body, { table_label: 'Empty Table', state: 'no_open_visit', pin_required: true, already_joined: false, pin_digits: null });
   expectError(await guest.clone().get('/api/guest/session'), 410, 'visit_closed');
   expectError(await joinQr(guest.clone(), t.token, visit.join_pin!), 409, 'no_open_visit');
 });
@@ -352,7 +352,7 @@ test('a disabled table refuses joins and new rounds while its seated party keeps
   assert.equal(tile.state, 'disabled');
   const d = device();
   const scan = await resolveQr(d, t.token);
-  assert.deepEqual(scan.body, { table_label: 'Disabled Table', state: 'disabled', pin_required: true, already_joined: false });
+  assert.deepEqual(scan.body, { table_label: 'Disabled Table', state: 'disabled', pin_required: true, already_joined: false, pin_digits: null });
   expectError(await joinQr(d, t.token, '1234'), 403, 'table_disabled');
   expectError(await floor.post(`/api/staff/tables/${t.id}/visits`, { covers: 2, idempotency_key: key('open') }), 403, 'table_disabled');
 
@@ -365,7 +365,7 @@ test('a disabled table refuses joins and new rounds while its seated party keeps
 
   // The seated party still sees its round and bill, but cannot add to it.
   const again = await resolveQr(member, t.token);
-  assert.deepEqual(again.body, { table_label: 'Disabled Table', state: 'disabled', pin_required: false, already_joined: true });
+  assert.deepEqual(again.body, { table_label: 'Disabled Table', state: 'disabled', pin_required: false, already_joined: true, pin_digits: null });
   const session = await member.get('/api/guest/session');
   assert.equal(session.status, 200);
   assert.deepEqual(session.body.ordering, { allowed: false, reason: 'table_disabled' });
@@ -527,7 +527,7 @@ test('PINs switched off then on again: a PIN-less visit admits nobody new until 
   assert.equal(count('SELECT pin_failures n FROM visits WHERE id = ?', [visit.id]), 0, 'no guess can match a PIN that does not exist');
   // The guest who joined earlier keeps access.
   assert.equal((await first.get('/api/guest/session')).status, 200);
-  assert.deepEqual((await resolveQr(first, t.token)).body, { table_label: 'No PIN', state: 'ready', pin_required: false, already_joined: true });
+  assert.deepEqual((await resolveQr(first, t.token)).body, { table_label: 'No PIN', state: 'ready', pin_required: false, already_joined: true, pin_digits: null });
 
   const floor = await srv.staff('floor');
   const rot = await floor.post<VisitDetailDTO>(`/api/staff/visits/${visit.id}/rotate-pin`, { version: (await visitDetail(floor, visit.id)).version });
@@ -569,7 +569,7 @@ test('a guest session older than GUEST_SESSION_HOURS no longer grants access', a
   srv.exec('UPDATE guest_sessions SET created_at = ? WHERE visit_id = ?', [new Date(Date.now() - 13 * 3_600_000).toISOString(), visit.id]);
   expectError(await guest.get('/api/guest/orders'), 401, 'visit_access_required');
   expectError(await submitSoup(guest), 401, 'visit_access_required');
-  assert.deepEqual((await resolveQr(guest, t.token)).body, { table_label: 'Expired', state: 'ready', pin_required: true, already_joined: false });
+  assert.deepEqual((await resolveQr(guest, t.token)).body, { table_label: 'Expired', state: 'ready', pin_required: true, already_joined: false, pin_digits: 4 });
   expectError(await joinQr(guest, t.token), 401, 'pin_required');
   assert.equal((await joinQr(guest, t.token, visit.join_pin!)).status, 201);
   assert.equal((await guest.get('/api/guest/session')).status, 200);
@@ -629,7 +629,7 @@ test('rotated PIN and revoked guests: old credentials are refused, the stream en
   expectError(session, 401, 'visit_access_revoked');
   expectError(await first.get('/api/guest/session'), 401, 'visit_access_required');
   const scan = await resolveQr(first, t.token);
-  assert.deepEqual(scan.body, { table_label: 'Revoked', state: 'ready', pin_required: true, already_joined: false });
+  assert.deepEqual(scan.body, { table_label: 'Revoked', state: 'ready', pin_required: true, already_joined: false, pin_digits: 4 });
 
   // Rejoin through current staff-provided access only.
   expectError(await joinQr(first, t.token), 401, 'pin_required');
@@ -1003,7 +1003,6 @@ test('scenario 6: after a real checkout the table is reused; the old cookie gets
     ['POST', `/api/guest/portions/${por2.body.id}/cancel`],
     ['POST', `/api/guest/portions/${por2.body.id}/decline`, { quote_id: 'pq_whatever', revision: 1 }],
     ['POST', `/api/guest/portions/${por2.body.id}/confirm`, { quote_id: 'pq_whatever', revision: 1, idempotency_key: key('pc') }],
-    ['POST', '/api/guest/feedback', { rating: 1, comment: 'old party', idempotency_key: key('fb') }],
   ];
   for (const [method, path, body] of calls) {
     const tab = oldTab();
@@ -1011,14 +1010,30 @@ test('scenario 6: after a real checkout the table is reused; the old cookie gets
     expectError(r, 410, 'visit_closed', `${method} ${path}`);
     const text = JSON.stringify(r.body);
     for (const s of secrets) assert.ok(!text.includes(s), `${method} ${path} leaks ${s}`);
-    assert.equal(tab.cookies.has('rg_guest'), false, `${method} ${path} clears the closed visit's cookie`);
+    // The cookie survives only so the party can still rate the meal (D-S8-22).
+    // It opens nothing else, and the window below closes it for good.
+    assert.equal(tab.cookies.has('rg_guest'), true, `${method} ${path} keeps the cookie for the feedback window`);
   }
+
+  // Feedback is the one thing the old phone may still send, and it belongs to the
+  // party that left - never to the new party at the same table.
+  const fb = await oldTab().post('/api/guest/feedback', { rating: 5, comment: 'Lovely evening', idempotency_key: key('fb') });
+  assert.equal(fb.status, 201, JSON.stringify(fb.body));
+  assert.equal(count('SELECT count(*) n FROM feedback WHERE visit_id = ?', [visit1.id]), 1);
+  assert.equal(count('SELECT count(*) n FROM feedback WHERE visit_id = ?', [visit2.id]), 0);
+
+  // Once that window has passed the old cookie is cleared like any dead credential.
+  srv.exec('UPDATE visits SET closed_at = ? WHERE id = ?', [new Date(Date.now() - 31 * 60_000).toISOString(), visit1.id]);
+  const late = oldTab();
+  expectError(await late.get('/api/guest/session'), 410, 'visit_closed');
+  assert.equal(late.cookies.has('rg_guest'), false, 'after the feedback window the cookie is cleared');
+  expectError(await oldTab().post('/api/guest/feedback', { rating: 1, comment: 'too late', idempotency_key: key('fb') }), 410, 'visit_closed');
   const sse = await openStream(oldTab(), '/api/guest/events');
   expectError({ status: sse.status, body: sse.body, headers: new Headers() }, 410, 'visit_closed', 'SSE');
 
   // Scanning again with the old cookie: public facts only, and the new PIN is still required.
   const scan = await resolveQr(oldTab(), token);
-  assert.deepEqual(scan.body, { table_label: 'T03', state: 'ready', pin_required: true, already_joined: false });
+  assert.deepEqual(scan.body, { table_label: 'T03', state: 'ready', pin_required: true, already_joined: false, pin_digits: 4 });
   expectError(await joinQr(oldTab(), token), 401, 'pin_required');
   expectError(await joinQr(oldTab(), token, pin1), 401, 'pin_invalid');
 
@@ -1028,7 +1043,8 @@ test('scenario 6: after a real checkout the table is reused; the old cookie gets
   assert.equal(count('SELECT count(*) n FROM portion_requests WHERE visit_id = ?', [visit2.id]), 1);
   assert.equal(count(`SELECT count(*) n FROM portion_requests WHERE id = ? AND status = 'requested'`, [por2.body.id]), 1);
   assert.equal(count('SELECT count(*) n FROM guest_sessions WHERE visit_id = ?', [visit2.id]), 1);
-  assert.equal(count('SELECT count(*) n FROM feedback'), 0);
+  // The one feedback entry is the old party's, sent inside its window (D-S8-22).
+  assert.equal(count('SELECT count(*) n FROM feedback'), 1);
   const view = await newcomer.get<{ orders: OrderDTO[] }>('/api/guest/orders');
   assert.deepEqual(view.body.orders.map((o) => o.id), [o2.id]);
   assert.equal(view.body.orders[0].round_no, 1, 'the new party starts at round 1');

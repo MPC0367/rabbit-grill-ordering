@@ -13,6 +13,7 @@ import { addDays, bangkokParts, nowIso, weekStart } from '../../shared/time.ts';
 import { many, one } from '../db/index.ts';
 import { AppError } from '../lib/errors.ts';
 import { getSettings } from '../lib/settings.ts';
+import { NO_FILTERS, orderFilter, type KpiFilters } from './kpi-filters.ts';
 import { bi } from './pricing.ts';
 import {
   CHARGEABLE_SQL, acceptanceSeconds, assertDate, availabilityOf, availableDays, bucketState, businessHours,
@@ -214,22 +215,27 @@ export interface RoundRow {
   subtotal_minor: number | null;
 }
 
-/** Every round submitted in [from, to], oldest first, with its current status. */
-export function listRounds(from: string, to: string, include: boolean, showMoney: boolean): RoundRow[] {
+/**
+ * Every round submitted in [from, to], oldest first, with its current status.
+ * `filters` is the operational report's table / category / staff scope, so the
+ * CSV behind a filtered figure lists the same rounds (D-S8-25).
+ */
+export function listRounds(from: string, to: string, include: boolean, showMoney: boolean, filters: KpiFilters = NO_FILTERS): RoundRow[] {
+  const f = orderFilter(filters);
   const orders = many<{ id: string; reference: string; business_date: string; table_label: string; submitted_at: string; local_at: string; source: string; round_no: number }>(
     `SELECT o.id, o.reference, o.business_date, o.table_label, o.submitted_at, o.source, o.round_no,
             COALESCE(o.manual_original_time, o.submitted_at) AS local_at
        FROM orders o
-      WHERE o.business_date BETWEEN :from AND :to AND ${fixtureSql('o', include)}
+      WHERE o.business_date BETWEEN :from AND :to AND ${fixtureSql('o', include)}${f.sql}
       ORDER BY o.business_date, o.submitted_at, o.id`,
-    { from, to },
+    { from, to, ...f.params },
   );
   const lines = groupBy(
     many<{ order_id: string; status: LineStatus; quantity: number; line_total_minor: number }>(
       `SELECT l.order_id, l.status, l.quantity, l.line_total_minor
          FROM order_lines l JOIN orders o ON o.id = l.order_id
-        WHERE o.business_date BETWEEN :from AND :to AND ${fixtureSql('o', include)}`,
-      { from, to },
+        WHERE o.business_date BETWEEN :from AND :to AND ${fixtureSql('o', include)}${f.sql}`,
+      { from, to, ...f.params },
     ),
     (l) => l.order_id,
   );

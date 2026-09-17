@@ -5,7 +5,7 @@
 import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from '../app.ts';
-import type { OrderDTO, PortionRequestDTO, ServiceRequestDTO, StaffOrderDTO } from '../../shared/dto.ts';
+import type { FeedbackEligibilityDTO, OrderDTO, PortionRequestDTO, ServiceRequestDTO, StaffOrderDTO } from '../../shared/dto.ts';
 import {
   FeedbackBody, IdSchema, IsoDateSchema, PortionCancelBody, PortionConfirmBody, PortionDeclineBody,
   PortionInPersonBody, PortionQuoteBody, PortionRequestBody, ServiceRequestBody, ServiceTransitionBody,
@@ -17,6 +17,7 @@ import { assertCan, guestOf, guestTx, requireGuest, requireStaff, staffOf, type 
 import { AppError } from '../lib/errors.ts';
 import { body, query } from '../lib/http.ts';
 import { hit, LIMITS } from '../lib/ratelimit.ts';
+import { feedbackEligibility } from '../domain/feedback.ts';
 import { orderDTO } from '../domain/orders.ts';
 import {
   createServiceRequest, listServiceQueue, listVisitRequests, submitFeedback, transitionServiceRequest,
@@ -59,6 +60,9 @@ function confirmedOrThrow(r: ConfirmPortionResult): Extract<ConfirmPortionResult
   return r;
 }
 
+/** Feedback routes accept a guest session that checkout ended, for the grace window. */
+const FEEDBACK_ACCESS = { feedbackGrace: true } as const;
+
 // ------------------------------------------------------------------ guest
 export const serviceGuest = new Hono<AppEnv>()
   .get('/service', requireGuest(), (c) => {
@@ -78,7 +82,12 @@ export const serviceGuest = new Hono<AppEnv>()
     }));
     return c.json<ServiceRequestDTO>(result.request, result.existing ? 200 : 201);
   })
-  .post('/feedback', requireGuest(), async (c) => {
+  // Feedback outlives checkout on this device for a short while (D-S8-22), so
+  // both routes accept a session that only checkout ended.
+  .get('/feedback/eligibility', requireGuest(FEEDBACK_ACCESS), (c) => {
+    return c.json<FeedbackEligibilityDTO>(feedbackEligibility(guestOf(c)));
+  })
+  .post('/feedback', requireGuest(FEEDBACK_ACCESS), async (c) => {
     const g = guestOf(c);
     const input = await body(c, FeedbackBody);
     const result = guestTx(g.guestId, () => submitFeedback({
@@ -88,7 +97,7 @@ export const serviceGuest = new Hono<AppEnv>()
       comment: input.comment,
       idempotencyKey: input.idempotency_key,
       actor: g.actor,
-    }));
+    }), FEEDBACK_ACCESS);
     return c.json({ ok: true, replayed: result.replayed }, result.replayed ? 200 : 201);
   })
   // Convenience read (GET /api/guest/orders also carries the portions).

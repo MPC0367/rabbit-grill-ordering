@@ -23,6 +23,8 @@ export interface PublicConfigDTO {
     within_hours: boolean | null; // null when hours are not enforced
   };
   services: ServiceType[];
+  /** How long a guest waits before the same request can be sent again (0 = no wait; D-S8-23). */
+  service_cooldown_seconds?: number;
   analytics: { enabled: boolean; idle_threshold_seconds: number; heartbeat_seconds: number };
   notes_max_length: number;
   sold_out_display: 'show_disabled' | 'hide';
@@ -97,6 +99,13 @@ export interface MenuItemDTO {
   badges: string[]; // evidence-based only, e.g. "demo_fixture", "staff_confirms_portion"
   sort: number;
   version: number;
+  /**
+   * Other spellings and nicknames search matches, never printed (brief 09).
+   * The public menu carries only aliases a reviewer approved; the admin
+   * catalog carries the drafts too (with `aliases_verified`).
+   */
+  aliases_th?: string[];
+  aliases_en?: string[];
 }
 
 export interface MenuCategoryDTO {
@@ -139,6 +148,21 @@ export interface QrResolveDTO {
   pin_required: boolean;
   /** true when this browser already holds valid access to this table's current visit */
   already_joined: boolean;
+  /**
+   * How many digits this visit's PIN has (4-8), so the join screen can shape
+   * its field. null when no PIN is needed, or the visit has none yet.
+   */
+  pin_digits?: number | null;
+}
+
+/** GET /api/guest/feedback/eligibility - may this browser still send feedback? */
+export interface FeedbackEligibilityDTO {
+  /** The form may be shown and POST /api/guest/feedback will be accepted. */
+  eligible: boolean;
+  /** This guest session already sent its one entry. */
+  submitted: boolean;
+  /** When the post-checkout grace period ends (null while the visit is still open). */
+  until: string | null;
 }
 
 // ------------------------------------------------------------------ cart / quote
@@ -162,6 +186,8 @@ export interface QuoteLineDTO {
   modifiers_minor: Minor;
   quantity: number;
   line_total_minor: Minor;
+  /** Weighed cut recovered from paper: the grams staff recorded (D-S8-21). */
+  measured_grams?: number | null;
 }
 
 export interface QuoteDTO {
@@ -200,6 +226,14 @@ export interface OrderLineDTO {
   allergy_flag: boolean;
   station: Station;
   prep_kind: 'cook' | 'prepare';
+  /**
+   * Snapshots taken when the round was sent (staff views only): the dish was
+   * alcoholic, and it needed a staff member to confirm it in person (the
+   * item's own flag, or alcohol while the owner's confirmation note is on).
+   * Later menu or settings changes never rewrite a ticket (D-S8-20).
+   */
+  alcohol?: boolean;
+  requires_staff_confirm?: boolean;
   status: LineStatus;
   status_reason: string | null;
   steps: LineStepDTO[];
@@ -433,6 +467,13 @@ export interface TableTileDTO {
     rounds: number;
     unresolved_lines: number;
     ready_lines: number;
+    /**
+     * The same two figures counted in dishes (quantities), which is what the
+     * ticket buttons count: "3 not served" on a tile and "Mark served · 3" on
+     * its ticket then mean the same thing.
+     */
+    unresolved_dishes?: number;
+    ready_dishes?: number;
     unaccepted_rounds: number;
     open_requests: number;
     bill_requested: boolean;
@@ -454,6 +495,9 @@ export interface TablesDTO {
   tables: TableTileDTO[];
   counts: Record<TableState, number>;
   server_time: string;
+  /** The address printed on QR cards, and whether it only opens on the server itself (D-S8-09). */
+  qr_base_url?: string;
+  qr_base_is_local?: boolean;
 }
 
 export interface VisitDetailDTO {
@@ -506,6 +550,12 @@ export interface StaffMeDTO {
   permissions: Permission[];
   landing: string;
   operating_mode: 'demo' | 'live';
+  /**
+   * settings.notifications.sound_default: the owner's alert-sound default for
+   * devices that never chose one. Never a device's own setting.
+   */
+  sound_default?: boolean;
+  notifications?: { sound_default: boolean };
 }
 
 export interface OverviewDTO {
@@ -514,9 +564,13 @@ export interface OverviewDTO {
   unaccepted_rounds: number;
   oldest_unaccepted_at: string | null;
   ready_lines: number;
+  /** Ready food counted in dishes (quantities), like the ticket buttons. */
+  ready_dishes?: number;
   open_requests: number;
   oldest_request_at: string | null;
   open_portion_requests: number;
+  /** Cuts waiting for the scale (requested only), a subset of open_portion_requests. */
+  portions_to_weigh?: number;
   bills_requested: number;
   blockers: string[];
   server_time: string;
@@ -554,6 +608,8 @@ export interface AdminItemDTO extends MenuItemDTO {
   publish_blockers: string[];
   unpublished_changes: boolean;
   requires_staff_confirm: boolean;
+  /** Search aliases: the admin catalog carries every alias; false = not published to guests yet. */
+  aliases_verified?: boolean;
   /** The dish's own tracker wording choice (null = follows its category / the default). */
   prep_kind_override?: 'cook' | 'prepare' | null;
   /** The wording new order lines get: "Currently cooking" (cook) or "Currently preparing" (prepare). */
@@ -727,6 +783,60 @@ export interface KpiDTO {
   /** S6: false when the caller lacks reports.financial (payment figures are then zeroed, not real zeros). */
   financial_visible?: boolean;
   generated_at?: string;
+  /** The filters the server applied, echoed back (null = all). */
+  filters?: KpiFiltersDTO;
+  /** The choices the report may offer, from the same request (no team.manage needed). */
+  filter_options?: KpiFilterOptionsDTO;
+  /**
+   * Figures no active filter narrows: they cover all tables, categories and
+   * staff, and the report says so under each one.
+   */
+  unfiltered?: KpiFigureKey[];
+}
+
+export interface KpiFiltersDTO {
+  table_id: string | null;
+  category_id: string | null;
+  staff_id: string | null;
+}
+
+export interface KpiFilterOptionsDTO {
+  tables: Array<{ id: string; label: string }>;
+  categories: Array<{ id: string; name: Bilingual }>;
+  staff: Array<{ id: string; name: string }>;
+}
+
+/** Keys of KpiDTO figures that `unfiltered` may list. */
+export type KpiFigureKey =
+  | 'qr_adoption' | 'guest_order_time' | 'average_order_value' | 'average_table_value' | 'operational_errors'
+  | 'accept' | 'ack' | 'open_bills' | 'payment_exceptions' | 'refunds' | 'totals' | 'cancellations' | 'hourly'
+  | 'service_requests';
+
+/** GET /api/staff/feedback - guest ratings and comments for a range (reports.view). */
+export interface FeedbackItemDTO {
+  id: string;
+  submitted_at: string;
+  business_date: string;
+  /** The table the party sat at, as recorded on the visit's rounds (null when unknown). */
+  table_label: string | null;
+  rating: number | null;
+  /** null when the guest left none, or retention removed it. */
+  comment: string | null;
+}
+
+export interface FeedbackListDTO {
+  from: string;
+  to: string;
+  include_fixture: boolean;
+  count: number;
+  rated: number;
+  average_rating: number | null;
+  distribution?: Array<{ rating: number; count: number }>;
+  with_comment: number;
+  /** Newest first; capped, in which case `truncated` is true. */
+  items: FeedbackItemDTO[];
+  truncated?: boolean;
+  generated_at: string;
 }
 
 export interface ReportJobDTO {

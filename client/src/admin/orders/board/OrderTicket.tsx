@@ -10,34 +10,12 @@ import {
   Ticket, type BoardStage, type TicketAction, type TicketChip, type TicketFlagSpec, type TicketLineData,
 } from '../../../ui/index.ts';
 import { LATE_AFTER_MINUTES, minutesSince, staffName, sumQty, textLang, tn } from '../support.ts';
-import { lastStep, readyPartOf, readySince, stageLines, STAGE_ACTION, tableOf, type Placement } from './model.ts';
+import { lastStep, readyPartOf, readySince, staffConfirmOf, stageLines, STAGE_ACTION, tableOf, type Placement } from './model.ts';
 
 type Pick = ReturnType<typeof useI18n>['pick'];
 type T = ReturnType<typeof useI18n>['t'];
 
 const DONENESS = /doneness|ความสุก/i;
-
-/** Staff-confirmation snapshot on a line, once the server sends it (D-FX-OPS-02). */
-type ConfirmFields = { requires_staff_confirm?: boolean; alcohol?: boolean };
-
-/** The server snapshots the staff-confirmation flag on every line. */
-export function linesCarryConfirm(lines: readonly OrderLineDTO[]): boolean {
-  return lines.every((l) => typeof (l as OrderLineDTO & ConfirmFields).requires_staff_confirm === 'boolean');
-}
-
-/**
- * How a line shows staff confirmation. With the line snapshot: alcohol lines
- * that need it get the kit's "Alcohol · staff to confirm" row, other flagged
- * dishes a "Staff to confirm" chip, and nothing when the owner turned it off.
- * Older payloads fall back to the live menu's alcohol flag.
- */
-export function staffConfirmOf(l: OrderLineDTO, alcoholItems: ReadonlySet<string>): { alcohol: boolean; chip: boolean } {
-  const f = l as OrderLineDTO & ConfirmFields;
-  if (typeof f.requires_staff_confirm !== 'boolean') return { alcohol: alcoholItems.has(l.item_id), chip: false };
-  if (!f.requires_staff_confirm) return { alcohol: false, chip: false };
-  const isAlcohol = f.alcohol ?? alcoholItems.has(l.item_id);
-  return { alcohol: isAlcohol, chip: !isAlcohol };
-}
 
 function lineChips(l: OrderLineDTO, pick: Pick, extra: TicketChip[]): TicketChip[] {
   const chips: TicketChip[] = [];
@@ -109,7 +87,6 @@ export interface OrderTicketProps {
   fresh: boolean;
   busy: 'primary' | 'secondary' | null;
   conflict: { by: string; at: string } | null;
-  alcoholItems: ReadonlySet<string>;
   showMoney: boolean;
   can: (p: Permission) => boolean;
   onAdvance: (order: StaffOrderDTO, lines: OrderLineDTO[], to: LineStatus, which: 'primary' | 'secondary') => void;
@@ -120,7 +97,7 @@ export interface OrderTicketProps {
 }
 
 function OrderTicketInner({
-  order, lines, placement, now, flags, fresh, busy, conflict, alcoholItems, showMoney, can,
+  order, lines, placement, now, flags, fresh, busy, conflict, showMoney, can,
   onAdvance, onMore, onReview, onFinish, readOnly,
 }: OrderTicketProps) {
   const { t, pick, lang, has } = useI18n();
@@ -129,7 +106,7 @@ function OrderTicketInner({
   const activeCount = lines.filter((l) => l.status !== 'rejected' && l.status !== 'cancelled').length;
   const confirmedAt = order.source === 'portion_quote' && !order.staff_name ? clock(order.submitted_at) : undefined;
   const ticketLines = lines.map((l) => {
-    const confirm = staffConfirmOf(l, alcoholItems);
+    const confirm = staffConfirmOf(l);
     return toTicketLine(l, {
       t, pick, lang, showMoney,
       alcohol: confirm.alcohol,

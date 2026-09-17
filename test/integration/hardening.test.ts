@@ -153,7 +153,7 @@ test('a comp linked to a dish is voided when the dish is cancelled, so the rest 
   assert.equal(ok(await guest.get('/api/guest/bill')).total_minor, 8_000);
 
   // A comp cannot be linked to a dish that is not on the bill.
-  expectError(await adjust(visit.id, { kind: 'comp', amount_minor: -1_000, reason: 'Late comp', order_line_id: soupLine }), 409, 'invalid_transition');
+  expectError(await adjust(visit.id, { kind: 'comp', amount_minor: -1_000, reason: 'Late comp', order_line_id: soupLine, idempotency_key: key('adj'), bill_version: (await bill(visit.id)).bill_version }), 409, 'invalid_transition');
 
   // Backstop for rows written before the rule: a linked adjustment only counts while its dish is on the bill.
   srv.exec(`INSERT INTO bill_adjustments (id, visit_id, kind, amount_minor, reason, order_line_id, created_by, created_at)

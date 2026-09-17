@@ -18,6 +18,13 @@ import { errorText, isApiError, qrDownloadHref, useStaff } from './shared.ts';
 import './tables.css';
 
 interface QrCardData { table_id: string; label: string; url: string; svg: string }
+/**
+ * The batch also says what the QR links point at. `qr_base_is_local` means
+ * PUBLIC_BASE_URL is this computer (localhost / 127.0.0.1), so a printed card
+ * would open nothing on a guest's phone: printing is blocked until it is set
+ * to the address the restaurant's Wi-Fi reaches (D-S8-09).
+ */
+interface QrBatch { cards: QrCardData[]; qr_base_url?: string; qr_base_is_local?: boolean; pin_required?: boolean }
 type Layout = 'a4' | 'a6';
 
 const LAYOUT_KEY = 'rg.c5.qrLayout';
@@ -31,7 +38,7 @@ function shortTokenId(url: string): string {
   return token.slice(0, 6);
 }
 
-function QrCard({ card }: { card: QrCardData }) {
+function QrCard({ card, pin }: { card: QrCardData; pin: boolean }) {
   const { t } = useI18n();
   return (
     <article className="c5-qrcard">
@@ -57,10 +64,13 @@ function QrCard({ card }: { card: QrCardData }) {
         <p className="c5-qrcard__scan" lang="th">{t('qr.card.scanTh')}</p>
         <p className="c5-qrcard__scan-en" lang="en">{t('qr.card.scanEn')}</p>
       </div>
-      <p className="c5-qrcard__pin">
-        <span lang="th">{t('qr.card.pinTh')}</span>
-        <span lang="en">{t('qr.card.pinEn')}</span>
-      </p>
+      {/* Only when the restaurant asks for a table code (D-S8-07 / join settings). */}
+      {pin ? (
+        <p className="c5-qrcard__pin">
+          <span lang="th">{t('qr.card.pinTh')}</span>
+          <span lang="en">{t('qr.card.pinEn')}</span>
+        </p>
+      ) : null}
       <p className="c5-qrcard__fallback">
         <span lang="th">{t('qr.card.fallbackTh')}</span>
         <span lang="en">{t('qr.card.fallbackEn')}</span>
@@ -77,6 +87,7 @@ export default function QrPrintPage() {
   const idsKey = (query.get('ids') ?? '').split(',').map((s) => s.trim()).filter(Boolean).join(',');
   const [layout, setLayoutState] = useState<Layout>(() => (storage.get<string>(LAYOUT_KEY, 'a4') === 'a6' ? 'a6' : 'a4'));
   const [cards, setCards] = useState<QrCardData[] | null>(null);
+  const [batch, setBatch] = useState<{ baseUrl: string | null; local: boolean; pin: boolean }>({ baseUrl: null, local: false, pin: true });
   const [replaced, setReplaced] = useState<string[]>([]);
   const [error, setError] = useState<ApiError | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -95,9 +106,15 @@ export default function QrPrintPage() {
         const tables = await api.get<TablesDTO>('/api/staff/tables');
         const wanted = idsKey ? new Set(idsKey.split(',')) : null;
         const flagged = tables.tables.filter((x) => x.qr?.reprint_required && (!wanted || wanted.has(x.id))).map((x) => x.label);
-        const res = await api.get<{ cards: QrCardData[] }>(`/api/staff/tables/qr-cards${idsKey ? `?ids=${idsKey.split(',').map(encodeURIComponent).join(',')}` : ''}`);
+        const res = await api.get<QrBatch>(`/api/staff/tables/qr-cards${idsKey ? `?ids=${idsKey.split(',').map(encodeURIComponent).join(',')}` : ''}`);
         if (cancelled) return;
         setReplaced(flagged);
+        setBatch({
+          baseUrl: res.qr_base_url ?? null,
+          local: res.qr_base_is_local === true,
+          // Until the server says otherwise, the card keeps its "ask staff for the code" line.
+          pin: res.pin_required !== false,
+        });
         setCards(res.cards);
       } catch (err) {
         if (!cancelled) setError(err instanceof ApiError ? err : new ApiError('internal', 0, String(err)));
@@ -137,7 +154,14 @@ export default function QrPrintPage() {
                 { value: 'a6', label: t('qr.layout.a6') },
               ]}
             />
-            <Button variant="primary" size="staff" icon="qr" disabled={!cards || count === 0} onClick={() => window.print()}>
+            <Button
+              variant="primary"
+              size="staff"
+              icon="qr"
+              disabled={!cards || count === 0 || batch.local}
+              aria-describedby={batch.local ? 'c5-qrlocal' : undefined}
+              onClick={() => window.print()}
+            >
               {t('qr.print', { n: count })}
             </Button>
           </>
@@ -145,7 +169,15 @@ export default function QrPrintPage() {
       />
 
       <div className="c5-qrpage__notes">
-        <p className="c5-callout c5-callout--neutral c5-pinnote">{t('qr.pinNote')}</p>
+        {/* Cards made from a localhost address open nothing on a phone: printing waits. */}
+        {batch.local ? (
+          <Banner variant="offline" staff id="c5-qrlocal" title={t('qr.local.title')}>
+            {t('qr.local.body', { url: batch.baseUrl ?? '' })}
+            {' '}
+            {t('qr.local.fix')}
+          </Banner>
+        ) : null}
+        {batch.pin ? <p className="c5-callout c5-callout--neutral c5-pinnote">{t('qr.pinNote')}</p> : null}
         {replaced.length > 0 ? (
           <Banner variant="warning" staff title={t('qr.replacedTitle')}>
             {t('qr.replacedBody', { tables: replaced.join(', ') })}
@@ -177,7 +209,8 @@ export default function QrPrintPage() {
           </p>
           <section className="c5-qrdl" aria-labelledby="c5-qrdl-h">
             <h2 id="c5-qrdl-h" className="c5-qrdl__h">{t('qr.download.title')}</h2>
-            <p className="c5-qrdl__help">{t('qr.download.help')}</p>
+            <p className="c5-qrdl__help">{batch.local ? t('qr.local.downloads') : t('qr.download.help')}</p>
+            {batch.local ? null : (
             <ul className="c5-qrdl__list">
               {cards.map((c) => (
                 <li key={c.table_id}>
@@ -193,17 +226,27 @@ export default function QrPrintPage() {
                 </li>
               ))}
             </ul>
+            )}
           </section>
           <section className={`c5-sheetprev c5-sheetprev--${layout}`} aria-label={t('qr.previewLabel')}>
-            {cards.map((c) => <QrCard key={c.table_id} card={c} />)}
+            {cards.map((c) => <QrCard key={c.table_id} card={c} pin={batch.pin} />)}
           </section>
-          {typeof document !== 'undefined' ? createPortal(
-            <div className={`c5-print c5-print--${layout}`} aria-hidden="true">
-              <style>{`@page { size: ${layout === 'a4' ? 'A4 portrait' : '105mm 148mm'}; margin: 0; }`}</style>
-              {cards.map((c) => <QrCard key={c.table_id} card={c} />)}
+          {typeof document === 'undefined' ? null : batch.local ? createPortal(
+            // Printing from the browser menu prints this note instead of cards
+            // nobody could scan.
+            <div className="c5-print c5-print--blocked" aria-hidden="true">
+              <p>{t('qr.local.title')}</p>
+              <p>{t('qr.local.body', { url: batch.baseUrl ?? '' })}</p>
+              <p>{t('qr.local.fix')}</p>
             </div>,
             document.body,
-          ) : null}
+          ) : createPortal(
+            <div className={`c5-print c5-print--${layout}`} aria-hidden="true">
+              <style>{`@page { size: ${layout === 'a4' ? 'A4 portrait' : '105mm 148mm'}; margin: 0; }`}</style>
+              {cards.map((c) => <QrCard key={c.table_id} card={c} pin={batch.pin} />)}
+            </div>,
+            document.body,
+          )}
         </>
       )}
     </div>

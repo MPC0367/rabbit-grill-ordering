@@ -4,7 +4,7 @@
 // may take. Paid and Checkout complete are shown as different things:
 // a payment never frees the table.
 import { useState, type ReactNode } from 'react';
-import type { BillLineDTO, BillRevisionDTO, PaymentDTO } from '../../../../shared/dto.ts';
+import type { BillLineDTO, BillRevisionDTO, PaymentDTO, StaffBillDTO } from '../../../../shared/dto.ts';
 import { clock, dateTime, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import {
@@ -97,6 +97,35 @@ function PaymentRow({ p, onReverse }: { p: PaymentDTO; onReverse?: () => void })
   );
 }
 
+/** Adjustments that no longer count: voided by a manager, or because their dish left the bill (D-S8-01). */
+function VoidedAdjustments({ list }: { list: NonNullable<StaffBillDTO['adjustments']> }) {
+  const { t, lang } = useI18n();
+  if (list.length === 0) return null;
+  return (
+    <details className="c5-revs c5-voids">
+      <summary>{t('billing.voided.title', { n: list.length })}</summary>
+      <ol>
+        {list.map((a) => (
+          <li key={a.id} className="is-old">
+            <p className="c5-revs__h">
+              <b>{t(`billing.adjust.kind.${a.kind}`)}</b>
+              <span className="num">{money(a.amount_minor, { sign: true })}</span>
+              <Pill tone="line" size="sm" icon="slash">{t('billing.voided.pill')}</Pill>
+            </p>
+            <p className="c5-payrow__meta">{t('billing.payment.reason', { reason: a.reason })}</p>
+            <p className="c5-payrow__meta">
+              {a.voided_at
+                ? t('billing.voided.by', { time: dateTime(a.voided_at, lang), name: a.voided_by ?? t('common.unknown') })
+                : null}
+              {a.void_reason ? ` · ${a.void_reason}` : ''}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
 function RevisionHistory({ revisions }: { revisions: BillRevisionDTO[] }) {
   const { t, lang } = useI18n();
   if (revisions.length === 0) return null;
@@ -128,7 +157,7 @@ function RevisionHistory({ revisions }: { revisions: BillRevisionDTO[] }) {
 }
 
 export function BillBody({ ctl, nextStep = 'inline' }: { ctl: BillController; nextStep?: 'inline' | 'external' }) {
-  const { t, pick } = useI18n();
+  const { t, lang, pick } = useI18n();
   const [showAll, setShowAll] = useState(false);
   const { bill, res, can } = ctl;
 
@@ -169,6 +198,13 @@ export function BillBody({ ctl, nextStep = 'inline' }: { ctl: BillController; ne
     for (const a of rev.adjustments) {
       summary.push({ key: a.id, term: `${t(`billing.adjust.kind.${a.kind}`)} · ${a.reason}`, value: money(a.amount_minor, { sign: true }) });
     }
+  } else if (b.adjustments && b.adjustments.length > 1) {
+    // Several on a running bill: one line in the calculation, each one listed
+    // below with who added it, why, and the way to void it.
+    summary.push({ key: 'adj', term: tn(t, 'billing.adjustmentsN', b.adjustments.length), value: money(b.adjustments_minor, { sign: true }) });
+  } else if (b.adjustments && b.adjustments.length === 1) {
+    const a = b.adjustments[0];
+    summary.push({ key: a.id, term: `${t(`billing.adjust.kind.${a.kind}`)} · ${a.reason}`, value: money(a.amount_minor, { sign: true }) });
   } else if (b.adjustments_minor !== 0) {
     summary.push({ key: 'adj', term: t('billing.adjustments'), value: money(b.adjustments_minor, { sign: true }) });
   }
@@ -264,10 +300,60 @@ export function BillBody({ ctl, nextStep = 'inline' }: { ctl: BillController; ne
         <Price minor={b.total_minor} size="total" />
       </p>
 
+      {/* Money given back after checkout: the revision stays settled as history (D-S8-04). */}
+      {b.payment_state === 'refunded' ? (
+        <div className="c5-callout c5-callout--alert c5-refund" role="status">
+          <p>{b.refund ? t('billing.refunded.row', { amount: money(b.refund.amount_minor) }) : t('billing.state.refunded')}</p>
+          {b.refund ? (
+            <p className="c5-refund__meta">
+              {[
+                b.refund.reason ? t('billing.payment.reason', { reason: b.refund.reason }) : null,
+                t('billing.refunded.by', { name: b.refund.by ?? t('common.unknown'), time: dateTime(b.refund.at, lang) }),
+              ].filter(Boolean).join(' · ')}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       {b.paid && !closed ? (
         <p className="c5-callout c5-callout--ok" role="status">{t('billing.paidNotClosed')}</p>
       ) : null}
       {closed ? <p className="c5-callout c5-callout--ok">{t('billing.closedNote')}</p> : null}
+
+      {/* Each adjustment with who added it and why; a manager can void one while the bill is open (D-S8-01). */}
+      {b.adjustments && b.adjustments.length > 0 ? (
+        <div className="c5-bsub">
+          <h4 className="c5-cap">{t('billing.adjustments')}</h4>
+          <ul className="c5-payrows">
+            {b.adjustments.map((a) => (
+              <li key={a.id} className="c5-payrow">
+                <div className="c5-payrow__main">
+                  <b>{t(`billing.adjust.kind.${a.kind}`)}</b>
+                  <Price minor={a.amount_minor} plain className="c5-payrow__amt num" />
+                </div>
+                <p className="c5-payrow__meta">
+                  {[clock(a.created_at), a.created_by, t('billing.payment.reason', { reason: a.reason })].filter(Boolean).join(' · ')}
+                </p>
+                {canAdjust ? (
+                  <Button
+                    variant="ghost"
+                    size="staff"
+                    className="c5-payrow__act"
+                    opensDialog
+                    aria-label={t('billing.void.action.named', {
+                      kind: t(`billing.adjust.kind.${a.kind}`),
+                      amount: money(a.amount_minor, { sign: true }),
+                      reason: a.reason,
+                    })}
+                    onClick={() => ctl.open('void', { adjustment: a })}
+                  >
+                    {t('billing.void.action')}
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {canAdjust ? (
         <Button variant="ghost" size="staff" icon="plus" opensDialog className="c5-bill__adjust" onClick={() => ctl.open('adjust')}>
@@ -284,7 +370,7 @@ export function BillBody({ ctl, nextStep = 'inline' }: { ctl: BillController; ne
                 key={p.id}
                 p={p}
                 onReverse={p.kind === 'settlement' && p.status === 'confirmed' && can('payments.correct') && (!settlementRev || p.bill_revision_id === settlementRev || closed)
-                  ? () => ctl.open('reverse', p)
+                  ? () => ctl.open('reverse', { payment: p })
                   : undefined}
               />
             ))}
@@ -294,6 +380,7 @@ export function BillBody({ ctl, nextStep = 'inline' }: { ctl: BillController; ne
         <p className="c5-bill__empty">{t('billing.noPayment')}</p>
       ) : null}
 
+      <VoidedAdjustments list={b.voided_adjustments ?? []} />
       <RevisionHistory revisions={b.revisions} />
 
       {next?.blockedBy ? <p className="c5-note" id={`c5-next-${b.visit_id}`}>{next.blockedBy}</p> : null}

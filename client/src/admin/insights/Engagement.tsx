@@ -123,6 +123,8 @@ function EngagementBody({ d, t, lang, refreshing }: { d: EngagementDTO; t: T; la
   const isYear = d.period === 'year';
   const since = c.telemetry_since;
   const orders = f.attributed_orders + f.unattributed_orders;
+  // Scroll depth is measured on the menu page only, over the sessions that opened it (D-S8-05).
+  const scrollBase = d.scroll_sessions ?? 0;
 
   const funnel = [
     { key: 'ses', label: t('insights.eng.funnel.sessions'), value: f.sessions, note: t('insights.eng.funnel.base') },
@@ -235,11 +237,11 @@ function EngagementBody({ d, t, lang, refreshing }: { d: EngagementDTO; t: T; la
               key: String(s.threshold),
               label: t('insights.eng.reached', { n: s.threshold }),
               value: s.sessions,
-              note: ratioText(s.sessions, c.measured_sessions),
-              ratio: c.measured_sessions > 0 ? s.sessions / c.measured_sessions : 0,
+              note: ratioText(s.sessions, scrollBase),
+              ratio: scrollBase > 0 ? s.sessions / scrollBase : 0,
             }))}
           />
-          <p className="insx-fine">{t('insights.eng.scrollNote')}</p>
+          <p className="insx-fine">{t('insights.eng.scrollBase', { n: num(scrollBase) })} {t('insights.eng.scrollNote')}</p>
         </Card>
         <Card title={t(isYear ? 'insights.eng.monthly' : 'insights.eng.daily')}>
           {daily.length > 0 ? (
@@ -342,7 +344,7 @@ function ItemTable({ d, t }: { d: EngagementDTO; t: T }) {
           <span className="insx-dish">
             <b lang={th ? 'th' : 'en'}>{th ?? r.name.en}</b>
             {th && r.name.en ? <span className="en" lang="en">{r.name.en}</span> : null}
-            {!th ? <small>{t('common.enOnly')}</small> : null}
+            {!th || !r.name.en ? <small>{t(!th ? 'common.enOnly' : 'insights.thOnly')}</small> : null}
           </span>
         );
       },

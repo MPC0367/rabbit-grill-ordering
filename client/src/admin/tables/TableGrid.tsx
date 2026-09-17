@@ -91,6 +91,11 @@ export const TableGridTile = forwardRef<HTMLButtonElement, Props>(function Table
     facts.push(<span className="c5-fact c5-fact--heat">{t('tables.tile.paused')}</span>);
     spokenExtra.push(t('tables.tile.paused'));
   }
+  // Too many wrong join codes: floor staff see it without opening the drawer (D-S8-07).
+  if (v?.pin_locked) {
+    facts.push(<span className="c5-fact c5-fact--alert">{t('tables.tile.pinLocked')}</span>);
+    spokenExtra.push(t('tables.tile.pinLockedSpoken'));
+  }
   if (tile.qr?.reprint_required) {
     facts.push(<span className="c5-fact c5-fact--alert">{t('tables.tile.reprint')}</span>);
     spokenExtra.push(t('tables.tile.reprint'));
@@ -108,7 +113,7 @@ export const TableGridTile = forwardRef<HTMLButtonElement, Props>(function Table
   const kinds = attentionKinds(tile.attention);
   const attention = kinds.map((kind: AttnKind) => ({
     kind,
-    detail: kind === 'ready' && v ? v.ready_lines : kind === 'new' && v && v.unaccepted_rounds > 1 ? v.unaccepted_rounds : undefined,
+    detail: kind === 'ready' && v ? (v.ready_dishes ?? v.ready_lines) : kind === 'new' && v && v.unaccepted_rounds > 1 ? v.unaccepted_rounds : undefined,
   }));
 
   const stateWord = t(`table.${tile.state}`);

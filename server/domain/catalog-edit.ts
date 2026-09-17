@@ -29,7 +29,7 @@ import { emit } from '../lib/events.ts';
 import { getSettings, putSetting } from '../lib/settings.ts';
 import { adminCatalog, adminItemDTO, isItemOrderable, logAvailability, publishBlockersFor } from './catalog.ts';
 import { publicOrderingState, unacceptedRounds } from './guards.ts';
-import { catalogVersion, getCategory, getItem, type GroupRow, type ItemRow, type OptionRow, type VariantRow } from './pricing.ts';
+import { catalogVersion, getCategory, getItem, normalizeAliases, parseAliases, type GroupRow, type ItemRow, type OptionRow, type VariantRow } from './pricing.ts';
 
 export type CreateItemInput = z.infer<typeof CreateItemBody>;
 export type UpdateItemInput = z.infer<typeof UpdateItemBody>;
@@ -135,6 +135,24 @@ function nextDescVerified(requested: boolean | undefined, current: number, textC
   if (textChanged || requested === false) return 0;
   if (requested === true && current !== 1) {
     throw new AppError('forbidden', 'Only a reviewer can mark a description as verified.', { permission: 'menu.review' });
+  }
+  return current as 0 | 1;
+}
+
+/**
+ * Search aliases (D-S8-28). They are published to the guest menu only once a
+ * reviewer approves them, exactly like a description: anyone may propose
+ * spellings, an edit by someone without menu.review unpublishes them again.
+ */
+function nextAliasesVerified(requested: boolean | undefined, current: number, listChanged: boolean, canReview: boolean, empty: boolean): 0 | 1 {
+  if (empty) return 0;
+  if (canReview) {
+    if (requested !== undefined) return requested ? 1 : 0;
+    return listChanged ? 0 : (current as 0 | 1);
+  }
+  if (listChanged || requested === false) return 0;
+  if (requested === true && current !== 1) {
+    throw new AppError('forbidden', 'Only a reviewer can publish search aliases.', { permission: 'menu.review' });
   }
   return current as 0 | 1;
 }
@@ -286,6 +304,8 @@ export function createItem(input: CreateItemInput, staff: StaffContext): AdminIt
   const nameEn = clean(input.name_en) ?? null;
   const descTh = clean(input.desc_th) ?? null;
   const descEn = clean(input.desc_en) ?? null;
+  const aliasesTh = normalizeAliases(input.aliases_th ?? []);
+  const aliasesEn = normalizeAliases(input.aliases_en ?? []);
   const pricing = normalizePricing(input.pricing_type, input.price_minor ?? null, input.rate_minor ?? null, input.rate_basis_grams ?? null);
   insert('menu_items', {
     id,
@@ -299,6 +319,9 @@ export function createItem(input: CreateItemInput, staff: StaffContext): AdminIt
     desc_th: descTh,
     desc_en: descEn,
     desc_verified: nextDescVerified(input.desc_verified, 0, false, canReview) && (descTh || descEn) ? 1 : 0,
+    aliases_th: JSON.stringify(aliasesTh),
+    aliases_en: JSON.stringify(aliasesEn),
+    aliases_verified: nextAliasesVerified(input.aliases_verified, 0, false, canReview, aliasesTh.length + aliasesEn.length === 0),
     portion_note_th: clean(input.portion_note_th) ?? null,
     portion_note_en: clean(input.portion_note_en) ?? null,
     pricing_type: input.pricing_type,
@@ -362,6 +385,17 @@ export function updateItem(id: string, input: UpdateItemInput, staff: StaffConte
     set('desc_en', clean(input.desc_en));
     const descChanged = 'desc_th' in patch || 'desc_en' in patch;
     set('desc_verified', nextDescVerified(input.desc_verified, item.desc_verified, descChanged, canReview));
+
+    // search aliases (never printed; only reviewed ones reach the guest menu)
+    const aliases = {
+      th: input.aliases_th === undefined ? parseAliases(item.aliases_th) : normalizeAliases(input.aliases_th),
+      en: input.aliases_en === undefined ? parseAliases(item.aliases_en) : normalizeAliases(input.aliases_en),
+    };
+    set('aliases_th', JSON.stringify(aliases.th));
+    set('aliases_en', JSON.stringify(aliases.en));
+    const aliasesChanged = 'aliases_th' in patch || 'aliases_en' in patch;
+    set('aliases_verified', nextAliasesVerified(
+      input.aliases_verified, item.aliases_verified, aliasesChanged, canReview, aliases.th.length + aliases.en.length === 0));
     for (const f of SIMPLE_FIELDS) set(f, clean(input[f]));
 
     // pricing

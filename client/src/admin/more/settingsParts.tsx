@@ -4,9 +4,15 @@
 // when it was last saved (or that it is still a proposed default), inline
 // validation, a conflict note when another device saved meanwhile, and the
 // audit trail link.
+//
+// Version check (admin-ops finding 12): every save sends
+// `expected_updated`, a map of each key the section edits to the
+// `updated[key]` time its draft started from (null = never saved). The
+// server answers 409 `stale_version` with `details.current` (the full
+// SettingsView) when any of those keys was saved since, and changes nothing.
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { Settings } from '../../../../shared/settings.ts';
-import { api } from '../../lib/api.ts';
+import { api, ApiError } from '../../lib/api.ts';
 import { dateTime } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { Banner, Button, Dialog, Tag, TextLink, useAnnounce, useToast } from '../../ui/index.ts';
@@ -15,15 +21,43 @@ import { FormAlert, issuesOf, same, useErrorWords, type ErrorWords } from './sha
 
 export type Key = keyof Settings;
 
+/** What the daily clean-up task last did (D-S8-02). */
+export interface RetentionStatus {
+  last_run_at: string | null;
+  raw_events_purged_through: string | null;
+}
+
 export interface SettingsView {
   settings: Settings;
   updated: Partial<Record<Key, string>>;
   future_only: string[];
+  retention_status?: RetentionStatus;
+}
+
+/** Reserved PATCH field: key -> the `updated` time the draft was based on (null = never saved). */
+export const EXPECTED_UPDATED = 'expected_updated';
+
+export type Stamps = Partial<Record<Key, string | null>>;
+
+export function stampsOf(updated: SettingsView['updated'], keys: readonly Key[]): Stamps {
+  const out: Stamps = {};
+  for (const k of keys) out[k] = updated[k] ?? null;
+  return out;
+}
+
+const isSettingsView = (v: unknown): v is SettingsView =>
+  Boolean(v) && typeof v === 'object' && typeof (v as SettingsView).settings === 'object' && typeof (v as SettingsView).updated === 'object';
+
+/** PATCH the settings with the version check (D-S8-26). */
+function patchSettings(patch: Record<string, unknown>, stamps: Stamps): Promise<SettingsView> {
+  return api.patch<SettingsView>('/api/staff/settings', { ...patch, [EXPECTED_UPDATED]: stamps });
 }
 
 export interface SettingsCtx {
   view: SettingsView;
   apply: (view: SettingsView) => void;
+  /** Re-read the settings (after a conflict answer without the current view). */
+  refresh: () => unknown;
   setDirty: (id: string, dirty: boolean) => void;
 }
 
@@ -59,6 +93,10 @@ export interface ConfirmSpec {
   body: ReactNode;
   confirmLabel: string;
   tone?: 'default' | 'danger';
+  /** Reserved fields sent with the patch when this dialog is confirmed (e.g. deactivate_demo_staff). */
+  extra?: Record<string, unknown>;
+  /** A refusal this dialog can answer: the replacement dialog, or null for the usual error. */
+  retry?: (err: ApiError) => ConfirmSpec | null;
 }
 
 export interface SettingsSectionProps<K extends Key> {
@@ -75,11 +113,13 @@ export interface SettingsSectionProps<K extends Key> {
   toPatch?: (draft: Picked<K>) => Record<string, unknown>;
   /** Ask before saving (e.g. going live, pausing ordering, permission changes). */
   confirm?: (draft: Picked<K>, base: Picked<K>) => ConfirmSpec | null | Promise<ConfirmSpec | null>;
+  /** This section's own words for a refusal the generic error line cannot explain. */
+  refusal?: (err: ApiError) => string | null;
   /** Extra content under the section footer (read-only notes). */
   after?: ReactNode;
 }
 
-export function SettingsSection<K extends Key>({ id, keys, title, description, scopeNote, children, validate, toPatch, confirm, after }: SettingsSectionProps<K>) {
+export function SettingsSection<K extends Key>({ id, keys, title, description, scopeNote, children, validate, toPatch, confirm, refusal, after }: SettingsSectionProps<K>) {
   const { t, lang } = useI18n();
   const { can } = useStaff();
   const ctx = useSettingsCtx();
@@ -90,7 +130,9 @@ export function SettingsSection<K extends Key>({ id, keys, title, description, s
   const box = useRef<HTMLElement>(null);
 
   const server = pick(ctx.view.settings, keys);
+  const serverStamps = stampsOf(ctx.view.updated, keys);
   const [base, setBase] = useState(server);
+  const [baseStamps, setBaseStamps] = useState(serverStamps);
   const [draft, setDraft] = useState(server);
   const [errors, setErrors] = useState<Record<string, ErrorWords>>({});
   const [general, setGeneral] = useState<ErrorWords[]>([]);
@@ -98,9 +140,11 @@ export function SettingsSection<K extends Key>({ id, keys, title, description, s
   const [asking, setAsking] = useState<ConfirmSpec | null>(null);
   const [preparing, setPreparing] = useState(false);
   const dirty = !same(draft, base);
-  const moved = !same(server, base);
+  // A save elsewhere moves the stamp even when it stored the same values.
+  const moved = !same(server, base) || !same(serverStamps, baseStamps);
   if (moved && !dirty && !saving) {
     setBase(server);
+    setBaseStamps(serverStamps);
     setDraft(server);
   }
   const conflict = moved && dirty;
@@ -144,10 +188,12 @@ export function SettingsSection<K extends Key>({ id, keys, title, description, s
   const send = async () => {
     setSaving(true);
     setGeneral([]);
+    const payload: Record<string, unknown> = { ...(toPatch ? toPatch(draft) : draft), ...asking?.extra };
     try {
-      const view = await api.patch<SettingsView>('/api/staff/settings', toPatch ? toPatch(draft) : draft);
+      const view = await patchSettings(payload, baseStamps);
       const fresh = pick(view.settings, keys);
       setBase(fresh);
+      setBaseStamps(stampsOf(view.updated, keys));
       setDraft(fresh);
       setErrors({});
       setAsking(null);
@@ -155,20 +201,33 @@ export function SettingsSection<K extends Key>({ id, keys, title, description, s
       toast.show(t('settings.saved', { section: title }));
     } catch (err) {
       const issues = issuesOf(err);
-      if (issues.length) {
+      const again = asking?.retry && err instanceof ApiError ? asking.retry(err) : null;
+      if (err instanceof ApiError && err.code === 'stale_version') {
+        // Someone saved these keys meanwhile: nothing was changed. Show their
+        // version beside this draft (the conflict banner) and let the person decide.
+        const current = (err.details as { current?: unknown } | null | undefined)?.current;
+        if (isSettingsView(current)) ctx.apply(current); else void ctx.refresh();
+        setAsking(null);
+        setGeneral([{ text: t('settings.conflict.refused') }]);
+        announce(t('settings.conflict.refused'), { assertive: true });
+        focusFirstError();
+      } else if (again) {
+        // The dialog stays open with what the answer asks for (e.g. the demo accounts to switch off).
+        setAsking(again);
+        announce(again.title, { assertive: true });
+      } else if (issues.length) {
         const map: Record<string, ErrorWords> = {};
         for (const i of issues) map[i.path] = issueWords(i);
         setErrors(map);
         setAsking(null);
         announce(t('settings.saveFailed', { section: title }), { assertive: true });
         focusFirstError();
-      } else if (asking) {
-        setGeneral([{ text: errorText(err) }]);
-        setAsking(null);
-        announce(errorText(err), { assertive: true });
       } else {
-        setGeneral([{ text: errorText(err) }]);
-        announce(errorText(err), { assertive: true });
+        // A refusal this section can say better than the generic error line.
+        const words = (err instanceof ApiError ? refusal?.(err) : null) ?? errorText(err);
+        setGeneral([{ text: words }]);
+        if (asking) setAsking(null);
+        announce(words, { assertive: true });
       }
     } finally {
       setSaving(false);
@@ -211,6 +270,7 @@ export function SettingsSection<K extends Key>({ id, keys, title, description, s
 
   const reload = () => {
     setBase(server);
+    setBaseStamps(serverStamps);
     setDraft(server);
     setErrors({});
     setGeneral([]);

@@ -270,6 +270,7 @@ function CategoryBlock({ category, total, soldCount, canPause, onPause, children
   children: ReactNode;
 }) {
   const { t } = useI18n();
+  const nameText = useNameText();
   const headId = `av-cat-${category.id}`;
   return (
     <section className={category.ordering_paused ? 'av-cat is-paused' : 'av-cat'} aria-labelledby={headId}>
@@ -289,6 +290,7 @@ function CategoryBlock({ category, total, soldCount, canPause, onPause, children
             size="staff"
             icon={category.ordering_paused ? undefined : 'pause'}
             opensDialog
+            aria-label={t(category.ordering_paused ? 'catalog.pause.resumeNamed' : 'catalog.pause.pauseNamed', { name: nameText(category.name) })}
             onClick={onPause}
           >
             {category.ordering_paused ? t('catalog.pause.resume') : t('catalog.pause.pause')}

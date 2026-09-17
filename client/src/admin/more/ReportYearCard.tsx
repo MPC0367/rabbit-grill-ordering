@@ -13,12 +13,23 @@ export type ReportKind = ReportJobDTO['kind'];
 
 export interface NextLabel { label: ReportLabel; revision: number }
 
-/** What the server will call the next file of this kind (D-S7-01), for the buttons and the reason prompt. */
-export function nextLabel(year: ReportYearDTO, kind: ReportKind, includeDemo: boolean): NextLabel {
+/** What this viewer's copy may contain: the server decides it from their permissions. */
+export interface ReportScope { canFinancial: boolean; canRaw: boolean }
+
+/**
+ * What the server will call the next file of this kind (D-S7-01, D-S8-13),
+ * for the buttons and the reason prompt. final and revised are decided
+ * within one scope (kind, year, demo data, financial, raw events), so a
+ * manager's first non-financial copy of a completed year is its own final and
+ * needs no reason. The revision number counts every file of the kind and year.
+ */
+export function nextLabel(year: ReportYearDTO, kind: ReportKind, includeDemo: boolean, scope: ReportScope): NextLabel {
   const same = year.jobs.filter((j) => j.kind === kind && j.include_fixture === includeDemo);
   const revision = same.reduce((m, j) => Math.max(m, j.revision), 0) + 1;
   if (year.state === 'current') return { label: 'provisional', revision };
-  const finalReady = same.some((j) => j.status === 'ready' && (j.label === 'final' || j.label === 'revised'));
+  const raw = kind === 'annual_csv' && scope.canRaw;
+  const mine = same.filter((j) => j.financial === scope.canFinancial && j.raw_events === raw);
+  const finalReady = mine.some((j) => j.status === 'ready' && (j.label === 'final' || j.label === 'revised'));
   return { label: finalReady ? 'revised' : 'final', revision };
 }
 
@@ -36,6 +47,7 @@ export interface ReportYearCardProps {
   includeDemo: boolean;
   canGenerate: boolean;
   canFinancial: boolean;
+  canRaw: boolean;
   onGenerate: (year: ReportYearDTO, kind: ReportKind) => void;
   onRetry: (job: ReportJobDTO) => void;
   onDownload: (job: ReportJobDTO) => void;
@@ -43,7 +55,7 @@ export interface ReportYearCardProps {
   pendingKinds: Set<string>;
 }
 
-export function ReportYearCard({ year, includeDemo, canGenerate, canFinancial, onGenerate, onRetry, onDownload, retrying, pendingKinds }: ReportYearCardProps) {
+export function ReportYearCard({ year, includeDemo, canGenerate, canFinancial, canRaw, onGenerate, onRetry, onDownload, retrying, pendingKinds }: ReportYearCardProps) {
   const { t, lang, has } = useI18n();
   const [all, setAll] = useState(false);
   const y = year.year;
@@ -51,8 +63,9 @@ export function ReportYearCard({ year, includeDemo, canGenerate, canFinancial, o
   const headId = `ryear-${y}`;
   const jobs = [...year.jobs].sort((a, b) => b.requested_at.localeCompare(a.requested_at) || b.revision - a.revision);
   const shown = all ? jobs : jobs.slice(0, SHOW);
-  const pdfNext = nextLabel(year, 'annual_pdf', includeDemo);
-  const csvNext = nextLabel(year, 'annual_csv', includeDemo);
+  const scope = { canFinancial, canRaw };
+  const pdfNext = nextLabel(year, 'annual_pdf', includeDemo, scope);
+  const csvNext = nextLabel(year, 'annual_csv', includeDemo, scope);
   const labelWords = (n: NextLabel) => (n.label === 'revised' ? t('common.job.revised', { n: n.revision }) : t(`common.job.${n.label}`));
   const fixtures = year.fixture_order_rounds ?? 0;
   const version = year.data_version ?? 0;
@@ -129,6 +142,7 @@ export function ReportYearCard({ year, includeDemo, canGenerate, canFinancial, o
               onClick={() => onGenerate(year, 'annual_csv')}
             >
               {t('reports.gen.csv')}
+              <span className="ryear__next"> · {labelWords(csvNext)}</span>
             </Button>
           </div>
         ) : null}

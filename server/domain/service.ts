@@ -25,6 +25,7 @@ import { AppError, staleVersion } from '../lib/errors.ts';
 import { emit } from '../lib/events.ts';
 import { hit, LIMITS } from '../lib/ratelimit.ts';
 import { cutoffHour, fixtureFlag, getSettings } from '../lib/settings.ts';
+import { feedbackWindowOpen } from './feedback.ts';
 import { getTable, getVisit, type VisitRow } from './guards.ts';
 
 // ------------------------------------------------------------------ rows and DTOs
@@ -33,7 +34,7 @@ export interface ServiceRequestRow {
   type: ServiceType; note: string | null; status: ServiceStatus;
   idempotency_key: string; guest_session_id: string | null; created_by_staff: string | null;
   created_at: string; business_date: string;
-  acknowledged_at: string | null; acknowledged_by: string | null;
+  acknowledged_at: string | null; acknowledged_by: string | null; acknowledged_by_id: string | null;
   completed_at: string | null; completed_by: string | null;
   cancelled_at: string | null; cancelled_by: string | null;
   close_reason: string | null; is_fixture: number; updated_at: string; version: number;
@@ -103,6 +104,32 @@ function activeOfType(visitId: string, type: ServiceType): ServiceRequestRow | u
   );
 }
 
+/**
+ * "Wait before the same request can be sent again"
+ * (settings.service_cooldown_seconds, D-S8-23). The active-request rule already
+ * stops double taps; this stops a table re-paging staff the moment a request is
+ * completed or cancelled. Measured from when the last request of that type was
+ * sent. Asking for the bill is never held back, and staff are never held back.
+ */
+function assertCooldownPassed(visitId: string, type: ServiceType, source: 'guest' | 'staff'): void {
+  const seconds = getSettings().service_cooldown_seconds;
+  if (source !== 'guest' || type === 'bill' || seconds <= 0) return;
+  const last = one<{ created_at: string }>(
+    'SELECT created_at FROM service_requests WHERE visit_id = ? AND type = ? ORDER BY created_at DESC, id DESC LIMIT 1',
+    [visitId, type],
+  );
+  if (!last) return;
+  const waited = (Date.now() - new Date(last.created_at).getTime()) / 1000;
+  if (waited >= seconds) return;
+  const retry = Math.max(1, Math.ceil(seconds - waited));
+  throw new AppError('rate_limited', 'That request was just sent. Please give staff a moment.', {
+    reason: 'service_cooldown',
+    type,
+    retry_after_seconds: retry,
+    available_at: new Date(new Date(last.created_at).getTime() + seconds * 1000).toISOString(),
+  });
+}
+
 function emitService(row: { id: string; visit_id: string; type: ServiceType; table_label: string }, status: ServiceStatus, version: number): void {
   // Payload: ids, state and the table only - never the note.
   emit('service.updated', {
@@ -158,6 +185,7 @@ export function createServiceRequest(args: CreateServiceRequestArgs): { request:
 
     const active = activeOfType(visit.id, args.type);
     if (active) return { request: serviceRequestDTO(active, view), existing: true };
+    assertCooldownPassed(visit.id, args.type, args.guestSessionId ? 'guest' : 'staff');
 
     const table = getTable(visit.table_id);
     const now = nowIso();
@@ -254,10 +282,14 @@ export function transitionServiceRequest(args: ServiceTransitionArgs): ServiceRe
 
     const now = nowIso();
     const by = args.actor.label;
+    // The name is what staff screens show; the account id is what reports
+    // filter by, and it survives a rename (D-S8-25).
+    const byId = args.actor.type === 'staff' ? args.actor.id : null;
     const patch: Record<string, unknown> = { status: args.to, updated_at: now };
     if (args.to === 'acknowledged') {
       patch.acknowledged_at = now;
       patch.acknowledged_by = by;
+      patch.acknowledged_by_id = byId;
     } else if (args.to === 'completed') {
       patch.completed_at = now;
       patch.completed_by = by;
@@ -265,6 +297,7 @@ export function transitionServiceRequest(args: ServiceTransitionArgs): ServiceRe
       if (!row.acknowledged_at) {
         patch.acknowledged_at = now;
         patch.acknowledged_by = by;
+        patch.acknowledged_by_id = byId;
       }
       if (reason) patch.close_reason = reason;
     } else if (args.to === 'cancelled') {
@@ -334,6 +367,10 @@ interface FeedbackRow { id: string; visit_id: string; guest_session_id: string; 
  * Store optional feedback: one per guest session. The same key replays;
  * a second submission from the same browser returns already_done. Comments
  * are private to the restaurant: never emitted, audited only as "has comment".
+ *
+ * A visit that checkout closed is still accepted for a short window
+ * (D-S8-22): the cashier often completes checkout while the party is still at
+ * the table, and the thank-you page is where the form finally appears.
  */
 export function submitFeedback(args: FeedbackArgs): { replayed: boolean } {
   hit(`feedback:${args.guestSessionId}`, LIMITS.feedback);
@@ -352,7 +389,7 @@ export function submitFeedback(args: FeedbackArgs): { replayed: boolean } {
     }
     const visit = getVisit(args.visitId);
     if (!visit) throw new AppError('not_found', 'Visit not found');
-    if (visit.status === 'closed') throw new AppError('visit_closed');
+    if (!feedbackWindowOpen(visit)) throw new AppError('visit_closed');
 
     const now = nowIso();
     const id = newId('fbk');

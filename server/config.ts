@@ -41,7 +41,13 @@ export const config = {
   reportsDir: resolve(env.REPORTS_DIR || 'var/reports'),
   distDir: resolve('dist'),
   publicDir: resolve('public'),
-  seedDemo: flag(env.SEED_DEMO, !production),
+  /**
+   * Demo fixtures (draft catalog, demo staff with published passwords, a
+   * synthetic year) are seeded ONLY when SEED_DEMO is set. A bare
+   * `node server/main.ts` against a restaurant's database must never invent
+   * accounts or orders (D-S8-30). `npm run dev` and `npm run seed` set it.
+   */
+  seedDemo: flag(env.SEED_DEMO, false),
   seedHistory: flag(env.SEED_HISTORY, !production),
   browserPath: env.BROWSER_PATH || '',
   paymentProvider: env.PAYMENT_PROVIDER || '',
