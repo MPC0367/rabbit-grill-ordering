@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F3ECDD">
+<title>เมนู · โต๊ะ 07 · Rabbit Grill</title>
+<!-- FINAL reference mock. States: #sheet (item sheet), #service (service menu), #categories (all categories), #toast.
+     Add ?full to park the fixed dock at the end for full-page captures.
+     Data: names/prices from rabbit-grill/data/menu.json. Draft, table and times are fixtures. -->
+<script>if (/[?&]full/.test(location.search)) document.documentElement.classList.add('full');</script>
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<link rel="stylesheet" href="../../client/src/styles/tokens.css">
+<link rel="stylesheet" href="final.css">
+<style>
+  html.full .dock { position: static; }
+  html.full .g-main { padding-bottom: 16px; }
+</style>
+</head>
+<body>
+<script src="sprite.js"></script>
+<a class="skip" href="#menu">ข้ามไปที่เมนู</a>
+
+<div class="g-app">
+  <header class="mast">
+    <div class="mast__in">
+      <p class="tabletag" aria-label="โต๊ะ 07"><span class="tabletag__k" aria-hidden="true">โต๊ะ</span><span class="tabletag__n num" aria-hidden="true">07</span></p>
+      <a class="wordmark" href="#" aria-label="Rabbit Grill Khao Yai"><span class="wordmark__name" lang="en" aria-hidden="true">Rabbit Grill</span><span class="wordmark__sub" lang="en" aria-hidden="true">Khao Yai</span></a>
+      <nav class="mast__nav" aria-label="เมนูหลัก">
+        <a href="#" aria-current="page">เมนู</a>
+        <a href="#">รายการของฉัน <span class="badge">2</span></a>
+        <a href="#">ติดตาม</a>
+      </nav>
+      <div class="mast__right">
+        <button class="btn btn--outline g-desk-only" aria-haspopup="dialog" data-open="service"><svg class="i"><use href="#i-bell"/></svg>บริการ</button>
+        <div class="seg seg--box" role="group" aria-label="ภาษา Language">
+          <button aria-pressed="true" lang="th">ไทย</button><button aria-pressed="false" lang="en">EN</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolrow">
+    <label class="search"><span class="sr">ค้นหาเมนู ไทย หรือ English</span><svg class="i"><use href="#i-search"/></svg><input type="search" placeholder="ค้นหา"></label>
+    <div class="seg" role="group" aria-label="กลุ่มเมนู">
+      <button aria-pressed="true">อาหาร</button><button aria-pressed="false">เครื่องดื่ม</button>
+    </div>
+  </div>
+
+  <div class="catrow" id="catrow">
+    <button class="catrow__all" aria-haspopup="dialog" data-open="categories"><svg class="i"><use href="#i-list"/></svg>ทุกหมวด</button>
+    <nav class="catrow__scroll" aria-label="หมวดอาหาร">
+      <a class="cattab" href="#beef" aria-current="true"><span class="cattab__n" aria-hidden="true">01</span>เนื้อ</a>
+      <a class="cattab" href="#grill"><span class="cattab__n" aria-hidden="true">02</span>จานหลักจากเตา</a>
+      <a class="cattab" href="#appetizer"><span class="cattab__n" aria-hidden="true">03</span>ของเรียกน้ำย่อย</a>
+      <a class="cattab" href="#"><span class="cattab__n" aria-hidden="true">04</span>สลัด</a>
+      <a class="cattab" href="#"><span class="cattab__n" aria-hidden="true">05</span>ข้าว</a>
+      <a class="cattab" href="#"><span class="cattab__n" aria-hidden="true">06</span>เครื่องเคียง</a>
+      <a class="cattab" href="#"><span class="cattab__n" aria-hidden="true">07</span>ของหวาน</a>
+      <span class="mark" aria-hidden="true"></span>
+    </nav>
+  </div>
+
+  <div class="g-desk">
+    <!-- desktop category sidebar -->
+    <aside class="g-side g-desk-only" aria-label="หมวดอาหาร">
+      <div class="seg seg--staff" role="group" aria-label="กลุ่มเมนู">
+        <button aria-pressed="true">อาหาร</button><button aria-pressed="false">เครื่องดื่ม</button>
+      </div>
+      <nav class="sidecats">
+        <a href="#beef" aria-current="true"><span class="cattab__n" aria-hidden="true">01</span>เนื้อ</a>
+        <a href="#grill"><span class="cattab__n" aria-hidden="true">02</span>จานหลักจากเตา</a>
+        <a href="#appetizer"><span class="cattab__n" aria-hidden="true">03</span>ของเรียกน้ำย่อย</a>
+        <a href="#"><span class="cattab__n" aria-hidden="true">04</span>สลัด</a>
+        <a href="#"><span class="cattab__n" aria-hidden="true">05</span>ข้าว</a>
+        <a href="#"><span class="cattab__n" aria-hidden="true">06</span>เครื่องเคียง</a>
+        <a href="#"><span class="cattab__n" aria-hidden="true">07</span>ของหวาน</a>
+      </nav>
+    </aside>
+
+    <main class="g-main" id="menu">
+      <div class="deskSearch g-desk-only">
+        <label class="search"><span class="sr">ค้นหาเมนู</span><svg class="i"><use href="#i-search"/></svg><input type="search" placeholder="ค้นหาเมนู ไทย หรือ English"></label>
+      </div>
+
+      <!-- 01 BEEF -->
+      <section class="msec" id="beef" aria-labelledby="h-beef">
+        <p class="msec__kick" lang="en" aria-hidden="true">No. 01</p>
+        <div class="msec__title"><h2 id="h-beef">เนื้อ</h2><p class="en" lang="en">Beef Selection</p></div>
+        <div class="msec__list">
+
+          <!-- by weight: staff-assisted quote flow (brief 44A). No Add, no preset portions. -->
+          <article class="dish dish--weight" aria-labelledby="n-pr">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/primerib-full-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <p class="dish__kick"><svg class="i"><use href="#i-scale"/></svg>ราคาตามน้ำหนัก</p>
+              <div class="lead">
+                <h3 class="dish__name" id="n-pr"><button class="dish__open" aria-haspopup="dialog">ไพร์มริบ</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val lead__val--unit"><span class="price"><span class="baht">฿</span>490</span><span class="price-unit">ต่อ 100 กรัม</span></p>
+              </div>
+              <p class="en" lang="en">Prime Rib</p>
+              <p class="dish__note">พนักงานจะชั่งและแจ้งยอดให้ยืนยันก่อนเริ่มย่าง</p>
+              <div class="dish__foot">
+                <button class="btn btn--secondary"><svg class="i"><use href="#i-scale"/></svg>ขอให้พนักงานชั่ง</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="dish" aria-labelledby="n-wg">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/wagyu-tenderloin-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-wg"><button class="dish__open" aria-haspopup="dialog">เนื้อสันในวากิวย่างซอสไวน์แดง</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>1,990</p>
+              </div>
+              <p class="en" lang="en">Wagyu Tenderloin MB 6–7 with Red Wine Jus</p>
+              <p class="dish__unit">300 กรัม</p>
+              <div class="dish__foot">
+                <span></span>
+                <button class="btn btn--secondary btn--add" aria-label="เพิ่ม เนื้อสันในวากิวย่างซอสไวน์แดง"><svg class="i i--bold"><use href="#i-plus"/></svg>เพิ่ม</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- has owner-configured choices, already in the draft once: Add re-opens the sheet -->
+          <article class="dish" aria-labelledby="n-sl">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/striploin-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-sl"><button class="dish__open" data-open="sheet" aria-haspopup="dialog">เนื้อสันนอกออสเตรเลีย</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>590</p>
+              </div>
+              <p class="en" lang="en">Australian Striploin</p>
+              <div class="dish__foot">
+                <p class="dish__state"><svg class="i"><use href="#i-check"/></svg>ในรายการ 1</p>
+                <button class="btn btn--secondary btn--add" data-open="sheet" aria-haspopup="dialog" aria-label="เพิ่ม เนื้อสันนอกออสเตรเลีย เลือกตัวเลือก"><svg class="i i--bold"><use href="#i-plus"/></svg>เพิ่ม</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="dish is-soldout" aria-labelledby="n-tg">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/grilled-tongue-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-tg">ลิ้นวัวย่าง</h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>590</p>
+              </div>
+              <p class="en" lang="en">Grilled Tongue</p>
+              <div class="dish__foot">
+                <p class="soldout"><svg class="i"><use href="#i-slash"/></svg>หมดชั่วคราว</p>
+              </div>
+            </div>
+          </article>
+
+          <!-- TEXT-LED state. This dish has a real photo; shown text-led to demonstrate the image-failure / no-photo row. -->
+          <article class="dish dish--text" aria-labelledby="n-ts">
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-ts"><button class="dish__open" aria-haspopup="dialog">สตูว์ลิ้นวัว</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>490</p>
+              </div>
+              <div class="dish__foot">
+                <p class="en" lang="en">Beef Tongue Stew</p>
+                <button class="btn btn--secondary btn--add" aria-label="เพิ่ม สตูว์ลิ้นวัว"><svg class="i i--bold"><use href="#i-plus"/></svg>เพิ่ม</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 02 GRILL -->
+      <section class="msec" id="grill" aria-labelledby="h-grill">
+        <p class="msec__kick" lang="en" aria-hidden="true">No. 02</p>
+        <div class="msec__title"><h2 id="h-grill">จานหลักจากเตา</h2><p class="en" lang="en">From the Grill</p></div>
+        <div class="msec__list">
+          <article class="dish" aria-labelledby="n-rp">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/river-prawns-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-rp"><button class="dish__open" aria-haspopup="dialog">กุ้งแม่น้ำย่าง</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>990</p>
+              </div>
+              <p class="en" lang="en">Grilled River Prawns</p>
+              <div class="dish__foot"><span></span><button class="btn btn--secondary btn--add" aria-label="เพิ่ม กุ้งแม่น้ำย่าง"><svg class="i i--bold"><use href="#i-plus"/></svg>เพิ่ม</button></div>
+            </div>
+          </article>
+          <article class="dish" aria-labelledby="n-bc">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/baby-chicken-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-bc"><button class="dish__open" aria-haspopup="dialog">ไก่ย่างตัวเล็กคลุกเครื่องเทศ</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>590</p>
+              </div>
+              <p class="en" lang="en">Grilled Baby Chicken</p>
+              <div class="dish__foot"><span></span><button class="btn btn--secondary btn--add" aria-label="เพิ่ม ไก่ย่างตัวเล็กคลุกเครื่องเทศ"><svg class="i i--bold"><use href="#i-plus"/></svg>เพิ่ม</button></div>
+            </div>
+          </article>
+          <!-- simple fixed-price dish in the draft: inline stepper -->
+          <article class="dish" aria-labelledby="n-pk">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/pork-ribs-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-pk"><button class="dish__open" aria-haspopup="dialog">ซี่โครงหมูย่าง</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>590</p>
+              </div>
+              <p class="en" lang="en">Grilled Pork Ribs</p>
+              <div class="dish__foot">
+                <p class="dish__state"><svg class="i"><use href="#i-check"/></svg>ในรายการ</p>
+                <div class="stepper" role="group" aria-label="จำนวน ซี่โครงหมูย่าง ในรายการ">
+                  <button aria-label="ลด 1"><svg class="i"><use href="#i-minus"/></svg></button>
+                  <output aria-live="polite">1</output>
+                  <button aria-label="เพิ่ม 1"><svg class="i"><use href="#i-plus"/></svg></button>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="dish" aria-labelledby="n-gf">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/grilled-fish-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-gf"><button class="dish__open" aria-haspopup="dialog">ปลาย่าง</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>490</p>
+              </div>
+              <p class="en" lang="en">Grilled Fish</p>
+              <div class="dish__foot"><span></span><button class="btn btn--secondary btn--add" aria-label="เพิ่ม ปลาย่าง"><svg class="i i--bold"><use href="#i-plus"/></svg>เพิ่ม</button></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 03 APPETIZERS -->
+      <section class="msec" id="appetizer" aria-labelledby="h-app">
+        <p class="msec__kick" lang="en" aria-hidden="true">No. 03</p>
+        <div class="msec__title"><h2 id="h-app">ของเรียกน้ำย่อย</h2><p class="en" lang="en">Appetizers</p></div>
+        <div class="msec__list">
+          <article class="dish" aria-labelledby="n-cm">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/calamari-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-cm"><button class="dish__open" aria-haspopup="dialog">ปลาหมึกชุบเกลือขนมปังทอดเสิร์ฟพร้อมซอสทาร์ทาร์</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>390</p>
+              </div>
+              <p class="en" lang="en">Calamari Served with Tartar Sauce</p>
+              <div class="dish__foot"><span></span><button class="btn btn--secondary btn--add" aria-label="เพิ่ม ปลาหมึกชุบเกลือขนมปังทอด"><svg class="i i--bold"><use href="#i-plus"/></svg>เพิ่ม</button></div>
+            </div>
+          </article>
+          <article class="dish" aria-labelledby="n-cr">
+            <div class="dish__plate" aria-hidden="true"><div class="plate"><img src="../../public/media/dish/corn-rib-480.webp" alt="" width="480" height="360"></div></div>
+            <div class="dish__body">
+              <div class="lead">
+                <h3 class="dish__name" id="n-cr"><button class="dish__open" aria-haspopup="dialog">คอร์นริบ</button></h3>
+                <span class="lead__dots" aria-hidden="true"></span>
+                <p class="lead__val price"><span class="baht">฿</span>150</p>
+              </div>
+              <p class="en" lang="en">Corn Rib</p>
+              <div class="dish__foot"><span></span><button class="btn btn--secondary btn--add" aria-label="เพิ่ม คอร์นริบ"><svg class="i i--bold"><use href="#i-plus"/></svg>เพิ่ม</button></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <!-- desktop persistent order panel -->
+    <aside class="g-cart g-desk-only" aria-label="รายการของฉัน">
+      <div class="card" style="padding: 18px 18px 16px">
+        <h2 class="round__t">รายการของฉัน <span class="meta">· ร่างในเครื่องนี้</span></h2>
+        <ul style="margin-top:10px">
+          <li class="dline" style="padding:12px 0;grid-template-columns:56px 1fr">
+            <div class="plate"><img src="../../public/media/dish/striploin-240.webp" alt="" width="240" height="180"></div>
+            <div>
+              <div class="lead"><span class="dline__name">เนื้อสันนอกออสเตรเลีย</span><span class="lead__dots" aria-hidden="true"></span><span class="lead__val price" style="font-size:var(--fs-17)"><span class="baht">฿</span>590</span></div>
+              <p class="meta">× 1 · มีเดียม <span class="tag tag--example">ตัวอย่าง</span></p>
+              <p class="meta" style="display:flex;gap:4px;align-items:center"><svg class="i i--sm"><use href="#i-note"/></svg>ขอจานแบ่ง 2 ใบ</p>
+            </div>
+          </li>
+          <li class="dline" style="padding:12px 0;grid-template-columns:56px 1fr">
+            <div class="plate"><img src="../../public/media/dish/pork-ribs-240.webp" alt="" width="240" height="180"></div>
+            <div>
+              <div class="lead"><span class="dline__name">ซี่โครงหมูย่าง</span><span class="lead__dots" aria-hidden="true"></span><span class="lead__val price" style="font-size:var(--fs-17)"><span class="baht">฿</span>590</span></div>
+              <p class="meta">× 1</p>
+            </div>
+          </li>
+        </ul>
+        <div class="bill" style="margin-top:6px">
+          <div class="lead"><span>ยอดอาหาร · 2 รายการ</span><span class="lead__dots" aria-hidden="true"></span><span class="lead__val price" style="font-size:var(--fs-22)"><span class="baht">฿</span>1,180</span></div>
+          <p class="bill__note">ยังไม่ได้ส่งเข้าครัว · ร้านจะยืนยันออเดอร์หลังส่ง</p>
+        </div>
+        <button class="btn btn--primary btn--lg btn--block" style="margin-top:14px">ส่งออเดอร์ · <span class="btn__price"><span class="baht">฿</span>1,180</span></button>
+      </div>
+      <p class="support" style="margin-top:14px;padding:0 4px">ออเดอร์ที่ส่งแล้วเป็นของทั้งโต๊ะ รายการนี้อยู่ในเครื่องนี้เท่านั้น</p>
+    </aside>
+  </div>
+
+  <!-- phone / tablet dock -->
+  <div class="dock">
+    <a class="slip" href="#" aria-label="2 รายการ ฿1,180 ยังไม่ได้ส่งเข้าครัว ดูรายการ">
+      <span class="slip__main">
+        <span class="slip__count">2 รายการ · <span class="price"><span class="baht">฿</span>1,180</span></span>
+        <span class="slip__sub">ยังไม่ได้ส่งเข้าครัว</span>
+      </span>
+      <span class="slip__perf" aria-hidden="true"></span>
+      <span class="slip__go">ดูรายการ<svg class="i"><use href="#i-chev-r"/></svg></span>
+    </a>
+    <div class="gnav">
+      <nav class="bnav" aria-label="เมนูหลัก">
+        <a class="bnav__item" href="#" aria-current="page"><svg class="i"><use href="#i-book"/></svg>เมนู</a>
+        <a class="bnav__item" href="#"><span class="bnav__icon"><svg class="i"><use href="#i-pad"/></svg><span class="badge badge--ring" aria-hidden="true">2</span></span>รายการของฉัน<span class="sr">2 รายการ</span></a>
+        <a class="bnav__item" href="#"><svg class="i"><use href="#i-track"/></svg>ติดตาม</a>
+        <span class="mark" aria-hidden="true"></span>
+      </nav>
+      <button class="svckey" aria-haspopup="dialog" data-open="service"><span class="svckey__ring"><svg class="i"><use href="#i-bell"/></svg></span>บริการ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ITEM SHEET (native dialog) ============ -->
+<dialog class="sheet" id="sheet" aria-labelledby="sh-t">
+  <div class="sheet__grab" aria-hidden="true"></div>
+  <div class="sheet__head">
+    <p class="sheet__kick"><span lang="en">No. 01</span><span lang="th">เนื้อ</span></p>
+    <button class="iconbtn" data-close aria-label="ปิด"><svg class="i i--lg"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sheet__body">
+    <div class="plate plate--wide sheet__photo"><img src="../../public/media/dish/striploin-872.webp" alt="เนื้อสันนอกหั่นเป็นชิ้นบนจานเหล็ก" width="872" height="654"></div>
+    <h2 class="sheet__title" id="sh-t">เนื้อสันนอกออสเตรเลีย</h2>
+    <p class="en en--lg" lang="en">Australian Striploin</p>
+    <div class="sheet__price lead"><span class="support" style="color:var(--text)">ราคา</span><span class="lead__dots" aria-hidden="true"></span><span class="lead__val price"><span class="baht">฿</span>590</span></div>
+
+    <!-- DESIGN PLACEHOLDER: doneness group illustrates an owner-configured required group.
+         Rabbit Grill has NOT confirmed any doneness options. Visible tag: ตัวอย่าง. -->
+    <fieldset class="sheet__block choice">
+      <div class="choice__head">
+        <legend class="choice__legend">ระดับความสุก <span class="tag tag--example">ตัวอย่าง</span></legend>
+        <span class="reqpill is-met"><svg class="i"><use href="#i-check"/></svg>เลือกแล้ว</span>
+      </div>
+      <p class="choice__rule">จำเป็น · เลือก 1 อย่าง</p>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="d"><span class="opt__label">มีเดียมแรร์</span><span class="opt__val">รวมในราคา</span></label>
+        <label class="opt"><input type="radio" name="d" checked><span class="opt__label">มีเดียม</span><span class="opt__val">รวมในราคา</span></label>
+        <label class="opt"><input type="radio" name="d"><span class="opt__label">มีเดียมเวลล์</span><span class="opt__val">รวมในราคา</span></label>
+      </div>
+    </fieldset>
+
+    <div class="sheet__block field">
+      <label class="field__label" for="note">หมายเหตุถึงพนักงาน <small>ไม่บังคับ</small></label>
+      <div class="field__box">
+        <textarea id="note" maxlength="120" aria-describedby="note-c note-h">ขอจานแบ่ง 2 ใบ</textarea>
+        <span class="field__count" id="note-c" aria-live="polite">14 / 120</span>
+      </div>
+      <p class="field__help" id="note-h">เป็นคำขอถึงร้าน พนักงานจะยืนยันอีกครั้ง</p>
+    </div>
+
+    <div class="sheet__block notice" role="note">
+      <svg class="i"><use href="#i-alert"/></svg>
+      <p class="notice__t">แพ้อาหารหรือมีข้อจำกัดด้านอาหาร?</p>
+      <p class="notice__b">ร้านยังไม่ได้ยืนยันข้อมูลสารก่อภูมิแพ้ของจานนี้ การเขียนหมายเหตุไม่ได้รับประกันว่าครัวจะปรับให้ได้ กรุณาคุยกับพนักงานก่อนสั่ง</p>
+      <button class="btn btn--outline"><svg class="i"><use href="#i-bell"/></svg>เรียกพนักงาน</button>
+    </div>
+  </div>
+  <div class="sheet__foot">
+    <div class="stepper stepper--plain stepper--lg" role="group" aria-label="จำนวน">
+      <button aria-label="ลด 1" disabled><svg class="i"><use href="#i-minus"/></svg></button>
+      <output>1</output>
+      <button aria-label="เพิ่ม 1"><svg class="i"><use href="#i-plus"/></svg></button>
+    </div>
+    <button class="btn btn--primary btn--lg">เพิ่มในรายการ · <span class="btn__price"><span class="baht">฿</span>590</span></button>
+  </div>
+</dialog>
+
+<!-- ============ SERVICE MENU ============ -->
+<dialog class="sheet" id="service" aria-labelledby="sv-t">
+  <div class="sheet__grab" aria-hidden="true"></div>
+  <div class="sheet__head">
+    <h2 id="sv-t">บริการที่โต๊ะ <span class="num" style="font-family:var(--font-display);font-weight:500">07</span></h2>
+    <button class="iconbtn" data-close aria-label="ปิด"><svg class="i i--lg"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sheet__body">
+    <ul>
+      <li><div class="srow">
+        <span class="srow__ic"><svg class="i"><use href="#i-bell"/></svg></span>
+        <span class="srow__txt"><span class="srow__t">เรียกพนักงาน</span><span class="srow__s">ส่งแล้ว 19:52 · รอพนักงานรับทราบ</span></span>
+        <span class="pill pill--neutral"><svg class="i"><use href="#i-check"/></svg>ส่งแล้ว</span>
+      </div></li>
+      <li><button class="srow">
+        <span class="srow__ic"><svg class="i"><use href="#i-receipt"/></svg></span>
+        <span class="srow__txt"><span class="srow__t">ขอเช็กบิล</span><span class="srow__s">พนักงานจะสรุปบิลรวมของทั้งโต๊ะ</span></span>
+        <svg class="i"><use href="#i-chev-r"/></svg>
+      </button></li>
+      <li><a class="srow" href="#">
+        <span class="srow__ic"><svg class="i"><use href="#i-pad"/></svg></span>
+        <span class="srow__txt"><span class="srow__t">ดูบิลของโต๊ะ</span><span class="srow__s">ค่าอาหารที่ส่งแล้ว ฿3,630 · ยังไม่ใช่ยอดสุดท้าย</span></span>
+        <svg class="i"><use href="#i-chev-r"/></svg>
+      </a></li>
+    </ul>
+    <p class="support" style="display:flex;gap:8px;margin-top:14px;padding:12px;background:var(--sunken);border-radius:var(--radius-ctl)"><svg class="i i--sm" style="margin-top:4px"><use href="#i-hand"/></svg>ถ้าส่งคำขอไม่ได้ โบกมือเรียกพนักงานที่อยู่ใกล้ได้เลย</p>
+  </div>
+</dialog>
+
+<!-- ============ ALL CATEGORIES ============ -->
+<dialog class="sheet" id="categories" aria-labelledby="ct-t">
+  <div class="sheet__grab" aria-hidden="true"></div>
+  <div class="sheet__head">
+    <h2 id="ct-t">ทุกหมวด</h2>
+    <button class="iconbtn" data-close aria-label="ปิด"><svg class="i i--lg"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sheet__body">
+    <p class="catlist__grp"><span lang="th">อาหาร</span></p>
+    <ul>
+      <li><a class="srow catlist__row" href="#beef" aria-current="true"><span class="catlist__n">01</span><span class="srow__txt"><span class="srow__t">เนื้อ</span><span class="en" lang="en">Beef Selection</span></span><span class="catlist__count">5</span></a></li>
+      <li><a class="srow catlist__row" href="#grill"><span class="catlist__n">02</span><span class="srow__txt"><span class="srow__t">จานหลักจากเตา</span><span class="en" lang="en">From the Grill</span></span><span class="catlist__count">7</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">03</span><span class="srow__txt"><span class="srow__t">ของเรียกน้ำย่อย</span><span class="en" lang="en">Appetizers</span></span><span class="catlist__count">5</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">04</span><span class="srow__txt"><span class="srow__t">สลัด</span><span class="en" lang="en">Salads</span></span><span class="catlist__count">5</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">05</span><span class="srow__txt"><span class="srow__t">ข้าว</span><span class="en" lang="en">Rice</span></span><span class="catlist__count">3</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">06</span><span class="srow__txt"><span class="srow__t">เครื่องเคียง</span><span class="en" lang="en">Side Dishes</span></span><span class="catlist__count">7</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">07</span><span class="srow__txt"><span class="srow__t">ของหวาน</span><span class="en" lang="en">Dessert</span></span><span class="catlist__count">2</span></a></li>
+    </ul>
+    <p class="catlist__grp"><span lang="th">เครื่องดื่ม</span></p>
+    <ul>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">01</span><span class="srow__txt"><span class="srow__t">มัทฉะพิเศษ</span><span class="en" lang="en">Special Matcha</span></span><span class="catlist__count">12</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">02</span><span class="srow__txt"><span class="srow__t">นม</span><span class="en" lang="en">Milky</span></span><span class="catlist__count">5</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">03</span><span class="srow__txt"><span class="srow__t">โซดา</span><span class="en" lang="en">Soda</span></span><span class="catlist__count">3</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">04</span><span class="srow__txt"><span class="srow__t">น้ำผลไม้สด</span><span class="en" lang="en">Fresh Juice</span></span><span class="catlist__count">4</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">05</span><span class="srow__txt"><span class="srow__t">เบียร์สด</span><span class="en" lang="en">Draft Beer</span></span><span class="catlist__count">3</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">06</span><span class="srow__txt"><span class="srow__t">เบียร์ขวดและสุรา</span><span class="en" lang="en">Bottled Beer &amp; Spirits</span></span><span class="catlist__count">4</span></a></li>
+      <li><a class="srow catlist__row" href="#"><span class="catlist__n">07</span><span class="srow__txt"><span class="srow__t">เครื่องดื่ม</span><span class="en" lang="en">Soft Drinks</span></span><span class="catlist__count">7</span></a></li>
+    </ul>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden><svg class="i"><use href="#i-check-c"/></svg>เพิ่ม ซี่โครงหมูย่าง แล้ว<button class="btn btn--ghost">เลิกทำ</button></div>
+
+<script>
+  // ember mark: one element per rail that glides to the current item (snaps under reduced motion via tokens)
+  function place(mark, el, inset, fixed) {
+    if (!mark || !el) return;
+    const w = fixed || (el.offsetWidth - inset * 2);
+    const x = el.offsetLeft + (fixed ? (el.offsetWidth - fixed) / 2 : inset);
+    mark.style.width = w + 'px';
+    mark.style.transform = `translateX(${x}px)`;
+  }
+  function marks() {
+    const cat = document.querySelector('.catrow__scroll');
+    place(cat.querySelector('.mark'), cat.querySelector('[aria-current="true"]'), 12);
+    const nav = document.querySelector('.bnav');
+    place(nav.querySelector('.mark'), nav.querySelector('[aria-current="page"]'), 0, 32);
+  }
+  document.fonts.ready.then(marks);
+  addEventListener('resize', marks);
+
+  // QA states by hash
+  const state = location.hash.slice(1);
+  if (['sheet', 'service', 'categories'].includes(state)) {
+    const d = document.getElementById(state);
+    document.querySelector('.g-app').inert = true;
+    d.showModal();
+  }
+  if (state === 'toast') document.getElementById('toast').hidden = false;
+  document.addEventListener('click', (e) => {
+    const o = e.target.closest('[data-open]');
+    if (o) { e.preventDefault(); document.getElementById(o.dataset.open).showModal(); }
+    const c = e.target.closest('[data-close]');
+    if (c) c.closest('dialog').close();
+  });
+</script>
+</body>
+</html>

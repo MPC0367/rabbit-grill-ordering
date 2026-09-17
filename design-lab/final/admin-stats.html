@@ -1,0 +1,278 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Insights · Rabbit Grill staff</title>
+<!-- FINAL reference mock: Order Stats weekly bars (brief 37) + Menu Stats ranking rows (brief 38), 1440 wide, full page.
+     In the app these are two subtabs; they are stacked here so one capture shows both.
+     ALL NUMBERS ARE DEMO FIXTURES (the page says so). Week Mon 14 - Sun 20 Sep 2026, "now" = Thu 17 Sep 19:52 Asia/Bangkok.
+     Week so far: 34 + 39 + 0 + 21 = 94. Same point last week: 30 + 36 + 0 + 22 = 88. -->
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<link rel="stylesheet" href="../../client/src/styles/tokens.css">
+<link rel="stylesheet" href="final.css">
+</head>
+<body>
+<script src="sprite.js"></script>
+<div class="a-app">
+  <aside class="rail" data-surface="dark" aria-label="Staff navigation">
+    <a class="wordmark" href="#" aria-label="Rabbit Grill Khao Yai, staff"><span class="wordmark__name" aria-hidden="true">Rabbit Grill</span><span class="wordmark__sub" aria-hidden="true">Khao Yai · Staff</span></a>
+    <nav class="rnav">
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-orders"/></svg>Orders<span class="badge badge--ember" aria-label="2 new">2</span></a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-tables"/></svg>Tables</a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-cutlery"/></svg>Menu</a>
+      <a class="rnav__item" href="#" aria-current="page"><svg class="i"><use href="#i-bars"/></svg>Insights</a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-more"/></svg>More</a>
+    </nav>
+    <div class="rail__foot">
+      <div class="rail__row"><svg class="i"><use href="#i-sound"/></svg>Alerts on<button class="textbtn">Test</button></div>
+      <a class="rail__row rail__row--link" href="#"><svg class="i"><use href="#i-lock"/></svg>Lock screen</a>
+      <div class="seg seg--box" role="group" aria-label="Language ภาษา"><button aria-pressed="false" lang="th">ไทย</button><button aria-pressed="true" lang="en">EN</button></div>
+      <p class="rail__time">Thu 17 Sep 2026<br>Asia/Bangkok</p>
+    </div>
+  </aside>
+
+  <div class="ws">
+    <header class="wshead">
+      <h1>Insights</h1>
+      <nav class="subtabs" aria-label="Insights views">
+        <a class="subtab" href="#" aria-current="page">Order Stats</a>
+        <a class="subtab" href="#">Menu Stats</a>
+        <a class="subtab" href="#">Engagement</a>
+      </nav>
+      <div class="wshead__right">
+        <p class="ordering__state" style="padding:0">Data as of <b style="color:var(--text)">19:52</b>&nbsp;· refreshed 1 min ago</p>
+        <button class="btn btn--outline btn--staff"><svg class="i"><use href="#i-download"/></svg>Export CSV</button>
+        <div class="who"><span class="avatar" aria-hidden="true">NK</span><div><p class="who__n">Nok</p><p class="who__r">Owner</p></div></div>
+      </div>
+    </header>
+
+    <div class="banner banner--demo" role="note" style="padding-inline:var(--admin-pad)">
+      <svg class="i"><use href="#i-info"/></svg>
+      <p><span class="banner__t">Demo data.</span> These figures come from seed fixtures, not from Rabbit Grill's real service. Reports and exports are labelled the same way until live data exists.</p>
+    </div>
+
+    <div class="ins">
+      <!-- period controls -->
+      <div class="periodbar">
+        <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Previous week"><svg class="i"><use href="#i-chev-l"/></svg></button>
+        <div class="periodbar__range"><b>This week</b><span>Mon 14 – Sun 20 Sep 2026 · Asia/Bangkok</span></div>
+        <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Next week"><svg class="i"><use href="#i-chev-r"/></svg></button>
+        <button class="btn btn--outline btn--staff" aria-disabled="true" style="--_fg:var(--text-2)">This week</button>
+        <button class="btn btn--outline btn--staff"><svg class="i"><use href="#i-calendar"/></svg>Pick a date</button>
+        <div class="seg seg--staff" role="group" aria-label="Period" style="margin-left:auto">
+          <button aria-pressed="true">Week</button><button aria-pressed="false">Month</button><button aria-pressed="false">Year</button>
+        </div>
+      </div>
+
+      <div class="metrics" role="group" aria-label="Metric">
+        <button class="metric" aria-pressed="true">Order rounds</button>
+        <button class="metric" aria-pressed="false">Accepted rounds</button>
+        <button class="metric" aria-pressed="false">Ordering visits</button>
+        <button class="metric" aria-pressed="false">Ordering devices</button>
+        <button class="metric" aria-pressed="false">Recorded diners</button>
+        <button class="metric" aria-pressed="false">Items ordered</button>
+        <button class="metric" style="margin-left:auto"><svg class="i"><use href="#i-info"/></svg>What each metric counts</button>
+      </div>
+
+      <!-- charcoal analytics panel -->
+      <section class="panel panel--chart" data-surface="dark" aria-labelledby="wk-h">
+        <div class="headline">
+          <p class="cap" id="wk-h">Order rounds · this week so far</p>
+          <p class="headline__v">94</p>
+          <p class="headline__u">submitted order rounds, Mon 14 to Thu 17 at 19:52</p>
+          <div class="cmp">
+            <span class="cmp__d">▲ 6</span>
+            <div>vs 88 at the same point last week<small>Mon–Thu to 19:52 · +7%</small></div>
+          </div>
+          <div class="selday" aria-live="polite">
+            <h3>Tue 15 Sep <span style="color:var(--text-2);font-weight:400">· selected</span></h3>
+            <dl class="kv">
+              <dt>Submitted</dt><dd>39</dd>
+              <dt>Accepted</dt><dd>37</dd>
+              <dt>Rejected · cancelled</dt><dd>1 · 1</dd>
+              <dt>Ordering visits</dt><dd>22</dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="chart">
+          <div class="chart__top">
+            <p class="cap">Submitted order rounds per day</p>
+            <button class="btn btn--ghost btn--staff"><svg class="i"><use href="#i-table-view"/></svg>Show as table</button>
+          </div>
+          <div class="chart__plot">
+            <div class="yaxis" aria-hidden="true"><span style="bottom:0">0</span><span style="bottom:25%">10</span><span style="bottom:50%">20</span><span style="bottom:75%">30</span><span style="bottom:100%">40</span></div>
+            <div class="grid">
+              <i style="bottom:25%"></i><i style="bottom:50%"></i><i style="bottom:75%"></i><i style="bottom:100%"></i>
+              <div class="bars" role="list" aria-label="Order rounds by day">
+                <button class="bar" role="listitem" aria-label="Monday 14 September, 34 order rounds, last week 30" style="--h:85%"><span class="bar__fill"></span><span class="bar__val">34</span><span class="bar__prior" style="bottom:75%"></span></button>
+                <button class="bar is-selected" role="listitem" aria-pressed="true" aria-label="Tuesday 15 September, 39 order rounds, last week 36, selected" style="--h:97.5%"><span class="bar__fill"></span><span class="bar__val">39</span><span class="bar__prior" style="bottom:90%"></span></button>
+                <button class="bar bar--zero" role="listitem" aria-label="Wednesday 16 September, 0 order rounds recorded, last week 0" style="--h:3px"><span class="bar__fill"></span><span class="bar__val">0</span></button>
+                <button class="bar bar--today" role="listitem" aria-label="Thursday 17 September, today, 21 order rounds so far, partial day; last week at the same time 22" style="--h:52.5%"><span class="bar__fill"></span><span class="bar__val">21</span><span class="bar__prior" style="bottom:55%"></span></button>
+                <div class="bar bar--future" role="listitem" aria-label="Friday 18 September, upcoming, no data yet" style="--h:100%"><span class="bar__fill" style="opacity:.7"></span><span class="bar__val" style="color:var(--text-2)">—</span></div>
+                <div class="bar bar--future" role="listitem" aria-label="Saturday 19 September, upcoming" style="--h:100%"><span class="bar__fill" style="opacity:.7"></span><span class="bar__val" style="color:var(--text-2)">—</span></div>
+                <div class="bar bar--future" role="listitem" aria-label="Sunday 20 September, upcoming" style="--h:100%"><span class="bar__fill" style="opacity:.7"></span><span class="bar__val" style="color:var(--text-2)">—</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="xaxis" aria-hidden="true">
+            <span></span>
+            <ol>
+              <li><b>Mon</b><span>14 Sep</span></li>
+              <li class="is-selected"><b>Tue</b><span>15 Sep</span></li>
+              <li><b>Wed</b><span>16 Sep</span></li>
+              <li class="is-today"><b>Today</b><span class="live">Live · partial</span></li>
+              <li><b>Fri</b><span>Upcoming</span></li>
+              <li><b>Sat</b><span>Upcoming</span></li>
+              <li><b>Sun</b><span>Upcoming</span></li>
+            </ol>
+          </div>
+          <div class="chart__legend" aria-label="Legend">
+            <span class="lg"><i class="l-done"></i>Completed day</span>
+            <span class="lg"><i class="l-today"></i>Today, partial</span>
+            <span class="lg"><i class="l-future"></i>Upcoming, not zero</span>
+            <span class="lg"><i class="l-zero"></i>Zero recorded</span>
+            <span class="lg"><i class="l-missing"></i>No data (failed to load)</span>
+            <span class="lg"><i class="l-prior"></i>Same point last week</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- supporting cards -->
+      <div class="stats">
+        <article class="stat">
+          <p class="stat__k">Orders today <button class="iconbtn" aria-label="Definition: orders today"><svg class="i i--sm"><use href="#i-info"/></svg></button></p>
+          <p class="stat__v">21 <span class="pill pill--ok pill--live">Live</span></p>
+          <p class="stat__c"><b>▼ 1</b> vs last Thursday at 19:52</p>
+        </article>
+        <article class="stat">
+          <p class="stat__k">Ordering visits <button class="iconbtn" aria-label="Definition: ordering visits"><svg class="i i--sm"><use href="#i-info"/></svg></button></p>
+          <p class="stat__v">58 <small>this week</small></p>
+          <p class="stat__c">Distinct visits, counted once for the week</p>
+        </article>
+        <article class="stat">
+          <p class="stat__k">Recorded diners <button class="iconbtn" aria-label="Definition: recorded diners"><svg class="i i--sm"><use href="#i-info"/></svg></button></p>
+          <p class="stat__v">164</p>
+          <div class="coverage" aria-hidden="true"><i style="width:84%"></i></div>
+          <p class="stat__c">Covers entered for <b>49 of 58</b> visits. Missing covers are not estimated.</p>
+        </article>
+        <article class="stat">
+          <p class="stat__k">Median acceptance <button class="iconbtn" aria-label="Definition: median acceptance"><svg class="i i--sm"><use href="#i-info"/></svg></button></p>
+          <p class="stat__v">2<small>m</small> 10<small>s</small></p>
+          <p class="stat__c">Received to accepted · 92 rounds</p>
+        </article>
+        <article class="stat">
+          <p class="stat__k">Unresolved now <button class="iconbtn" aria-label="Definition: unresolved now"><svg class="i i--sm"><use href="#i-info"/></svg></button></p>
+          <p class="stat__v">5 <span class="pill pill--ok pill--live">Live</span></p>
+          <p class="stat__c">Oldest waiting <b>22 min</b> · table 12</p>
+        </article>
+      </div>
+
+      <!-- day drill-down -->
+      <section aria-labelledby="dd-h" style="display:grid;gap:12px">
+        <div class="section-h">
+          <h2 id="dd-h">Tue 15 Sep · 39 order rounds</h2>
+          <p>Table shown as it was when the order was sent · showing 6 of 39</p>
+          <div class="right"><button class="btn btn--outline btn--staff"><svg class="i"><use href="#i-download"/></svg>CSV for this day</button></div>
+        </div>
+        <table class="dtable">
+          <thead><tr><th>Reference</th><th>Table</th><th class="n">Round</th><th>Sent</th><th>Source</th><th class="n">Items</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="code">RG-3F8K</td><td>04</td><td class="n">1</td><td>11:24</td><td>Guest QR</td><td class="n">3</td><td><span class="pill pill--ok"><svg class="i"><use href="#i-check"/></svg>Served</span></td></tr>
+            <tr><td class="code">RG-3F9A</td><td>11</td><td class="n">1</td><td>11:52</td><td>Guest QR</td><td class="n">5</td><td><span class="pill pill--ok"><svg class="i"><use href="#i-check"/></svg>Served</span></td></tr>
+            <tr><td class="code">RG-3G2C</td><td>02</td><td class="n">2</td><td>12:10</td><td>Staff assist · Nok</td><td class="n">2</td><td><span class="pill pill--ok"><svg class="i"><use href="#i-check"/></svg>Served</span></td></tr>
+            <tr><td class="code">RG-3G4N</td><td>07</td><td class="n">1</td><td>12:31</td><td>Guest QR</td><td class="n">4</td><td><span class="pill pill--heat"><svg class="i"><use href="#i-slash"/></svg>Served · 1 cancelled</span></td></tr>
+            <tr><td class="code">RG-3G7Q</td><td>14</td><td class="n">1</td><td>12:48</td><td>Guest QR</td><td class="n">1</td><td><span class="pill pill--alert"><svg class="i"><use href="#i-slash"/></svg>Rejected · table asked to cancel</span></td></tr>
+            <tr><td class="code">RG-3H1D</td><td>09</td><td class="n">3</td><td>13:05</td><td>Guest QR</td><td class="n">2</td><td><span class="pill pill--ok"><svg class="i"><use href="#i-check"/></svg>Served</span></td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="7"><a class="textlink" href="#">Show all 39 rounds</a></td></tr></tfoot>
+        </table>
+      </section>
+
+      <!-- ===================== MENU STATS (subtab) ===================== -->
+      <section aria-labelledby="ms-h" style="display:grid;gap:14px;margin-top:22px;padding-top:26px;border-top:1px solid var(--rule-ink)">
+        <div class="section-h">
+          <h2 id="ms-h" style="font:var(--type-admin-title);font-size:var(--fs-28)">Menu Stats</h2>
+          <p>Most ordered · net accepted servings · rejected and cancelled quantities excluded</p>
+          <div class="right"><label class="search search--staff" style="width:240px"><span class="sr">Find a dish</span><svg class="i"><use href="#i-search"/></svg><input type="search" placeholder="Find a dish"></label></div>
+        </div>
+        <div class="periodbar" style="padding-top:0">
+          <div class="seg seg--staff" role="group" aria-label="Range"><button aria-pressed="true">Week</button><button aria-pressed="false">Month</button><button aria-pressed="false">Year</button><button aria-pressed="false">Custom</button></div>
+          <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Previous week"><svg class="i"><use href="#i-chev-l"/></svg></button>
+          <div class="periodbar__range"><b>Mon 14 – Thu 17 Sep 2026</b><span>This week so far</span></div>
+          <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Next week"><svg class="i"><use href="#i-chev-r"/></svg></button>
+          <button class="selectbtn">Category <b>All food</b><svg class="i"><use href="#i-chev-d"/></svg></button>
+          <div class="fchips" role="group" aria-label="Order"><button aria-pressed="true">Most ordered</button><button aria-pressed="false">Least ordered</button></div>
+        </div>
+
+        <div class="ranks" role="table" aria-label="Most ordered dishes this week">
+          <div class="rank rank--head" role="row"><span role="columnheader">Rank</span><span></span><span role="columnheader">Dish</span><span role="columnheader">Servings · share</span><span role="columnheader" style="text-align:right">Orders</span><span role="columnheader" style="text-align:right">Visits</span><span role="columnheader">vs last week</span><span role="columnheader">Context</span></div>
+          <div class="rank" role="row">
+            <span class="rank__n">01</span>
+            <div class="plate"><img src="../../public/media/dish/corn-rib-240.webp" alt="" width="240" height="180"></div>
+            <div class="rank__name"><b lang="th">คอร์นริบ</b><span class="en">Corn Rib</span> <span class="rank__cat">· Appetizers</span></div>
+            <div class="rank__qty"><b>31<small>13%</small></b><span class="share"><i style="width:100%"></i></span></div>
+            <span class="rank__num">27</span><span class="rank__num">25</span>
+            <span class="delta delta--up">▲ 4</span>
+            <p class="rank__q"><b><svg class="i"><use href="#i-check-c"/></svg>Available every open day</b></p>
+          </div>
+          <div class="rank" role="row">
+            <span class="rank__n">02</span>
+            <div class="plate"><img src="../../public/media/dish/striploin-240.webp" alt="" width="240" height="180"></div>
+            <div class="rank__name"><b lang="th">เนื้อสันนอกออสเตรเลีย</b><span class="en">Australian Striploin</span> <span class="rank__cat">· Beef Selection</span></div>
+            <div class="rank__qty"><b>24<small>10%</small></b><span class="share"><i style="width:77%"></i></span></div>
+            <span class="rank__num">21</span><span class="rank__num">19</span>
+            <span class="delta delta--up">▲ 2</span>
+            <p class="rank__q"><b><svg class="i"><use href="#i-check-c"/></svg>Available every open day</b></p>
+          </div>
+          <div class="rank" role="row">
+            <span class="rank__n">03</span>
+            <div class="plate"><img src="../../public/media/dish/caesar-240.webp" alt="" width="240" height="180"></div>
+            <div class="rank__name"><b lang="th">กริลล์ซีซาร์สลัด</b><span class="en">Grilled Caesar Salad</span> <span class="rank__cat">· Salads</span></div>
+            <div class="rank__qty"><b>22<small>9%</small></b><span class="share"><i style="width:71%"></i></span></div>
+            <span class="rank__num">20</span><span class="rank__num">18</span>
+            <span class="delta delta--down">▼ 3</span>
+            <p class="rank__q"><b><svg class="i"><use href="#i-check-c"/></svg>Available every open day</b></p>
+          </div>
+          <div class="rank" role="row">
+            <span class="rank__n">04</span>
+            <div class="plate"><img src="../../public/media/dish/river-prawns-240.webp" alt="" width="240" height="180"></div>
+            <div class="rank__name"><b lang="th">กุ้งแม่น้ำย่าง</b><span class="en">Grilled River Prawns</span> <span class="rank__cat">· From the Grill</span></div>
+            <div class="rank__qty"><b>17<small>7%</small></b><span class="share"><i style="width:55%"></i></span></div>
+            <span class="rank__num">16</span><span class="rank__num">15</span>
+            <span class="delta">= 0 <small>no change</small></span>
+            <p class="rank__q"><b><svg class="i"><use href="#i-check-c"/></svg>Available every open day</b></p>
+          </div>
+          <div class="rank" role="row">
+            <span class="rank__n">05</span>
+            <div class="plate"><img src="../../public/media/dish/primerib-full-240.webp" alt="" width="240" height="180"></div>
+            <div class="rank__name"><b lang="th">ไพร์มริบ</b><span class="en">Prime Rib</span> <span class="rank__cat">· Beef Selection</span></div>
+            <div class="rank__qty"><b>11<small>5% · servings</small></b><span class="share"><i style="width:35%"></i></span></div>
+            <span class="rank__num">11</span><span class="rank__num">10</span>
+            <span class="delta delta--up">▲ 1</span>
+            <p class="rank__q"><b><svg class="i"><use href="#i-scale"/></svg>Priced by weight</b>Ranked by servings · 4.6 kg confirmed in total</p>
+          </div>
+          <div class="rank" role="row">
+            <span class="rank__n">06</span>
+            <div class="plate"><img src="../../public/media/dish/grilled-tongue-240.webp" alt="" width="240" height="180"></div>
+            <div class="rank__name"><b lang="th">ลิ้นวัวย่าง</b><span class="en">Grilled Tongue</span> <span class="rank__cat">· Beef Selection</span></div>
+            <div class="rank__qty"><b>6<small>3%</small></b><span class="share"><i style="width:19%"></i></span></div>
+            <span class="rank__num">6</span><span class="rank__num">6</span>
+            <span class="delta delta--down">▼ 5</span>
+            <p class="rank__q"><b style="color:var(--alert)"><svg class="i"><use href="#i-slash"/></svg>Sold out 2 of 3 open days</b>Low count is not proof of low demand</p>
+          </div>
+          <div class="rank" role="row" style="min-height:60px;grid-template-columns:1fr auto">
+            <p class="stat__c">Showing 6 of 34 published food items · <b>2</b> never ordered despite being available · <b>1</b> with too little availability to rank</p>
+            <a class="btn btn--outline btn--staff" href="#">Full ranking</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</body>
+</html>

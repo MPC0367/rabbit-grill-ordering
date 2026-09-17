@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dish Crop Sheet</title>
+<!-- QA page for scripts/assets.ts: every dish's 480 crop, shown at 240x180 in menu order.
+     Open straight from disk. Served over http, it also reads public/media/manifest.json
+     and prints the widths each dish was cut at. -->
+<link rel="stylesheet" href="../node_modules/@fontsource-variable/oswald/index.css">
+<link rel="stylesheet" href="../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<style>
+  :root {
+    --paper: #F3ECDD; --paper-2: #E9E0CB; --bone: #F8F4EA;
+    --ink: #17150F; --ink-2: #221E16; --taupe: #6B5E4B; --ember-ink: #A8441E; --steel: #8E8B82;
+    --rule: rgba(23, 21, 15, .16);
+    --serif: "Cormorant Garamond Variable", "Noto Sans Thai Variable", Georgia, serif;
+    --disp: "Oswald Variable", "Noto Sans Thai Variable", "Arial Narrow", sans-serif;
+    --sans: "Noto Sans Thai Variable", "Helvetica Neue", Arial, sans-serif;
+    --tile: 240px;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); color: var(--ink); }
+  body { margin: 0; padding: 56px 16px 72px; font: 14px/1.45 var(--sans); }
+  .wrap { max-width: calc(var(--tile) * 5 + 24px * 4); margin: 0 auto; }
+
+  header { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px 32px; padding-bottom: 20px; border-bottom: 1px solid var(--ink); }
+  .kick { grid-column: 1 / -1; font: 500 11px/1 var(--disp); letter-spacing: .22em; text-transform: uppercase; color: var(--taupe); }
+  h1 { margin: 0; font: italic 500 52px/1 var(--serif); letter-spacing: -.01em; }
+  .spec { margin: 0; display: flex; gap: 22px; font: 400 12px/1 var(--disp); letter-spacing: .12em; text-transform: uppercase; color: var(--taupe); }
+  .spec b { font-weight: 500; color: var(--ink); }
+  .spec .file { text-transform: none; letter-spacing: .04em; }
+
+  section { margin-top: 40px; }
+  h2 { display: flex; align-items: baseline; gap: 14px; margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); font: 500 15px/1.2 var(--disp); letter-spacing: .14em; text-transform: uppercase; }
+  h2 .n { color: var(--ember-ink); font-variant-numeric: tabular-nums; }
+  h2 .th { font: 400 14px/1.2 var(--sans); letter-spacing: 0; text-transform: none; color: var(--taupe); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, var(--tile)); gap: 28px 24px; }
+  figure { margin: 0; }
+  .ph { position: relative; width: var(--tile); aspect-ratio: 4 / 3; background: var(--paper-2); outline: 1px solid var(--rule); outline-offset: -1px; overflow: hidden; }
+  .ph img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .ph.missing::after { content: "no crop"; position: absolute; inset: 0; display: grid; place-items: center; font: 500 11px var(--disp); letter-spacing: .2em; text-transform: uppercase; color: var(--ember-ink); }
+  figcaption { padding-top: 9px; }
+  .stem { display: flex; justify-content: space-between; gap: 8px; font: 500 11px/1.2 var(--disp); letter-spacing: .1em; text-transform: uppercase; }
+  .stem span { color: var(--steel); font-weight: 400; letter-spacing: .06em; }
+  .en { margin-top: 4px; font: italic 500 17px/1.15 var(--serif); }
+  .th { color: var(--taupe); font-size: 13px; }
+
+  @media (max-width: 560px) {
+    :root { --tile: calc((100vw - 32px - 16px) / 2); }
+    body { padding-top: 32px; }
+    header { grid-template-columns: 1fr; }
+    h1 { font-size: 38px; }
+    .spec { flex-wrap: wrap; gap: 8px 16px; }
+    .grid { gap: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kick">Rabbit Grill Khao Yai &middot; ordering &middot; design lab</div>
+    <h1>Dish crops</h1>
+    <p class="spec"><span>Ratio <b>4:3</b></span><span>File <b class="file">-480.webp</b></span><span>Shown <b>240&times;180</b></span><span id="count">&nbsp;</span></p>
+  </header>
+  <main id="sheet"></main>
+</div>
+<script>
+  // Menu order and names from data/menu.json (restaurant's own menu).
+  const MENU = [
+    ['01', 'Beef Selection', 'เนื้อ', [
+      ['primerib-full', 'Prime Rib', 'ไพร์มริบ'],
+      ['wagyu-tenderloin', 'Wagyu Tenderloin MB 6–7 with Red Wine Jus', 'เนื้อสันในวากิวย่างซอสไวน์แดง'],
+      ['striploin', 'Australian Striploin', 'เนื้อสันนอกออสเตรเลีย'],
+      ['grilled-tongue', 'Grilled Tongue', 'ลิ้นวัวย่าง'],
+      ['tongue-stew', 'Beef Tongue Stew', 'สตูว์ลิ้นวัว'],
+      ['lamb-rack', 'Grilled Lamb Rack', 'ซี่โครงแกะย่าง'],
+    ]],
+    ['02', 'From the Grill', 'จานหลักจากเตา', [
+      ['river-prawns', 'Grilled River Prawns', 'กุ้งแม่น้ำย่าง'],
+      ['baby-chicken', 'Grilled Baby Chicken', 'ไก่ย่างตัวเล็กคลุกเครื่องเทศ'],
+      ['pork-ribs', 'Grilled Pork Ribs', 'ซี่โครงหมูย่าง'],
+      ['grilled-fish', 'Grilled Fish', 'ปลาย่าง'],
+      ['fish-chips', 'Fish and Chips', 'ฟิชแอนด์ชิปส์'],
+      ['grilled-pork', 'Grilled Pork', 'หมูย่าง'],
+      ['grilled-squid', 'Grilled Squid', 'ปลาหมึกย่าง'],
+    ]],
+    ['03', 'Appetizers', 'ของเรียกน้ำย่อย', [
+      ['bone-marrow', 'Beef Tartare Bone Marrow', 'บีฟทาร์ทาร์เสิร์ฟพร้อมโบนแมโรว์'],
+      ['calamari', 'Calamari Served with Tartar Sauce', 'ปลาหมึกชุบเกลือขนมปังทอดเสิร์ฟพร้อมซอสทาร์ทาร์'],
+      ['nashville-chicken', 'Nashville Hot Chicken', 'ไก่ทอดซอสเผ็ดแนชวิลล์'],
+      ['sweet-potato', 'Fried Sweet Potato', 'มันหวานทอด'],
+      ['corn-rib', 'Corn Rib', 'คอร์นริบ'],
+    ]],
+    ['04', 'Salads', 'สลัด', [
+      ['burrata-tomato', 'Burrata Cheese and Tomato Salad', 'ชีสบุรัตต้าสลัดมะเขือเทศ'],
+      ['greenbean-peas', 'Green Beans and Peas Salad', 'สลัดถั่วหวานกับซอสบัลซามิก'],
+      ['caesar', 'Grilled Caesar Salad', 'กริลล์ซีซาร์สลัด'],
+      ['green-salad', 'Green Salad with Balsamic Dressing', 'สลัดรวมกับซอสบัลซามิก'],
+      ['tomato-salad', 'Tomato Salad', 'สลัดมะเขือเทศ'],
+    ]],
+    ['05', 'Seasonal — Avocado', 'เมนูตามฤดูกาล · อะโวคาโด', [
+      ['burrata-guacamole', 'Burrata Salad with Roasted Tomatoes & Guacamole', 'สลัดบุรัตต้ากับมะเขือเทศอบและกัวคาโมเล'],
+      ['corn-avocado-salad', 'Grilled Corn & Avocado Salad', 'สลัดข้าวโพดย่างกับอะโวคาโด'],
+      ['fried-avocado', 'Crispy Fried Avocado', 'อะโวคาโดทอดกรอบ'],
+      ['corn-fritters', 'Crispy Corn Fritters with Guacamole', 'ข้าวโพดทอดกรอบกับกัวคาโมเล'],
+    ]],
+    ['06', 'Rice', 'ข้าว', [
+      ['basil-beef-rice', 'Rice with Stir-Fried Basil and Grilled Beef', 'ข้าวกะเพราคลุกเนื้อย่าง'],
+      ['beef-fried-rice', 'Beef Fried Rice with Grilled Beef', 'ข้าวผัดมันเนื้อย่าง'],
+      ['american-fried-rice', 'American Fried Rice', 'ข้าวผัดอเมริกัน'],
+    ]],
+    ['07', 'Side Dishes', 'เครื่องเคียง', [
+      ['mashed-potato', 'Mashed Potato', 'มันบด'],
+      ['greenbeans-bacon', 'Sauteed Green Beans Bacon', 'ถั่วแขกผัดเบคอน'],
+      ['mini-broccoli', 'Sauteed Mini Broccoli', 'บรอกโคลีเล็กผัด'],
+      ['mushrooms', 'Sauteed Mushrooms', 'เห็ดผัด'],
+      ['sauteed-potato', 'Sauteed Potato', 'มันฝรั่งผัด'],
+      ['garlic-confit', 'Garlic Confit', 'กระเทียมคอนฟี'],
+      ['french-fries', 'French Fries', 'เฟรนช์ฟรายส์'],
+    ]],
+    ['08', 'Dessert', 'ของหวาน', [
+      ['tiramisu', 'Tiramisu', 'ทีรามิสุ'],
+      ['creme-brulee', 'Crème Brûlée Lemon', 'เครมบรูเล่เลมอน'],
+    ]],
+  ];
+
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  let total = 0;
+  document.getElementById('sheet').innerHTML = MENU.map(([n, en, th, items]) => {
+    total += items.length;
+    return `<section><h2><span class="n">${n}</span>${esc(en)}<span class="th">${esc(th)}</span></h2><div class="grid">${
+      items.map(([stem, dEn, dTh]) => `
+        <figure data-stem="${stem}">
+          <div class="ph"><img src="../public/media/dish/${stem}-480.webp" width="480" height="360" alt="${esc(dEn)}" decoding="async"
+            onerror="this.parentNode.classList.add('missing'); this.remove()"></div>
+          <figcaption><div class="stem">${stem}<span data-sizes></span></div><div class="en">${esc(dEn)}</div><div class="th">${esc(dTh)}</div></figcaption>
+        </figure>`).join('')
+    }</div></section>`;
+  }).join('');
+  document.getElementById('count').innerHTML = `Dishes <b>${total}</b>`;
+
+  // Over http, annotate each tile with the widths the pipeline produced.
+  if (location.protocol.startsWith('http')) {
+    fetch('../public/media/manifest.json').then((r) => r.json()).then((m) => {
+      for (const fig of document.querySelectorAll('figure[data-stem]')) {
+        const e = m.dish[fig.dataset.stem];
+        fig.querySelector('[data-sizes]').textContent = e ? e.sizes.join(' · ') : 'not in manifest';
+      }
+    }).catch(() => {});
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rabbit Grill · โต๊ะ 07 · ติดตามอาหาร</title>
+<!-- QUIET LUXURY · guest Track · phone 390 · Thai active -->
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<style>
+:root{
+  --paper:#F3ECDD; --paper-2:#E9E0CB; --bone:#F8F4EA;
+  --ink:#17150F; --ink-2:#221E16; --ink-3:#2E2921;
+  --forest:#1E4230; --forest-2:#2C5A40; --oxblood:#6E1621; --taupe:#6B5E4B;
+  --ember:#CB6234; --ember-ink:#A8441E; --steel:#8E8B82;
+  --canvas:var(--paper); --surface:var(--bone); --sunken:var(--paper-2);
+  --text:var(--ink); --text-2:var(--taupe);
+  --act:var(--forest); --on-act:var(--bone); --now:var(--ember);
+  --rule:rgba(23,21,15,.11); --rule-strong:rgba(23,21,15,.2); --rule-ctl:#858176;
+  --serif:"Cormorant Garamond Variable","Noto Sans Thai Variable",Georgia,serif;
+  --disp:"Oswald Variable","Noto Sans Thai Variable","Arial Narrow",sans-serif;
+  --sans:"Noto Sans Thai Variable","Helvetica Neue",Arial,sans-serif;
+  --r-xs:6px; --r-s:10px; --r-m:14px; --r-l:18px; --r-pill:999px;
+  --e-1:0 1px 0 rgba(23,21,15,.03),0 1px 3px rgba(23,21,15,.07);
+  --t-press:120ms; --t-fast:160ms; --t-base:200ms; --t-step:220ms;
+  --ease-out:cubic-bezier(.2,.7,.3,1);
+  --gut:20px; --top-h:60px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;overflow-x:clip}
+body{margin:0;background:var(--canvas);color:var(--text);font:400 15px/1.65 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:clip}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3,p,ol,ul{margin:0;padding:0}
+ol,ul{list-style:none}
+a{color:inherit;text-decoration:none}
+img,svg{display:block;max-width:100%}
+.ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico--s{width:16px;height:16px}
+:focus-visible{outline:2px solid var(--now);outline-offset:2px;border-radius:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.mark-now{position:absolute;width:18px;height:2px;border-radius:2px;background:var(--now)}
+
+/* header (shared) */
+.top{position:sticky;top:0;z-index:20;height:var(--top-h);display:flex;align-items:center;gap:6px;padding:0 10px 0 var(--gut);
+  background:rgba(243,236,221,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 1px 0 var(--rule)}
+.wordmark{margin-right:auto;font:600 14px/1 var(--serif);letter-spacing:.22em;text-transform:uppercase;white-space:nowrap}
+.place{display:inline-flex;align-items:center;height:44px;padding:0 4px}
+.place__card{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 0 0 10px;background:var(--bone);border-radius:var(--r-xs);box-shadow:var(--e-1),inset 0 0 0 1px var(--rule)}
+.place__k{font:500 12px/1 var(--sans);color:var(--taupe)}
+.place__n{font:600 18px/.8 var(--serif)}
+.place__svc{display:grid;place-items:center;align-self:stretch;width:32px;margin-left:5px;box-shadow:inset 1px 0 0 var(--rule)}
+.lang{height:44px;display:flex;align-items:center}
+.lang__track{display:flex;padding:3px;border-radius:var(--r-pill);background:var(--paper-2)}
+.lang button{position:relative;min-width:38px;height:30px;border-radius:var(--r-pill);font:500 12px/1 var(--disp);letter-spacing:.1em;color:var(--taupe)}
+.lang button::after{content:"";position:absolute;inset:-7px -1px}
+.lang button[aria-pressed=true]{background:var(--bone);color:var(--ink);box-shadow:var(--e-1)}
+
+main{padding:28px var(--gut) calc(110px + env(safe-area-inset-bottom))}
+
+/* page head */
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.head h1{font:600 28px/1.35 var(--sans)}
+.head p{font-size:14px;line-height:1.6;color:var(--taupe)}
+.live{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border-radius:var(--r-pill);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule);font:500 13px/1 var(--sans);white-space:nowrap}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--act);box-shadow:0 0 0 3px rgba(30,66,48,.14)}
+
+/* service — compact, always the same two things */
+.service{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.svc{min-height:48px;padding:6px 12px;text-align:center;border-radius:var(--r-m);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-ctl);
+  display:flex;align-items:center;justify-content:center;gap:8px;font:500 15px/1.3 var(--sans);transition:transform var(--t-press) var(--ease-out),background var(--t-fast)}
+.svc:active{transform:scale(.98)}
+
+/* round card */
+.round{margin-top:22px;background:var(--surface);border-radius:var(--r-l);box-shadow:var(--e-1),inset 0 0 0 1px var(--rule);overflow:hidden}
+.round__top{padding:18px 20px 16px}
+.round__meta{display:flex;align-items:center;justify-content:space-between;gap:12px;font:500 13px/1.5 var(--sans);color:var(--taupe)}
+.ref{font:500 13px/1 var(--disp);letter-spacing:.14em;color:var(--ink)}
+.round__state{position:relative;margin-top:8px;display:inline-block;font:600 26px/1.35 var(--sans);padding-bottom:10px}
+.round__state .mark-now{left:0;bottom:2px;width:24px}
+.round__sub{margin-top:6px;font-size:14px;line-height:1.6;color:var(--taupe)}
+.nw{white-space:nowrap}
+.round__sub b{font-weight:500;color:var(--ink)}
+.tally{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.tag{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px 0 9px;border-radius:var(--r-pill);background:var(--canvas);font:500 13px/1 var(--sans)}
+
+/* parcel-style timeline */
+.tl{padding:6px 20px 8px;box-shadow:inset 0 1px 0 var(--rule)}
+.st{position:relative;display:grid;grid-template-columns:28px 1fr auto;column-gap:14px;padding:12px 0}
+/* rail: drawn from each node down to the next */
+.st::before{content:"";position:absolute;z-index:0;left:13.25px;top:23px;bottom:-23px;width:1.5px;background:var(--rule-strong)}
+.st:last-child::before{display:none}
+.st--done::before{background:var(--ink)}
+.node{position:relative;z-index:1;width:28px;height:22px;display:grid;place-items:center}
+.node__dot{width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+.st--done .node__dot{background:var(--ink);color:var(--bone)}
+.st--now .node__dot{width:26px;height:26px;margin-top:-2px;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--ink),0 0 0 5px rgba(203,98,52,.13)}
+.st--now .node__dot::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--now)}
+.st--next .node__dot{width:12px;height:12px;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--steel)}
+.st__t{font:500 16px/1.45 var(--sans)}
+.st--now .st__t{font-weight:600;font-size:17px}
+.st--next .st__t{color:var(--taupe);font-weight:400;font-size:15px}
+.st__d{grid-column:2 / 4;margin-top:4px;font-size:14px;line-height:1.65;color:var(--taupe)}
+.st__time{font:500 14px/1.45 var(--sans);font-variant-numeric:tabular-nums;color:var(--ink);text-align:right}
+.st--now .st__time{color:var(--taupe)}
+.st__time small{font-size:13px;color:var(--taupe);font-weight:400;margin-right:5px}
+
+/* per-dish */
+.dishes{box-shadow:inset 0 1px 0 var(--rule)}
+.dishes summary{list-style:none;cursor:pointer;min-height:56px;padding:0 20px;display:flex;align-items:center;gap:10px}
+.dishes summary::-webkit-details-marker{display:none}
+.dishes summary .t{font:600 15px/1.4 var(--sans)}
+.dishes summary .c{margin-left:auto;font-size:13px;color:var(--taupe)}
+.chev{transition:transform var(--t-base) var(--ease-out)}
+details[open] > summary .chev{transform:rotate(180deg)}
+.dish{display:grid;grid-template-columns:56px 1fr;column-gap:14px;align-items:center;padding:12px 20px;box-shadow:inset 0 1px 0 var(--rule)}
+.dish__img{width:56px;aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:var(--sunken)}
+.dish__img img{width:100%;height:100%;object-fit:cover}
+.dish__name{font:500 15px/1.5 var(--sans)}
+.dish__name .q{color:var(--taupe);font-weight:400;margin-left:4px;font-variant-numeric:tabular-nums}
+.dish__st{margin-top:3px;display:flex;align-items:center;gap:6px;font:500 13px/1.5 var(--sans)}
+.dish__st .when{color:var(--taupe);font-weight:400}
+.dish--served .dish__img img{opacity:.8}
+.i-cook{width:16px;height:16px}
+.dish__trail{margin-top:6px;display:flex;gap:3px}
+.dish__trail i{width:18px;height:3px;border-radius:2px;background:var(--rule-strong)}
+.dish__trail i.on{background:var(--ink)}
+.dish__trail i.now{background:var(--now)}
+.dish__trail i.skip{background:repeating-linear-gradient(90deg,var(--rule-strong) 0 3px,transparent 3px 5px)}
+
+/* earlier round, collapsed */
+.round--past{margin-top:14px}
+.round--past summary{list-style:none;cursor:pointer;padding:16px 20px;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:12px}
+.round--past summary::-webkit-details-marker{display:none}
+.past__l{display:flex;flex-direction:column;gap:2px}
+.past__st{display:flex;align-items:center;gap:6px;font:600 16px/1.45 var(--sans)}
+.past__m{font-size:13px;line-height:1.7;color:var(--taupe)}
+.ref--s{font-size:12px;color:var(--taupe)}
+.stack{display:flex;align-items:center}
+.stack span{width:34px;height:34px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 2px var(--surface);background:var(--sunken)}
+.stack span + span{margin-left:-10px}
+.stack img{width:100%;height:100%;object-fit:cover}
+.stack .more{display:grid;place-items:center;font:500 12px/1 var(--sans);color:var(--ink)}
+.past__r{display:flex;align-items:center;gap:10px}
+
+.billrow{margin-top:14px;min-height:56px;padding:0 20px;border-radius:var(--r-l);box-shadow:inset 0 0 0 1px var(--rule);display:flex;align-items:center;gap:12px;font:500 15px/1.4 var(--sans)}
+.billrow .ico:last-child{margin-left:auto}
+
+.fine{margin-top:22px;font-size:13px;line-height:1.7;color:var(--taupe);text-align:center;padding:0 10px}
+
+/* bottom nav (shared) */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(3,1fr);height:calc(66px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);
+  background:rgba(248,244,234,.96);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 -1px 0 var(--rule)}
+.nav a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:500 13px/1.4 var(--sans);color:var(--taupe)}
+.nav a[aria-current=page]{color:var(--ink);font-weight:600}
+.nav__ic{position:relative}
+.nav .mark-now{left:50%;bottom:6px;margin-left:-9px}
+.badge{position:absolute;top:-6px;left:13px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--act);color:var(--on-act);font:600 11px/18px var(--sans);text-align:center;box-shadow:0 0 0 2px var(--bone)}
+
+.num,.st__time,.round__sub,.past__m{font-variant-numeric:lining-nums tabular-nums}
+
+/* a confirmed staff event emphasises the new current step once (never on reconnect) */
+@keyframes settle{from{box-shadow:inset 0 0 0 1.5px var(--ink),0 0 0 11px rgba(203,98,52,0)}to{box-shadow:inset 0 0 0 1.5px var(--ink),0 0 0 5px rgba(203,98,52,.13)}}
+.st--now.is-fresh .node__dot{animation:settle var(--t-step) var(--ease-out) 1}
+/* small phones (<360): the language control collapses to the one option you can switch to */
+@media (max-width:359px){
+  .top{padding-left:16px}
+  .wordmark{font-size:12.5px;letter-spacing:.16em}
+  .lang__track{background:none;padding:0}
+  .lang button[aria-pressed=true]{display:none}
+  .lang button[aria-pressed=false]{min-width:44px;height:34px;box-shadow:inset 0 0 0 1px var(--rule-ctl)}
+}
+
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition-duration:.01ms!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="wordmark" href="#" lang="en">Rabbit Grill</a>
+  <button class="place" aria-haspopup="dialog" aria-label="โต๊ะ 07 — บริการที่โต๊ะ">
+    <span class="place__card">
+      <span class="place__k">โต๊ะ</span><span class="place__n num">07</span>
+      <span class="place__svc" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M4 17h16"/><path d="M6 17a6 6 0 0 1 12 0"/><path d="M12 8.5V7M10.5 7h3"/></svg></span>
+    </span>
+  </button>
+  <div class="lang" role="group" aria-label="ภาษา / Language">
+    <div class="lang__track">
+      <button aria-pressed="true" aria-label="ภาษาไทย" lang="en">TH</button>
+      <button aria-pressed="false" aria-label="English" lang="en">EN</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="head">
+    <div>
+      <h1>ติดตามอาหาร</h1>
+      <p>ออร์เดอร์ของทั้งโต๊ะ · 2 รอบ</p>
+    </div>
+    <span class="live" role="status"><i aria-hidden="true"></i>อัปเดตสด</span>
+  </div>
+
+  <div class="service" aria-label="บริการที่โต๊ะ">
+    <button class="svc">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17h16"/><path d="M6 17a6 6 0 0 1 12 0"/><path d="M12 8.5V7M10.5 7h3"/></svg>
+      เรียกพนักงาน
+    </button>
+    <button class="svc">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/></svg>
+      ขอเช็กบิล
+    </button>
+  </div>
+
+  <!-- ROUND 2 — current. Titles map to stable internal states (brief 35). -->
+  <article class="round" aria-labelledby="r2-state">
+    <div class="round__top">
+      <div class="round__meta">
+        <span>รอบที่ 2 · 3 จาน</span>
+        <span class="ref" lang="en">RG-4K7P</span>
+      </div>
+      <h2 class="round__state" id="r2-state">กำลังปรุง<span class="mark-now" aria-hidden="true"></span></h2>
+      <p class="round__sub"><span class="nw">ส่งเมื่อ <b>19:42</b></span> · <span class="nw">โต๊ะ 07</span> · <span class="nw">อัปเดตล่าสุด <b>19:51</b></span></p>
+      <div class="tally" aria-label="สรุปรายจาน">
+        <span class="tag">
+          <svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.6-4.9"/></svg>
+          เสิร์ฟแล้ว 1
+        </span>
+        <span class="tag">
+          <svg class="i-cook" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="#CB6234"/></svg>
+          กำลังปรุง 2
+        </span>
+      </div>
+    </div>
+
+    <ol class="tl" aria-label="ความคืบหน้าของรอบที่ 2">
+      <li class="st st--done">
+        <span class="node"><span class="node__dot"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 12.5 3.5 3.5 7.5-8"/></svg></span></span>
+        <span class="st__t">ได้รับออร์เดอร์แล้ว</span>
+        <span class="st__time">19:42</span>
+      </li>
+      <li class="st st--done">
+        <span class="node"><span class="node__dot"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 12.5 3.5 3.5 7.5-8"/></svg></span></span>
+        <span class="st__t">ยืนยันออร์เดอร์แล้ว</span>
+        <span class="st__time">19:43</span>
+      </li>
+      <li class="st st--now is-fresh" aria-current="step">
+        <span class="node"><span class="node__dot"></span></span>
+        <span class="st__t">กำลังปรุง</span>
+        <span class="st__time"><small>เริ่ม</small>19:46</span>
+        <p class="st__d">ครัวกำลังทำอาหารของรอบนี้ บางจานอาจเสร็จก่อน ดูสถานะแยกรายจานได้ด้านล่าง</p>
+      </li>
+      <li class="st st--next">
+        <span class="node"><span class="node__dot"></span></span>
+        <span class="st__t">ใกล้เสร็จ</span>
+        <span class="st__time" aria-hidden="true"></span>
+      </li>
+      <li class="st st--next">
+        <span class="node"><span class="node__dot"></span></span>
+        <span class="st__t">พร้อมเสิร์ฟ</span>
+        <span class="st__time" aria-hidden="true"></span>
+      </li>
+      <li class="st st--next">
+        <span class="node"><span class="node__dot"></span></span>
+        <span class="st__t">เสิร์ฟแล้ว</span>
+        <span class="st__time" aria-hidden="true"></span>
+      </li>
+    </ol>
+
+    <details class="dishes" open>
+      <summary>
+        <span class="t">รายจาน</span>
+        <span class="c">เสิร์ฟแล้ว 1 · กำลังปรุง 2</span>
+        <svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <ul>
+        <!-- trail = received · confirmed · cooking · almost done · ready · served; dashed = not recorded (no invented time) -->
+        <li class="dish dish--served">
+          <span class="dish__img"><img src="../../../img/corn-rib.jpg" alt="" width="1200" height="926"></span>
+          <div>
+            <p class="dish__name">คอร์นริบ<span class="q">× 1</span></p>
+            <p class="dish__st">
+              <svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.6-4.9"/></svg>
+              เสิร์ฟแล้ว <span class="when num">19:49</span>
+            </p>
+            <span class="dish__trail" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="skip"></i><i class="on"></i><i class="on"></i></span>
+          </div>
+        </li>
+        <li class="dish">
+          <span class="dish__img"><img src="../../../img/river-prawns.jpg" alt="" width="1200" height="572"></span>
+          <div>
+            <p class="dish__name">กุ้งแม่น้ำย่าง<span class="q">× 1</span></p>
+            <p class="dish__st">
+              <svg class="i-cook" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="#CB6234"/></svg>
+              กำลังปรุง <span class="when num">ตั้งแต่ 19:46</span>
+            </p>
+            <span class="dish__trail" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="now"></i><i></i><i></i><i></i></span>
+          </div>
+        </li>
+        <li class="dish">
+          <span class="dish__img"><img src="../../../img/baby-chicken.jpg" alt="" width="1200" height="931"></span>
+          <div>
+            <p class="dish__name">ไก่ย่างตัวเล็กคลุกเครื่องเทศ<span class="q">× 1</span></p>
+            <p class="dish__st">
+              <svg class="i-cook" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="#CB6234"/></svg>
+              กำลังปรุง <span class="when num">ตั้งแต่ 19:46</span>
+            </p>
+            <span class="dish__trail" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="now"></i><i></i><i></i><i></i></span>
+          </div>
+        </li>
+      </ul>
+    </details>
+  </article>
+
+  <!-- ROUND 1 — fully served, collapsed. Rounds are never merged. -->
+  <details class="round round--past">
+    <summary>
+      <div class="past__l">
+        <span class="past__st">
+          <svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.6-4.9"/></svg>
+          เสิร์ฟครบแล้ว
+        </span>
+        <span class="past__m">รอบที่ 1 · <span lang="en" class="ref ref--s">RG-2M9C</span><br>ส่งเมื่อ 19:05 · 5 รายการ</span>
+      </div>
+      <div class="past__r">
+        <span class="stack" aria-hidden="true">
+          <span><img src="../../../img/wagyu-tenderloin.jpg" alt=""></span>
+          <span><img src="../../../img/bone-marrow.jpg" alt=""></span>
+          <span class="more num">+3</span>
+        </span>
+        <svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </summary>
+  </details>
+
+  <a class="billrow" href="#bill">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/></svg>
+    ดูบิลของโต๊ะ
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+  </a>
+
+  <p class="fine">สถานะอัปเดตโดยพนักงานเมื่อมีความคืบหน้าจริง<br>ออร์เดอร์ที่ส่งแล้วเป็นของทั้งโต๊ะ</p>
+</main>
+
+<nav class="nav" aria-label="หลัก">
+  <a href="#menu">
+    <span class="nav__ic"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 9h6M9 13h4"/></svg></span>
+    เมนู
+  </a>
+  <a href="#order">
+    <span class="nav__ic"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg><span class="badge num" aria-hidden="true">2</span></span>
+    รายการของฉัน<span class="sr">, 2 รายการ</span>
+  </a>
+  <a href="#track" aria-current="page">
+    <span class="nav__ic"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8"/><path d="M11 6h8M11 18h8M11 12h5"/></svg></span>
+    ติดตาม<span class="mark-now" aria-hidden="true"></span>
+  </a>
+</nav>
+
+</body>
+</html>

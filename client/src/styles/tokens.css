@@ -1,0 +1,538 @@
+/* =====================================================================
+   RABBIT GRILL KHAO YAI - ordering platform design tokens
+   Spec: docs/DESIGN.md (every ratio quoted there was computed, WCAG 2.x).
+   Reference mocks: design-lab/final/*.html
+
+   Custom properties only. No @font-face here: the three variable families
+   are imported in client/src/main.tsx from @fontsource-variable/*, which
+   register them as "Oswald Variable", "Noto Sans Thai Variable" and
+   "Cormorant Garamond Variable" (normal + wght-italic).
+
+   Layers
+     1. brand primitives (reference site css/base.css) + derived primitives
+     2. semantic roles, light paper surface (default)
+     3. [data-surface="dark"] charcoal scope (admin rail, analytics panel)
+     4. type, space, shape, elevation, focus, icon, motion, layout, z
+     5. language, reduced-motion and print overrides
+   Components read ONLY layer 2+ names. Never a raw hex in a component.
+   ===================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* ---------------------------------------------------------------
+     1. Brand primitives - verbatim from the reference site base.css
+     --------------------------------------------------------------- */
+  --paper: #F3ECDD;
+  --paper-2: #E9E0CB;
+  --bone: #F8F4EA;
+  --ink: #17150F;
+  --ink-2: #221E16;
+  --ink-3: #2E2921;
+  --forest: #1E4230;
+  --forest-2: #2C5A40;
+  --oxblood: #6E1621;
+  --taupe: #6B5E4B;
+  --ember: #CB6234;
+  --ember-ink: #A8441E;
+  --steel: #8E8B82;
+
+  /* Derived primitives (each one is justified by a ratio in DESIGN.md §3) */
+  --ink-soft: #5D574A;        /* reference --fg-soft. 6.10 paper · 6.53 bone · 5.46 paper-2 */
+  --ink-edge: #7A7264;        /* control boundary. 4.04 paper · 4.33 bone · 3.62 paper-2 */
+  --ink-numeral: #857D6F;     /* decorative numerals >= 24px only. 3.46 paper */
+  --paper-hover: #EFE8D8;     /* row/press wash on paper */
+  --paper-well: #EDE5D2;      /* board column tray (paper-2 62% on paper). ink 14.55 · ink-soft 5.72 · taupe 5.03 */
+  --forest-tint: #E3EAE2;     /* selected / in-your-order fill. ink 14.89 · forest 9.13 */
+  --oxblood-tint: #EEE4DC;    /* 7% oxblood on bone. ink 14.57 · oxblood 9.32 */
+  --ember-tint: #F3E2D4;      /* "oldest waiting" flag. ember-ink 4.74 */
+  --sage: #D5DDD4;            /* secondary text on forest. 8.06 */
+  --blush: #EAD3D3;           /* secondary text on oxblood. 8.20 */
+  --ash: #B9B2A2;             /* dark text-2. 8.65 ink · 7.87 ink-2 · 6.84 ink-3 */
+  --ash-2: #8F8878;           /* dark text-3. 5.18 ink · 4.71 ink-2 (never on ink-3) */
+  --smoke: #37342E;           /* hover wash on charcoal. bone 11.29 · ash 5.88 */
+  --sage-light: #9FC4AA;      /* ok text on charcoal. 9.52 ink · 8.65 ink-2 · 7.52 ink-3 */
+  --rose-light: #E59C90;      /* alert text on charcoal. 8.25 ink · 7.50 ink-2 · 6.52 ink-3 */
+  --ember-light: #E08A5E;     /* ember TEXT on charcoal. 6.92 ink · 6.30 ink-2 · 5.47 ink-3 */
+  --forest-night: #223127;    /* ok tint on charcoal. sage-light 7.13 */
+  --oxblood-night: #3A1B1C;   /* alert tint on charcoal. rose-light 7.01 */
+  --ember-night: #3A2419;     /* heat tint on charcoal. ember-light 5.51 */
+
+  /* ---------------------------------------------------------------
+     2. Semantic roles - light paper surface (guest + admin workspace)
+     --------------------------------------------------------------- */
+  --canvas: var(--paper);          /* page */
+  --surface: var(--bone);          /* cards, sheet, tickets, nav, inputs, plate mats */
+  --sunken: var(--paper-2);        /* segmented track, wells, note fields */
+  --well: var(--paper-well);       /* board column tray */
+  --hover: var(--paper-hover);
+
+  --text: var(--ink);              /* 15.52 canvas · 16.62 surface · 13.90 sunken */
+  --text-2: var(--ink-soft);       /* meta, English UI sub-lines, inactive tabs */
+  --text-3: var(--taupe);          /* kickers, English italic names, future steps. 5.36 · 5.75 · 4.80 */
+  --numeral: var(--ink-numeral);   /* decorative, aria-hidden, >= 24px */
+
+  --rule: rgba(23, 21, 15, 0.14);        /* hairline between rows (decorative) */
+  --rule-soft: rgba(23, 21, 15, 0.08);
+  --rule-strong: rgba(23, 21, 15, 0.26); /* perforation, outline-button border (label carries meaning) */
+  --rule-ink: var(--ink);                /* masthead double rule, framed table tag, section head rule */
+  --edge: var(--ink-edge);               /* boundary of any light-filled control (>= 3:1) */
+  --leader: var(--steel);                /* leader dots - decorative, never text */
+
+  --action: var(--forest);               /* the one colour that means "do" */
+  --action-hover: var(--forest-2);
+  --on-action: var(--bone);              /* 10.19 forest · 7.23 forest-2 */
+  --on-action-2: var(--sage);            /* sub-line inside a forest control. 8.06 */
+  --action-text: var(--forest);          /* outline button label. 9.51 canvas · 10.19 surface */
+
+  --selected: var(--forest-tint);        /* chosen option row, in-your-order stepper */
+  --selected-edge: var(--forest);
+
+  --ok: var(--forest);                   /* done, served, live */
+  --ok-tint: var(--forest-tint);
+  --alert: var(--oxblood);               /* allergy, sold out, late, rejected. Never alone: icon + words */
+  --alert-tint: var(--oxblood-tint);
+  --on-alert: var(--bone);               /* 10.62 */
+  --on-alert-2: var(--blush);            /* 8.20 */
+  --heat-text: var(--ember-ink);         /* "oldest waiting" words only. 5.09 canvas · 5.45 surface · 4.74 heat-tint */
+  --heat-tint: var(--ember-tint);
+
+  --now: var(--ember);                   /* THE ember mark. Graphic only on light (3.35 canvas · 3.58 surface) */
+  --now-text: var(--ember-ink);          /* if a "now" word must be warm on flat paper/bone */
+
+  --inverse: var(--ink);                 /* ink chips: NEW, "ตอนนี้", verified variant chips, badges */
+  --on-inverse: var(--bone);             /* 16.62 */
+  --on-inverse-2: var(--ash);            /* 8.65 */
+
+  --focus: var(--ember);                 /* 3.35 canvas · 3.58 surface · 4.64 ink */
+  --scrim: rgba(23, 21, 15, 0.56);
+  --image-bg: var(--ink-2);              /* reserved box behind a loading photo */
+  --image-mat: var(--bone);              /* plate mat around a photo */
+
+  /* Status tones (StatusPill, Badge, flags). Always paired with icon + text. */
+  --tone-neutral-bg: var(--sunken);   --tone-neutral-fg: var(--text);
+  --tone-ok-bg: var(--ok-tint);       --tone-ok-fg: var(--ok);
+  --tone-alert-bg: var(--alert-tint); --tone-alert-fg: var(--alert);
+  --tone-heat-bg: var(--heat-tint);   --tone-heat-fg: var(--heat-text);
+  --tone-ink-bg: var(--inverse);      --tone-ink-fg: var(--on-inverse);
+
+  /* Table states (TableTile). Shape + word, never colour alone. */
+  --table-available-bg: var(--surface);
+  --table-available-edge: var(--edge);          /* 1px dashed */
+  --table-available-fg: var(--text-2);
+  --table-dining-bg: var(--ink);
+  --table-dining-fg: var(--bone);
+  --table-dining-fg-2: var(--ash);
+  --table-checkout-bg: var(--surface);
+  --table-checkout-edge: var(--forest);         /* 2px solid + receipt icon + "Bill" */
+  --table-checkout-fg: var(--forest);
+  --table-disabled-bg: var(--sunken);
+  --table-disabled-fg: var(--text-2);
+
+  /* Charts (light) */
+  --chart-bar: var(--ink);
+  --chart-bar-selected: var(--ink);
+  --chart-today-mark: var(--ember);
+  --chart-future: var(--steel);
+  --chart-prior: var(--taupe);                  /* same-point-last-week tick. 5.36 paper */
+  --chart-grid: rgba(23, 21, 15, 0.10);
+  --chart-axis: var(--text-2);
+  --chart-missing: var(--edge);
+  --rail-pass: var(--ember);                    /* the flat copper rail over the Ready column */
+
+  /* ---------------------------------------------------------------
+     4a. Type
+     --------------------------------------------------------------- */
+  /* Every stack that can meet Thai names "Noto Sans Thai Variable" before
+     any fallback; Oswald and Cormorant carry no Thai (and no U+0E3F ฿). */
+  --font-ui: "Noto Sans Thai Variable", "Noto Sans Thai", "Leelawadee UI", Thonburi, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Oswald Variable", "Noto Sans Thai Variable", "Noto Sans Thai", "Arial Narrow", sans-serif;
+  --font-serif: "Cormorant Garamond Variable", "Noto Sans Thai Variable", "Noto Sans Thai", Georgia, "Times New Roman", serif;
+  --font-num: var(--font-display);
+  --num-features: "tnum" 1, "lnum" 1;           /* re-declare after every font shorthand */
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* size scale (rem; 1rem = 16px) */
+  --fs-12: 0.75rem;     /* staff Latin caps labels only. Floor for staff. */
+  --fs-13: 0.8125rem;   /* guest floor: meta, nav labels */
+  --fs-14: 0.875rem;
+  --fs-15: 0.9375rem;
+  --fs-16: 1rem;        /* inputs never below this (iOS zoom) */
+  --fs-17: 1.0625rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-22: 1.375rem;
+  --fs-24: 1.5rem;
+  --fs-26: 1.625rem;
+  --fs-28: 1.75rem;
+  --fs-32: 2rem;
+  --fs-40: 2.5rem;
+  --fs-48: 3rem;
+
+  --lh-thai: 1.6;           /* default for anything that can hold Thai */
+  --lh-thai-min: 1.55;      /* absolute floor for Thai, headings included */
+  --lh-latin: 1.45;
+  --lh-latin-tight: 1.2;    /* Latin-only headings, English italic */
+  --lh-numeral: 1;          /* Oswald numerals and codes (never Thai) */
+
+  --track-caps: 0.14em;     /* Oswald caps labels (lang="en" only) */
+  --track-wordmark: 0.18em;
+  --track-lockup: 0.34em;   /* KHAO YAI under the wordmark */
+  --track-ref: 0.06em;      /* RG-4K7P */
+  --track-num: 0.01em;
+
+  /* Named text styles: use as `font: var(--type-…)` then
+     `font-feature-settings: var(--num-features)` where numerals matter. */
+  --type-page-th:     var(--fw-semibold) var(--fs-26)/var(--lh-thai-min) var(--font-ui);
+  --type-state-th:    var(--fw-semibold) var(--fs-26)/var(--lh-thai-min) var(--font-ui);
+  --type-section-th:  var(--fw-semibold) var(--fs-24)/var(--lh-thai-min) var(--font-ui);
+  --type-sheet-th:    var(--fw-semibold) var(--fs-24)/var(--lh-thai-min) var(--font-ui);
+  --type-title-th:    var(--fw-semibold) var(--fs-18)/var(--lh-thai) var(--font-ui);
+  --type-dish-th:     var(--fw-semibold) var(--fs-17)/var(--lh-thai) var(--font-ui);
+  --type-step-th:     var(--fw-semibold) var(--fs-16)/var(--lh-thai) var(--font-ui);
+  --type-body-th:     var(--fw-regular) var(--fs-16)/var(--lh-thai) var(--font-ui);
+  --type-control-th:  var(--fw-semibold) var(--fs-15)/var(--lh-thai-min) var(--font-ui);
+  --type-support-th:  var(--fw-regular) var(--fs-14)/var(--lh-thai) var(--font-ui);
+  --type-meta-th:     var(--fw-regular) var(--fs-13)/var(--lh-thai) var(--font-ui);
+  --type-nav-th:      var(--fw-medium) var(--fs-13)/var(--lh-thai-min) var(--font-ui);
+  --type-ticket-th:   var(--fw-semibold) var(--fs-15)/var(--lh-thai-min) var(--font-ui);
+  --type-allergy-th:  var(--fw-bold) var(--fs-16)/var(--lh-thai-min) var(--font-ui);
+
+  --type-wordmark:    var(--fw-semibold) var(--fs-16)/1 var(--font-serif);
+  --type-lockup:      var(--fw-medium) var(--fs-12)/1 var(--font-display);
+  --type-en-dish:     italic var(--fw-medium) var(--fs-17)/1.25 var(--font-serif);
+  --type-en-sheet:    italic var(--fw-medium) var(--fs-22)/1.2 var(--font-serif);
+  --type-en-section:  italic var(--fw-medium) var(--fs-20)/1.2 var(--font-serif);
+  --type-admin-title: italic var(--fw-semibold) var(--fs-32)/1 var(--font-serif);
+  --type-cap:         var(--fw-medium) var(--fs-12)/1.3 var(--font-display);
+  --type-cap-lg:      var(--fw-semibold) var(--fs-14)/1.2 var(--font-display);
+  --type-kicker:      var(--fw-medium) var(--fs-13)/1.2 var(--font-display);
+  --type-price:       var(--fw-medium) var(--fs-20)/var(--lh-numeral) var(--font-num);
+  --type-price-lg:    var(--fw-medium) var(--fs-26)/var(--lh-numeral) var(--font-num);
+  --type-num-sm:      var(--fw-medium) var(--fs-16)/var(--lh-numeral) var(--font-num);
+  --type-num-md:      var(--fw-medium) var(--fs-24)/var(--lh-numeral) var(--font-num);
+  --type-num-lg:      var(--fw-medium) var(--fs-32)/var(--lh-numeral) var(--font-num);
+  --type-num-xl:      var(--fw-medium) var(--fs-48)/var(--lh-numeral) var(--font-num);
+  --type-ui:          var(--fw-regular) var(--fs-15)/var(--lh-latin) var(--font-ui);
+  --type-ui-strong:   var(--fw-semibold) var(--fs-15)/var(--lh-latin) var(--font-ui);
+  --type-ui-sm:       var(--fw-regular) var(--fs-13)/var(--lh-latin) var(--font-ui);
+
+  /* ---------------------------------------------------------------
+     4b. Space (4px base)
+     --------------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+
+  --gutter: 16px;                 /* phone; tablet and desktop override below */
+  --row-pad: 20px;                /* DishRow vertical padding */
+  --row-gap: 12px;                /* plate (incl. 4px mat) to text */
+  --stack-gap: 24px;              /* between blocks inside a sheet or card */
+  --section-gap: 40px;            /* between menu sections */
+
+  /* ---------------------------------------------------------------
+     4c. Shape, rules, elevation, focus
+     --------------------------------------------------------------- */
+  --radius-hair: 2px;             /* plates, table tag, language box, table tiles */
+  --radius-sm: 4px;               /* tags, flags, tickets, chips */
+  --radius-ctl: 6px;              /* buttons, inputs, steppers, segmented */
+  --radius-card: 8px;             /* round cards, board columns, stat cards, drawer blocks */
+  --radius-slip: 10px;            /* the order slip (cart bar) */
+  --radius-sheet: 16px;           /* sheet top corners, dialog */
+  --radius-pill: 999px;           /* status pills and count badges ONLY */
+
+  --border-hair: 1px solid var(--rule);
+  --border-ctl: 1px solid var(--edge);
+  --border-ink: 1px solid var(--rule-ink);
+  --border-perf: 1px dashed var(--rule-strong);
+  --border-focus-width: 2px;
+  /* masthead double rule as box-shadows: 1px ink, 3px canvas gap, 1px ink @26% */
+  --rule-double: 0 1px 0 var(--rule-ink), 0 4px 0 var(--canvas), 0 5px 0 var(--rule-strong);
+  --plate-frame: 0 0 0 3px var(--image-mat), 0 0 0 4px var(--rule);
+
+  --shadow-lift: 0 1px 0 rgba(23, 21, 15, 0.05);
+  --shadow-card: 0 1px 0 rgba(23, 21, 15, 0.04), 0 1px 3px rgba(23, 21, 15, 0.06);
+  --shadow-float: 0 6px 18px -4px rgba(23, 21, 15, 0.24);
+  --shadow-sheet: 0 -10px 30px rgba(23, 21, 15, 0.22);
+  --shadow-drawer: -12px 0 32px -8px rgba(23, 21, 15, 0.22);
+  --shadow-toast: 0 8px 24px -6px rgba(23, 21, 15, 0.35);
+
+  --focus-width: 2px;
+  --focus-offset: 2px;
+  --focus-ring: 0 0 0 var(--focus-offset) var(--canvas), 0 0 0 calc(var(--focus-offset) + var(--focus-width)) var(--focus);
+
+  /* ---------------------------------------------------------------
+     4d. Icons (inline SVG, 24 grid, stroke)
+     --------------------------------------------------------------- */
+  --icon-stroke: 1.5;
+  --icon-xs: 14px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+
+  /* ---------------------------------------------------------------
+     4e. Motion (brief §42). Durations collapse under reduced motion.
+     --------------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);      /* things arriving */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);     /* things moving while visible */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --dur-press: 120ms;       /* press scale */
+  --dur-fast: 160ms;        /* colour, hover, radio fill, initial render */
+  --dur-base: 200ms;        /* ember mark glide, segmented thumb, language fade */
+  --dur-step: 220ms;        /* tracking step emphasis, new ticket outline */
+  --dur-sheet: 240ms;       /* sheet / drawer travel */
+  --dur-tile: 180ms;        /* table tile state crossfade */
+  --dur-chart: 220ms;       /* bar height between real values */
+  --dur-toast: 200ms;
+  --dur-confirm: 1200ms;    /* "เพิ่มแล้ว ✓" label hold (not an animation) */
+
+  --rise: 4px;              /* max initial-render travel */
+  --sheet-travel: 24px;
+  --press-scale: 0.97;
+
+  /* ---------------------------------------------------------------
+     4f. Sizes and layout
+     --------------------------------------------------------------- */
+  --tap: 44px;              /* minimum hit area, everywhere */
+  --tap-staff: 48px;        /* staff actions (wet hands) */
+  --control-h: 44px;
+  --control-h-lg: 52px;     /* sheet footer action, Send order */
+  --control-h-staff: 48px;
+  --option-row-h: 52px;
+
+  --header-h: 60px;         /* guest masthead (plus double rule) */
+  --catrow-h: 52px;         /* sticky category row */
+  --nav-h: 64px;            /* bottom nav, before safe-area inset */
+  --slip-h: 60px;           /* order slip (cart bar) */
+  --dock-gap: 8px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --dock-clearance: calc(var(--nav-h) + var(--slip-h) + var(--dock-gap) * 2 + var(--safe-bottom) + 16px);
+
+  --thumb-w: clamp(96px, 28vw, 112px);  /* 4:3 dish plate on phones (109px at 390) */
+  --thumb-sm: 56px;                     /* Track per-dish, Your order rows */
+  --content-max: 720px;                 /* guest reading column */
+  --guest-side-w: 232px;                /* desktop category sidebar */
+  --guest-cart-w: 340px;                /* desktop persistent order panel */
+  --sheet-max-w: 560px;
+  --dialog-max-w: 480px;
+
+  --rail-w: 208px;                      /* admin sidebar, desktop */
+  --rail-w-compact: 84px;               /* admin rail, tablet */
+  --admin-header-h: 68px;
+  --admin-pad: 20px;
+  --drawer-w: 480px;
+  --board-col-min: 216px;                /* five columns fit from 1280px; below that the board becomes one filtered column */
+  --ticket-pad: 10px;
+
+  --bp-tablet: 720px;       /* documentation only: media queries cannot read vars */
+  --bp-desktop: 1080px;
+  --bp-admin-wide: 1200px;
+
+  /* ---------------------------------------------------------------
+     4g. Stacking
+     --------------------------------------------------------------- */
+  --z-sticky: 20;
+  --z-dock: 30;
+  --z-drawer: 40;
+  --z-sheet: 50;
+  --z-toast: 60;
+  --z-skip: 70;
+}
+
+/* -----------------------------------------------------------------
+   3. Charcoal scope. Put data-surface="dark" on the admin rail, the
+   analytics chart panel, or any compact charcoal band. Roles remap;
+   components need no dark-specific code.
+   ----------------------------------------------------------------- */
+[data-surface="dark"] {
+  color-scheme: dark;
+
+  --canvas: var(--ink);
+  --surface: var(--ink-2);
+  --sunken: var(--ink-3);
+  --well: var(--ink-2);
+  --hover: var(--smoke);
+
+  --text: var(--bone);             /* 16.62 ink · 15.11 ink-2 · 13.14 ink-3 */
+  --text-2: var(--ash);            /* 8.65 · 7.87 · 6.84 */
+  --text-3: var(--ash-2);          /* 5.18 ink · 4.71 ink-2. NOT on --sunken (4.10) */
+  --numeral: var(--ash-2);
+
+  --rule: rgba(248, 244, 234, 0.14);
+  --rule-soft: rgba(248, 244, 234, 0.08);
+  --rule-strong: rgba(248, 244, 234, 0.28);
+  --rule-ink: var(--bone);
+  --edge: var(--ash-2);            /* 5.18 ink · 4.71 ink-2 */
+  --leader: var(--steel);          /* 5.36 ink */
+
+  --action: var(--forest);
+  --action-hover: var(--forest-2);
+  --on-action: var(--bone);
+  --on-action-2: var(--sage);
+  --action-text: var(--sage-light);
+
+  --selected: var(--forest-night);
+  --selected-edge: var(--sage-light);
+
+  --ok: var(--sage-light);
+  --ok-tint: var(--forest-night);
+  --alert: var(--rose-light);
+  --alert-tint: var(--oxblood-night);
+  --on-alert: var(--bone);
+  --heat-text: var(--ember-light);
+  --heat-tint: var(--ember-night);
+
+  --now: var(--ember);             /* 4.64 ink · 4.22 ink-2 (graphic) */
+  --now-text: var(--ember-light);  /* ember-coloured words on any charcoal */
+
+  --inverse: var(--bone);
+  --on-inverse: var(--ink);
+  --on-inverse-2: var(--ink-soft);
+
+  --focus: var(--ember);
+  --image-mat: var(--ink-3);
+
+  --tone-neutral-bg: var(--ink-3);    --tone-neutral-fg: var(--bone);
+  --tone-ok-bg: var(--forest-night);  --tone-ok-fg: var(--sage-light);
+  --tone-alert-bg: var(--oxblood-night); --tone-alert-fg: var(--rose-light);
+  --tone-heat-bg: var(--ember-night); --tone-heat-fg: var(--ember-light);
+  --tone-ink-bg: var(--bone);         --tone-ink-fg: var(--ink);
+
+  --chart-bar: var(--bone);           /* 15.11 on ink-2 */
+  --chart-bar-selected: var(--bone);
+  --chart-today-mark: var(--ember);
+  --chart-future: var(--steel);       /* 4.87 on ink-2 */
+  --chart-prior: var(--ash-2);       /* 4.71 on ink-2 · 3.3 on a bone bar */
+  --chart-grid: rgba(248, 244, 234, 0.10);
+  --chart-axis: var(--ash);
+  --chart-missing: var(--ash-2);
+
+  --shadow-card: 0 0 0 1px rgba(248, 244, 234, 0.06);
+
+  /* Composite tokens resolve where they are declared, so re-declare them here */
+  --border-hair: 1px solid var(--rule);
+  --border-ctl: 1px solid var(--edge);
+  --border-ink: 1px solid var(--rule-ink);
+  --border-perf: 1px dashed var(--rule-strong);
+  --rule-double: 0 1px 0 var(--rule-ink), 0 4px 0 var(--canvas), 0 5px 0 var(--rule-strong);
+  --plate-frame: 0 0 0 3px var(--image-mat), 0 0 0 4px var(--rule);
+  --focus-ring: 0 0 0 var(--focus-offset) var(--canvas), 0 0 0 calc(var(--focus-offset) + var(--focus-width)) var(--focus);
+}
+
+/* -----------------------------------------------------------------
+   Responsive layout tokens
+   ----------------------------------------------------------------- */
+@media (min-width: 720px) {
+  :root {
+    --gutter: 24px;
+    --thumb-w: 128px;   /* tablet: two-column dish list */
+    --section-gap: 48px;
+  }
+}
+@media (min-width: 1080px) {
+  :root {
+    --gutter: 32px;
+    --thumb-w: 156px;   /* desktop: one printed-menu column between sidebar and order panel */
+  }
+}
+@media (max-width: 359px) {
+  :root {
+    --gutter: 12px;
+    --row-gap: 10px;
+  }
+}
+
+/* -----------------------------------------------------------------
+   5. Language: Thai is never tracked and never uppercased.
+   Tracked Latin (codes, caps labels) must carry lang="en".
+   ----------------------------------------------------------------- */
+:lang(th) {
+  --track-caps: 0;
+  --track-wordmark: 0;
+  --track-lockup: 0;
+  --track-ref: 0;
+  --track-num: 0;
+}
+:lang(en) {
+  --track-caps: 0.14em;
+  --track-wordmark: 0.18em;
+  --track-lockup: 0.34em;
+  --track-ref: 0.06em;
+  --track-num: 0.01em;
+}
+
+/* -----------------------------------------------------------------
+   Reduced motion: every duration collapses; nothing travels.
+   [data-motion="reduce"] lets a staff device opt in from Settings.
+   ----------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-press: 1ms;
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-step: 1ms;
+    --dur-sheet: 1ms;
+    --dur-tile: 1ms;
+    --dur-chart: 1ms;
+    --dur-toast: 1ms;
+    --rise: 0px;
+    --sheet-travel: 0px;
+    --press-scale: 1;
+  }
+}
+[data-motion="reduce"] {
+  --dur-press: 1ms;
+  --dur-fast: 1ms;
+  --dur-base: 1ms;
+  --dur-step: 1ms;
+  --dur-sheet: 1ms;
+  --dur-tile: 1ms;
+  --dur-chart: 1ms;
+  --dur-toast: 1ms;
+  --rise: 0px;
+  --sheet-travel: 0px;
+  --press-scale: 1;
+}
+
+/* -----------------------------------------------------------------
+   Print (QR cards, printable bill view): white paper, ink rules,
+   no large tinted fills. Brand colour survives in rules and marks.
+   ----------------------------------------------------------------- */
+@media print {
+  :root,
+  [data-surface="dark"] {
+    color-scheme: light;
+    --canvas: #FFFFFF;
+    --surface: #FFFFFF;
+    --sunken: #FFFFFF;
+    --text: #000000;
+    --text-2: #3B372F;
+    --text-3: #3B372F;
+    --rule: rgba(0, 0, 0, 0.3);
+    --rule-strong: rgba(0, 0, 0, 0.5);
+    --rule-ink: #000000;
+    --edge: #000000;
+    --border-hair: 1px solid var(--rule);
+    --border-ctl: 1px solid var(--edge);
+    --border-ink: 1px solid var(--rule-ink);
+    --shadow-card: none;
+    --shadow-float: none;
+    --shadow-sheet: none;
+    --shadow-drawer: none;
+  }
+}

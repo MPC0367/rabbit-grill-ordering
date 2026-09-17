@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rabbit Grill · โต๊ะ 07 · เมนู</title>
+<!-- QUIET LUXURY · guest menu · phone 390 · Thai active -->
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<style>
+:root{
+  /* brand */
+  --paper:#F3ECDD; --paper-2:#E9E0CB; --bone:#F8F4EA;
+  --ink:#17150F; --ink-2:#221E16; --ink-3:#2E2921;
+  --forest:#1E4230; --forest-2:#2C5A40; --oxblood:#6E1621; --taupe:#6B5E4B;
+  --ember:#CB6234; --ember-ink:#A8441E; --steel:#8E8B82;
+  /* roles */
+  --canvas:var(--paper); --surface:var(--bone); --sunken:var(--paper-2);
+  --text:var(--ink); --text-2:var(--taupe);
+  --act:var(--forest); --act-hover:var(--forest-2); --on-act:var(--bone);
+  --now:var(--ember);
+  --rule:rgba(23,21,15,.11); --rule-strong:rgba(23,21,15,.2); --rule-ctl:#858176;
+  /* type */
+  --serif:"Cormorant Garamond Variable","Noto Sans Thai Variable",Georgia,serif;
+  --disp:"Oswald Variable","Noto Sans Thai Variable","Arial Narrow",sans-serif;
+  --sans:"Noto Sans Thai Variable","Helvetica Neue",Arial,sans-serif;
+  /* shape + depth */
+  --r-xs:6px; --r-s:10px; --r-m:14px; --r-l:18px; --r-pill:999px;
+  --e-1:0 1px 0 rgba(23,21,15,.03),0 1px 3px rgba(23,21,15,.07);
+  --e-2:0 2px 8px rgba(23,21,15,.05),0 16px 36px -16px rgba(23,21,15,.22);
+  /* motion (brief 42) */
+  --t-press:120ms; --t-fast:160ms; --t-base:200ms; --t-sheet:240ms;
+  --ease-out:cubic-bezier(.2,.7,.3,1);
+  --gut:20px; --top-h:60px; --cats-h:52px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;overflow-x:clip}
+body{margin:0;background:var(--canvas);color:var(--text);font:400 15px/1.65 var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:clip}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,p{margin:0}
+a{color:inherit;text-decoration:none}
+img,svg{display:block;max-width:100%}
+.ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico--s{width:16px;height:16px}
+:focus-visible{outline:2px solid var(--now);outline-offset:2px;border-radius:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+/* Latin caps tracking never reaches Thai */
+.caps{font-family:var(--disp);font-weight:500;letter-spacing:.16em;text-transform:uppercase}
+:lang(th) .caps:not([lang]), .caps:lang(th){letter-spacing:0;text-transform:none}
+
+/* ---------- header ---------- */
+.top{position:sticky;top:0;z-index:20;height:var(--top-h);display:flex;align-items:center;gap:6px;padding:0 10px 0 var(--gut);
+  background:rgba(243,236,221,.92);-webkit-backdrop-filter:saturate(1.1) blur(16px);backdrop-filter:saturate(1.1) blur(16px)}
+.wordmark{margin-right:auto;font:600 14px/1 var(--serif);letter-spacing:.22em;text-transform:uppercase;white-space:nowrap}
+.place{display:inline-flex;align-items:center;height:44px;padding:0 4px}
+.place__card{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 0 0 10px;background:var(--bone);border-radius:var(--r-xs);box-shadow:var(--e-1),inset 0 0 0 1px var(--rule);transition:transform var(--t-press) var(--ease-out)}
+.place:active .place__card{transform:scale(.97)}
+.place__svc{display:grid;place-items:center;align-self:stretch;width:32px;margin-left:5px;box-shadow:inset 1px 0 0 var(--rule);color:var(--ink)}
+.place__k{font:500 12px/1 var(--sans);color:var(--taupe)}
+.place__n{font:600 18px/.8 var(--serif)}
+.lang{height:44px;display:flex;align-items:center}
+.lang__track{display:flex;padding:3px;border-radius:var(--r-pill);background:var(--paper-2)}
+.lang button{position:relative;min-width:38px;height:30px;border-radius:var(--r-pill);font:500 12px/1 var(--disp);letter-spacing:.1em;color:var(--taupe)}
+.lang button::after{content:"";position:absolute;inset:-7px -1px}
+.lang button[aria-pressed=true]{background:var(--bone);color:var(--ink);box-shadow:var(--e-1)}
+
+/* ---------- search + group ---------- */
+.tools{padding:6px var(--gut) 0}
+.search{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;background:var(--bone);border-radius:var(--r-m);box-shadow:inset 0 0 0 1px var(--rule-ctl)}
+.search .ico{color:var(--taupe)}
+.search input{flex:1;min-width:0;border:0;background:none;outline:0;font-size:16px;line-height:1.5}
+.search input::placeholder{color:var(--taupe);opacity:1}
+.search:focus-within{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.seg{position:relative;margin-top:12px;display:grid;grid-template-columns:1fr 1fr;height:48px;padding:3px;border-radius:var(--r-m);background:var(--paper-2)}
+.seg__thumb{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:11px;background:var(--bone);box-shadow:var(--e-1);transition:transform var(--t-base) var(--ease-out)}
+.seg button{position:relative;z-index:1;border-radius:11px;font:500 15px/1 var(--sans);color:var(--taupe);display:flex;align-items:center;justify-content:center;gap:8px}
+.seg button[aria-selected=true]{color:var(--ink);font-weight:600}
+
+/* ---------- category row (sticky) ---------- */
+.cats{position:sticky;top:var(--top-h);z-index:19;margin-top:14px;display:flex;height:var(--cats-h);
+  background:rgba(243,236,221,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 1px 0 var(--rule)}
+.cats__scroll{flex:1;min-width:0;display:flex;overflow-x:auto;scrollbar-width:none;padding-left:10px;
+  -webkit-mask-image:linear-gradient(90deg,#000 84%,transparent);mask-image:linear-gradient(90deg,#000 84%,transparent)}
+.cats__scroll::-webkit-scrollbar{display:none}
+.cat-tab{position:relative;flex:none;height:100%;padding:0 10px;font:500 15px/1 var(--sans);color:var(--taupe);white-space:nowrap}
+.cat-tab[aria-current=true]{color:var(--ink);font-weight:600}
+/* THE EMBER MARK — "here, now". In the build this is one element that glides between tabs (180ms). */
+.mark-now{position:absolute;left:10px;bottom:9px;width:18px;height:2px;border-radius:2px;background:var(--now)}
+.cats__all{flex:none;display:flex;align-items:center;gap:7px;padding:0 var(--gut) 0 14px;font:500 14px/1 var(--sans);color:var(--ink);box-shadow:inset 1px 0 0 var(--rule)}
+
+/* ---------- menu ---------- */
+.menu{padding:0 var(--gut) calc(176px + env(safe-area-inset-bottom))}
+.cat{padding-top:30px;scroll-margin-top:calc(var(--top-h) + var(--cats-h))}
+.cat__head{display:flex;align-items:baseline;gap:12px;padding-bottom:12px;box-shadow:0 1px 0 var(--rule)}
+.cat__no{font:500 12px/1 var(--disp);letter-spacing:.14em;color:var(--taupe);transform:translateY(-3px)}
+.cat__title{font:600 24px/1.4 var(--sans)}
+.cat__en{margin-left:auto;font:italic 500 17px/1.2 var(--serif);color:var(--taupe);white-space:nowrap}
+
+.en{font:italic 500 16px/1.3 var(--serif);color:var(--taupe)}
+
+/* feature card — the by-weight cut earns the room to explain itself */
+.feat{margin-top:20px;background:var(--surface);border-radius:var(--r-l);overflow:hidden;box-shadow:var(--e-1),inset 0 0 0 1px var(--rule)}
+.feat__img{position:relative;display:block;width:100%;aspect-ratio:3/2;overflow:hidden;background:var(--ink-2)}
+.feat__img img{width:100%;height:100%;object-fit:cover;object-position:50% 64%}
+.feat__body{padding:18px 20px 20px}
+.kicker{display:inline-flex;align-items:center;gap:6px;font:500 13px/1.5 var(--sans);color:var(--taupe)}
+.feat__name{margin-top:6px;font:600 22px/1.45 var(--sans)}
+.feat .en{font-size:18px}
+.rate{margin-top:14px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.rate__n{font:600 30px/1 var(--serif)}
+.rate__u{font:500 16px/1 var(--sans)}
+.rate__per{font:400 15px/1 var(--sans);color:var(--taupe)}
+.explain{margin-top:10px;font-size:14px;line-height:1.7;color:var(--taupe)}
+.btn-line{margin-top:16px;width:100%;min-height:50px;padding:0 16px;border-radius:var(--r-m);box-shadow:inset 0 0 0 1px var(--act);color:var(--act);
+  display:flex;align-items:center;justify-content:center;gap:10px;font:600 15px/1.4 var(--sans);transition:background var(--t-fast) var(--ease-out),transform var(--t-press) var(--ease-out)}
+.btn-line:hover{background:rgba(30,66,48,.06)}
+.btn-line:active{transform:scale(.98)}
+
+/* rows */
+.row{display:grid;grid-template-columns:clamp(96px,31vw,124px) minmax(0,1fr);column-gap:16px;padding:20px 0;box-shadow:0 1px 0 var(--rule)}
+.row__img{width:100%;aspect-ratio:4/3;border-radius:var(--r-s);overflow:hidden;background:var(--sunken);box-shadow:inset 0 0 0 1px rgba(23,21,15,.06)}
+.row__img img{width:100%;height:100%;object-fit:cover;transition:transform 600ms var(--ease-out)}
+.row__img:active img{transform:scale(1.03)}
+.row__body{display:flex;flex-direction:column;min-width:0}
+.row__name{font:500 17px/1.5 var(--sans);text-align:left}
+.row .en{margin-top:1px}
+.row__meta{margin-top:4px;font-size:13px;line-height:1.6;color:var(--taupe)}
+.row__foot{margin-top:auto;padding-top:12px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 8px}
+.row__foot > :last-child{margin-left:auto}
+.price{font:600 21px/1 var(--serif);white-space:nowrap}
+.price__c{font:500 15px/1 var(--sans);margin-right:1px}
+
+.add{height:44px;min-width:92px;padding:0 16px 0 12px;border-radius:var(--r-pill);background:var(--surface);box-shadow:inset 0 0 0 1px var(--act);color:var(--act);
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;font:600 15px/1 var(--sans);
+  transition:transform var(--t-press) var(--ease-out),background var(--t-fast) var(--ease-out),color var(--t-fast) var(--ease-out)}
+.add:hover{background:var(--act);color:var(--on-act)}
+.add:active{transform:scale(.96)}
+/* in your order: the control fills — the only filled green in the list */
+.step{display:inline-flex;align-items:center;height:44px;border-radius:var(--r-pill);background:var(--act);color:var(--on-act)}
+.step button{width:42px;height:44px;display:grid;place-items:center;border-radius:var(--r-pill)}
+.step output{min-width:22px;text-align:center;font:600 16px/1 var(--sans)}
+.inorder{margin-top:6px;display:inline-flex;align-items:center;gap:5px;font:500 13px/1.5 var(--sans);color:var(--act)}
+
+/* sold out: still legible, never orderable */
+.row--out .row__img img{filter:grayscale(1) contrast(.9);opacity:.45}
+.row--out .row__name, .row--out .price{color:var(--taupe)}
+.soldout{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--r-pill);background:var(--sunken);font:500 13px/1 var(--sans);color:var(--ink)}
+
+/* text-led: no photo, no placeholder — set like a line on a printed menu */
+.row--text{grid-template-columns:1fr}
+.row--text .row__name{font-size:18px}
+.row--text .row__foot{padding-top:14px}
+
+/* ---------- dock: cart bar + bottom nav ---------- */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;pointer-events:none}
+.dock > *{pointer-events:auto}
+.cartbar{margin:0 12px 10px;height:58px;padding:0 6px 0 18px;border-radius:var(--r-l);background:var(--act);color:var(--on-act);
+  display:flex;align-items:center;gap:10px;box-shadow:0 14px 30px -14px rgba(30,66,48,.7),0 2px 6px rgba(23,21,15,.12)}
+.cartbar__sum{flex:1;display:flex;align-items:baseline;gap:8px;font:500 15px/1 var(--sans);white-space:nowrap}
+.cartbar__sum b{font:600 21px/1 var(--serif)}
+.cartbar__dot{width:3px;height:3px;border-radius:50%;background:currentColor;opacity:.6;transform:translateY(-4px)}
+.cartbar__go{height:46px;padding:0 14px 0 16px;border-radius:13px;background:rgba(248,244,234,.12);display:flex;align-items:center;gap:8px;font:600 15px/1 var(--sans)}
+.nav{display:grid;grid-template-columns:repeat(3,1fr);height:calc(66px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);
+  background:rgba(248,244,234,.96);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 -1px 0 var(--rule)}
+.nav a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:500 13px/1.4 var(--sans);color:var(--taupe)}
+.nav a[aria-current=page]{color:var(--ink);font-weight:600}
+.nav__ic{position:relative}
+.nav .mark-now{left:50%;bottom:6px;margin-left:-9px}
+.badge{position:absolute;top:-6px;left:13px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--act);color:var(--on-act);
+  font:600 11px/18px var(--sans);text-align:center;box-shadow:0 0 0 2px var(--bone)}
+
+/* numerals last: the font shorthand above resets font-variant, and Cormorant defaults to old-style figures */
+.num,.price,.rate__n,.place__n,.cartbar__sum b{font-variant-numeric:lining-nums tabular-nums;font-feature-settings:"lnum" 1,"tnum" 1}
+
+/* small phones (<360): the language control collapses to the one option you can switch to */
+@media (max-width:359px){
+  .top{padding-left:16px}
+  .wordmark{font-size:12.5px;letter-spacing:.16em}
+  .lang__track{background:none;padding:0}
+  .lang button[aria-pressed=true]{display:none}
+  .lang button[aria-pressed=false]{min-width:44px;height:34px;box-shadow:inset 0 0 0 1px var(--rule-ctl)}
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="wordmark" href="#" lang="en" aria-label="Rabbit Grill — เมนู">Rabbit Grill</a>
+  <!-- the place card: your table, always visible, and the door to table service (call staff, bill) -->
+  <button class="place" aria-haspopup="dialog" aria-label="โต๊ะ 07 — บริการที่โต๊ะ: เรียกพนักงาน หรือขอเช็กบิล">
+    <span class="place__card">
+      <span class="place__k">โต๊ะ</span><span class="place__n num">07</span>
+      <span class="place__svc" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M4 17h16"/><path d="M6 17a6 6 0 0 1 12 0"/><path d="M12 8.5V7M10.5 7h3"/></svg></span>
+    </span>
+  </button>
+  <div class="lang" role="group" aria-label="ภาษา / Language">
+    <div class="lang__track">
+      <button aria-pressed="true" aria-label="ภาษาไทย" lang="en">TH</button>
+      <button aria-pressed="false" aria-label="English" lang="en">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="tools">
+  <label class="search">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+    <span class="sr">ค้นหาเมนู</span>
+    <input type="search" placeholder="ค้นหาเมนู ไทย หรือ English" autocomplete="off">
+  </label>
+  <div class="seg" role="tablist" aria-label="กลุ่มเมนู">
+    <span class="seg__thumb" aria-hidden="true"></span>
+    <button role="tab" aria-selected="true">อาหาร</button>
+    <button role="tab" aria-selected="false">เครื่องดื่ม</button>
+  </div>
+</div>
+
+<nav class="cats" aria-label="หมวดอาหาร">
+  <div class="cats__scroll">
+    <!-- Seasonal — Avocado stays unpublished until the owner confirms it is running (brief 44D) -->
+    <button class="cat-tab" aria-current="true">เนื้อ<span class="mark-now" aria-hidden="true"></span></button>
+    <button class="cat-tab">จานหลักจากเตา</button>
+    <button class="cat-tab">ของเรียกน้ำย่อย</button>
+    <button class="cat-tab">สลัด</button>
+    <button class="cat-tab">ข้าว</button>
+    <button class="cat-tab">เครื่องเคียง</button>
+    <button class="cat-tab">ของหวาน</button>
+  </div>
+  <button class="cats__all" aria-haspopup="dialog">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    ทุกหมวด
+  </button>
+</nav>
+
+<main class="menu">
+
+  <section class="cat" id="beef" aria-labelledby="h-beef">
+    <header class="cat__head">
+      <span class="cat__no" lang="en">01</span>
+      <h2 class="cat__title" id="h-beef">เนื้อ</h2>
+      <span class="cat__en" lang="en">Beef Selection</span>
+    </header>
+
+    <!-- measured_weight: staff weigh + quote; guest confirms. No preset portions are invented (brief 44A). -->
+    <article class="feat" aria-labelledby="n-prime">
+      <button class="feat__img" aria-label="ดูรายละเอียด ไพร์มริบ">
+        <img src="../../../img/primerib-full.jpg" alt="ไพร์มริบหั่นเป็นชิ้นบนถาดสแตนเลส วางคู่กับซอสสองถ้วย" width="1200" height="1285">
+      </button>
+      <div class="feat__body">
+        <p class="kicker">
+          <svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M8 19h8M5 7h14"/><path d="M5 7 2.5 13h5zM19 7l-2.5 6h5z"/></svg>
+          ราคาตามน้ำหนัก
+        </p>
+        <h3 class="feat__name" id="n-prime">ไพร์มริบ</h3>
+        <p class="en" lang="en">Prime Rib</p>
+        <p class="rate"><span class="rate__n num">490</span><span class="rate__u">฿</span><span class="rate__per">/ 100 กรัม</span></p>
+        <p class="explain">พนักงานจะชั่งน้ำหนักจริง แล้วส่งราคาให้คุณกดยืนยันก่อนเริ่มเตรียม</p>
+        <button class="btn-line">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 17h-8l-4 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 5 5z"/><path d="m9 11 2 2 4-4"/></svg>
+          ขอให้พนักงานยืนยันน้ำหนัก
+        </button>
+      </div>
+    </article>
+
+    <article class="row" aria-labelledby="n-wagyu">
+      <button class="row__img" aria-label="ดูรายละเอียด เนื้อสันในวากิว"><img src="../../../img/wagyu-tenderloin.jpg" alt="เนื้อสันในวากิวสองชิ้นบนซอสไวน์แดง" width="1200" height="624" loading="lazy"></button>
+      <div class="row__body">
+        <h3 class="row__name" id="n-wagyu">เนื้อสันในวากิวย่างซอสไวน์แดง</h3>
+        <p class="en" lang="en">Wagyu Tenderloin MB 6–7 with Red Wine Jus</p>
+        <p class="row__meta">300 กรัม</p>
+        <div class="row__foot">
+          <p class="price num"><span class="price__c">฿</span>1,990</p>
+          <button class="add" aria-label="เพิ่ม เนื้อสันในวากิว">
+            <svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>เพิ่ม
+          </button>
+        </div>
+      </div>
+    </article>
+
+    <article class="row" aria-labelledby="n-strip">
+      <button class="row__img" aria-label="ดูรายละเอียด เนื้อสันนอกออสเตรเลีย"><img src="../../../img/striploin.jpg" alt="สันนอกย่างหั่นชิ้น เนื้อด้านในสีชมพู" width="1200" height="686" loading="lazy" style="object-position:62% 50%"></button>
+      <div class="row__body">
+        <h3 class="row__name" id="n-strip">เนื้อสันนอกออสเตรเลีย</h3>
+        <p class="en" lang="en">Australian Striploin</p>
+        <p class="inorder"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>อยู่ในรายการแล้ว</p>
+        <div class="row__foot">
+          <p class="price num"><span class="price__c">฿</span>590</p>
+          <div class="step" role="group" aria-label="จำนวน เนื้อสันนอกออสเตรเลีย">
+            <button aria-label="ลดจำนวน"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+            <output class="num" aria-live="polite">1</output>
+            <button aria-label="เพิ่มจำนวน"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="row row--out" aria-labelledby="n-tongue">
+      <div class="row__img"><img src="../../../img/grilled-tongue.jpg" alt="" width="1200" height="907" loading="lazy"></div>
+      <div class="row__body">
+        <h3 class="row__name" id="n-tongue">ลิ้นวัวย่าง</h3>
+        <p class="en" lang="en">Grilled Tongue</p>
+        <div class="row__foot">
+          <p class="price num"><span class="price__c">฿</span>590</p>
+          <span class="soldout">
+            <svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="m6.5 17.5 11-11"/></svg>
+            หมดชั่วคราว
+          </span>
+        </div>
+      </div>
+    </article>
+
+    <!-- STATE DEMO: text-led card (no approved photo on file). No placeholder art, no broken-image icon. -->
+    <article class="row row--text" aria-labelledby="n-stew">
+      <div class="row__body">
+        <h3 class="row__name" id="n-stew">สตูว์ลิ้นวัว</h3>
+        <p class="en" lang="en">Beef Tongue Stew</p>
+        <div class="row__foot">
+          <p class="price num"><span class="price__c">฿</span>490</p>
+          <button class="add" aria-label="เพิ่ม สตูว์ลิ้นวัว">
+            <svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>เพิ่ม
+          </button>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="cat" id="grill" aria-labelledby="h-grill">
+    <header class="cat__head">
+      <span class="cat__no" lang="en">02</span>
+      <h2 class="cat__title" id="h-grill">จานหลักจากเตา</h2>
+      <span class="cat__en" lang="en">From the Grill</span>
+    </header>
+
+    <article class="row" aria-labelledby="n-prawn">
+      <button class="row__img" aria-label="ดูรายละเอียด กุ้งแม่น้ำย่าง"><img src="../../../img/river-prawns.jpg" alt="กุ้งแม่น้ำย่างผ่าครึ่ง" width="1200" height="572" loading="lazy"></button>
+      <div class="row__body">
+        <h3 class="row__name" id="n-prawn">กุ้งแม่น้ำย่าง</h3>
+        <p class="en" lang="en">Grilled River Prawns</p>
+        <div class="row__foot">
+          <p class="price num"><span class="price__c">฿</span>990</p>
+          <button class="add" aria-label="เพิ่ม กุ้งแม่น้ำย่าง"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>เพิ่ม</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="row" aria-labelledby="n-ribs">
+      <button class="row__img" aria-label="ดูรายละเอียด ซี่โครงหมูย่าง"><img src="../../../img/pork-ribs.jpg" alt="ซี่โครงหมูย่างเคลือบซอส" width="900" height="925" loading="lazy"></button>
+      <div class="row__body">
+        <h3 class="row__name" id="n-ribs">ซี่โครงหมูย่าง</h3>
+        <p class="en" lang="en">Grilled Pork Ribs</p>
+        <p class="inorder"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>อยู่ในรายการแล้ว</p>
+        <div class="row__foot">
+          <p class="price num"><span class="price__c">฿</span>590</p>
+          <div class="step" role="group" aria-label="จำนวน ซี่โครงหมูย่าง">
+            <button aria-label="ลดจำนวน"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+            <output class="num">1</output>
+            <button aria-label="เพิ่มจำนวน"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="row" aria-labelledby="n-chick">
+      <button class="row__img" aria-label="ดูรายละเอียด ไก่ย่างตัวเล็ก"><img src="../../../img/baby-chicken.jpg" alt="ไก่ย่างทั้งตัวขนาดเล็ก" width="1200" height="931" loading="lazy"></button>
+      <div class="row__body">
+        <h3 class="row__name" id="n-chick">ไก่ย่างตัวเล็กคลุกเครื่องเทศ</h3>
+        <p class="en" lang="en">Grilled Baby Chicken</p>
+        <div class="row__foot">
+          <p class="price num"><span class="price__c">฿</span>590</p>
+          <button class="add" aria-label="เพิ่ม ไก่ย่างตัวเล็ก"><svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>เพิ่ม</button>
+        </div>
+      </div>
+    </article>
+  </section>
+</main>
+
+<div class="dock">
+  <a class="cartbar" href="#order" aria-label="รายการของคุณ 2 รายการ รวม 1,180 บาท — ดูรายการ">
+    <span class="cartbar__sum"><span>2 รายการ</span><span class="cartbar__dot" aria-hidden="true"></span><b class="num">฿1,180</b></span>
+    <span class="cartbar__go">ดูรายการ<svg class="ico ico--s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+  </a>
+  <nav class="nav" aria-label="หลัก">
+    <a href="#menu" aria-current="page">
+      <span class="nav__ic"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 9h6M9 13h4"/></svg></span>
+      เมนู<span class="mark-now" aria-hidden="true"></span>
+    </a>
+    <a href="#order">
+      <span class="nav__ic"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg><span class="badge num" aria-hidden="true">2</span></span>
+      รายการของฉัน<span class="sr">, 2 รายการ</span>
+    </a>
+    <a href="#track">
+      <span class="nav__ic"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8"/><path d="M11 6h8M11 18h8M11 12h5"/></svg></span>
+      ติดตาม
+    </a>
+  </nav>
+</div>
+
+</body>
+</html>

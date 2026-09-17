@@ -1,0 +1,55 @@
+{
+  "_readme": "Per-dish crop overrides for scripts/assets.ts. Key = photo name in ../img. position: attention | entropy | centre | north | south | east | west | northeast | northwest | southeast | southwest. x / y (0..1) place the focal point inside the region and win over position. inset (px, default 16) trims every edge first. left / top / width / height (source px) extract a region instead of the inset. why: free text. Dishes without an entry use the attention strategy.",
+  "corn-fritters": {
+    "position": "centre",
+    "why": "Attention dropped to the bowl base and table and cut the top of the fritter stack; centre on the stack."
+  },
+  "fried-avocado": {
+    "left": 16, "top": 16, "width": 868, "height": 682, "position": "south",
+    "why": "Attention dropped low and let the hand holding the tray (bottom-left, below y 700) into the corner while cutting the top sticks; extract above the hand and keep the whole pile."
+  },
+  "garlic-confit": {
+    "left": 16, "top": 10, "width": 784, "height": 500, "x": 0.515,
+    "why": "Attention cut the front bulb in half. Keep the back bulb whole and let the front one bleed off the left edge; trim the page-paper hairline on the top and left."
+  },
+  "greenbean-peas": {
+    "position": "centre",
+    "why": "Attention slid right and clipped the salad; centre on the bowl."
+  },
+  "grilled-fish": {
+    "x": 0.394,
+    "why": "Attention framed a close-up of the skin and dip cup and lost the head; keep the whole fish head-first and stop short of the dip cup."
+  },
+  "mini-broccoli": {
+    "inset": 0, "x": 0.525,
+    "why": "Attention kept the stalk ends and cut the florets; the source has no paper edge, so use its full width and keep the florets."
+  },
+  "mushrooms": {
+    "left": 18, "top": 8, "width": 774, "height": 470, "x": 0.517,
+    "why": "Handwritten menu lettering along the bottom edge and a page-paper strip on the left; extract above and inside them."
+  },
+  "nashville-chicken": {
+    "left": 0, "top": 0, "width": 892, "height": 869, "position": "north",
+    "why": "Centring the chicken sliced the dip cup in half. Pin the frame to the top so the dip and pickles stay whole, and trim only the page-paper strip on the right edge."
+  },
+  "river-prawns": {
+    "x": 0.586,
+    "why": "Attention kept the empty plate rim and cut off the prawn head; centre on the prawn from tail to head."
+  },
+  "striploin": {
+    "x": 0.555,
+    "why": "Attention cut the end slice off; start the frame at the first slice."
+  },
+  "tiramisu": {
+    "x": 0.5625,
+    "why": "Attention framed the empty table on the left and clipped the glass; centre on the glass."
+  },
+  "tomato-salad": {
+    "y": 0.527,
+    "why": "Attention cut the bowl rim at the top; keep the rim and lose a little of the base."
+  },
+  "wagyu-tenderloin": {
+    "position": "centre",
+    "why": "Attention sliced the left medallion in half; centre on the rosemary so both pieces read."
+  }
+}

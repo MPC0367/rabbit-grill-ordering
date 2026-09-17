@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tables · Rabbit Grill staff</title>
+<!-- FINAL reference mock: live table grid + table drawer, 1440x900 (brief 20, 36).
+     Same fixture service as admin-board.html (Thu 17 Sep 2026, 19:52). Counts reconcile with the tiles:
+     Available 9 · Dining 5 · Checking out 1 · Disabled 1 = 16. Drawer: table 07 (guest-track.html shows the guest side). -->
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<link rel="stylesheet" href="../../client/src/styles/tokens.css">
+<link rel="stylesheet" href="final.css">
+</head>
+<body>
+<script src="sprite.js"></script>
+<div class="a-app">
+  <aside class="rail" data-surface="dark" aria-label="Staff navigation">
+    <a class="wordmark" href="#" aria-label="Rabbit Grill Khao Yai, staff"><span class="wordmark__name" aria-hidden="true">Rabbit Grill</span><span class="wordmark__sub" aria-hidden="true">Khao Yai · Staff</span></a>
+    <nav class="rnav">
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-orders"/></svg>Orders<span class="badge badge--ember" aria-label="2 new">2</span></a>
+      <a class="rnav__item" href="#" aria-current="page"><svg class="i"><use href="#i-tables"/></svg>Tables</a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-cutlery"/></svg>Menu</a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-bars"/></svg>Insights</a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-more"/></svg>More</a>
+    </nav>
+    <div class="rail__foot">
+      <div class="rail__row"><svg class="i"><use href="#i-sound"/></svg>Alerts on<button class="textbtn">Test</button></div>
+      <a class="rail__row rail__row--link" href="#"><svg class="i"><use href="#i-lock"/></svg>Lock screen</a>
+      <div class="seg seg--box" role="group" aria-label="Language ภาษา"><button aria-pressed="false" lang="th">ไทย</button><button aria-pressed="true" lang="en">EN</button></div>
+      <p class="rail__time">Thu 17 Sep 2026<br>Asia/Bangkok</p>
+    </div>
+  </aside>
+
+  <div class="ws">
+    <header class="wshead">
+      <h1>Tables</h1>
+      <nav class="subtabs" aria-label="Tables views">
+        <a class="subtab" href="#" aria-current="page">Live</a>
+        <a class="subtab" href="#">QR codes</a>
+        <a class="subtab" href="#">Visit history</a>
+      </nav>
+      <span class="demo">Demo data</span>
+      <div class="wshead__right">
+        <span class="conn" role="status">Live <span>synced 19:52:04</span></span>
+        <div class="who"><span class="avatar" aria-hidden="true">NK</span><div><p class="who__n">Nok</p><p class="who__r">Floor manager</p></div></div>
+      </div>
+    </header>
+
+    <div class="tsum" role="toolbar" aria-label="Filter tables">
+      <div class="fchips" role="group" aria-label="Table state">
+        <button aria-pressed="true">All <span class="count">16</span></button>
+        <button aria-pressed="false"><i class="sw sw--avail"></i>Available <span class="count">9</span></button>
+        <button aria-pressed="false"><i class="sw sw--dining"></i>Dining <span class="count">5</span></button>
+        <button aria-pressed="false"><i class="sw sw--bill"></i>Checking out <span class="count">1</span></button>
+        <button aria-pressed="false"><i class="sw sw--off"></i>Disabled <span class="count">1</span></button>
+      </div>
+      <button class="checkbtn" aria-pressed="false"><span class="box"></span>Needs attention <b class="num" style="font-family:var(--font-display);font-weight:500">4</b></button>
+      <label class="search search--staff"><span class="sr">Find table</span><svg class="i"><use href="#i-search"/></svg><input type="search" placeholder="Find table"></label>
+    </div>
+
+    <div class="tgrid-wrap">
+      <div class="tgrid" aria-label="Tables">
+        <article class="tcard tcard--avail" aria-label="Table 01, available">
+          <div class="tcard__top"><span class="tcard__n">01</span></div>
+          <p class="tcard__state">Available</p>
+          <p class="tcard__facts">No open visit</p>
+          <div class="tcard__act"><button class="btn btn--outline"><svg class="i"><use href="#i-seat"/></svg>Seat guests</button></div>
+        </article>
+        <article class="tcard tcard--dining" aria-label="Table 02, dining, food ready">
+          <div class="tcard__top"><span class="tcard__n">02</span><span class="tcard__badges"><span class="attn attn--ready">Ready 1</span></span></div>
+          <p class="tcard__state">Dining</p>
+          <p class="tcard__facts"><span>Seated <b>1h 04</b></span><span>3 rounds · 3 unserved</span></p>
+          <div class="tcard__act"><button class="btn btn--outline">Details</button></div>
+        </article>
+        <article class="tcard tcard--dining" aria-label="Table 03, dining, new order">
+          <div class="tcard__top"><span class="tcard__n">03</span><span class="tcard__badges"><span class="attn attn--new">New</span></span></div>
+          <p class="tcard__state">Dining</p>
+          <p class="tcard__facts"><span>Seated <b>6 min</b></span><span>1 round · 5 to accept</span></p>
+          <div class="tcard__act"><button class="btn btn--outline">Details</button></div>
+        </article>
+        <article class="tcard tcard--avail" aria-label="Table 04, available">
+          <div class="tcard__top"><span class="tcard__n">04</span></div>
+          <p class="tcard__state">Available</p>
+          <p class="tcard__facts">No open visit</p>
+          <div class="tcard__act"><button class="btn btn--outline"><svg class="i"><use href="#i-seat"/></svg>Seat guests</button></div>
+        </article>
+        <article class="tcard tcard--bill" aria-label="Table 05, checking out, paid, ready to complete">
+          <div class="tcard__top"><span class="tcard__n">05</span></div>
+          <p class="tcard__state"><svg class="i"><use href="#i-receipt"/></svg>Checking out</p>
+          <p class="tcard__facts"><span>Bill <b style="color:var(--text)" class="num">฿2,480</b> · paid 19:49</span><span>All food served</span></p>
+          <div class="tcard__act"><button class="btn btn--primary">Complete checkout</button></div>
+        </article>
+        <article class="tcard tcard--avail" aria-label="Table 06, available">
+          <div class="tcard__top"><span class="tcard__n">06</span></div>
+          <p class="tcard__state">Available</p>
+          <p class="tcard__facts">No open visit</p>
+          <div class="tcard__act"><button class="btn btn--outline"><svg class="i"><use href="#i-seat"/></svg>Seat guests</button></div>
+        </article>
+        <article class="tcard tcard--dining is-open" aria-label="Table 07, dining, details open">
+          <div class="tcard__top"><span class="tcard__n">07</span><span class="tcard__badges"><span class="attn attn--quote">Quote</span></span></div>
+          <p class="tcard__state">Dining</p>
+          <p class="tcard__facts"><span>Seated <b>48 min</b></span><span>2 rounds · 2 preparing</span></p>
+          <div class="tcard__act"><button class="btn btn--outline" aria-expanded="true">Details open</button></div>
+        </article>
+        <article class="tcard tcard--avail" aria-label="Table 08, available">
+          <div class="tcard__top"><span class="tcard__n">08</span></div>
+          <p class="tcard__state">Available</p>
+          <p class="tcard__facts">No open visit</p>
+          <div class="tcard__act"><button class="btn btn--outline"><svg class="i"><use href="#i-seat"/></svg>Seat guests</button></div>
+        </article>
+        <article class="tcard tcard--dining" aria-label="Table 09, dining, guest called staff">
+          <div class="tcard__top"><span class="tcard__n">09</span><span class="tcard__badges"><span class="attn attn--call">Call 19:50</span></span></div>
+          <p class="tcard__state">Dining</p>
+          <p class="tcard__facts"><span>Seated <b>29 min</b></span><span>1 round · 2 almost done</span></p>
+          <div class="tcard__act"><button class="btn btn--outline">Details</button></div>
+        </article>
+        <article class="tcard tcard--avail" aria-label="Table 10, available">
+          <div class="tcard__top"><span class="tcard__n">10</span></div>
+          <p class="tcard__state">Available</p>
+          <p class="tcard__facts">No open visit</p>
+          <div class="tcard__act"><button class="btn btn--outline"><svg class="i"><use href="#i-seat"/></svg>Seat guests</button></div>
+        </article>
+        <article class="tcard tcard--avail" aria-label="Table 11, available">
+          <div class="tcard__top"><span class="tcard__n">11</span></div>
+          <p class="tcard__state">Available</p>
+          <p class="tcard__facts">No open visit</p>
+          <div class="tcard__act"><button class="btn btn--outline"><svg class="i"><use href="#i-seat"/></svg>Seat guests</button></div>
+        </article>
+        <article class="tcard tcard--dining" aria-label="Table 12, dining, new order">
+          <div class="tcard__top"><span class="tcard__n">12</span><span class="tcard__badges"><span class="attn attn--new">New</span></span></div>
+          <p class="tcard__state">Dining</p>
+          <p class="tcard__facts"><span>Seated <b>22 min</b></span><span>2 rounds · 6 unserved</span></p>
+          <div class="tcard__act"><button class="btn btn--outline">Details</button></div>
+        </article>
+        <article class="tcard tcard--avail" aria-label="Table 13, available">
+          <div class="tcard__top"><span class="tcard__n">13</span></div>
+          <p class="tcard__state">Available</p>
+          <p class="tcard__facts">No open visit</p>
+          <div class="tcard__act"><button class="btn btn--outline"><svg class="i"><use href="#i-seat"/></svg>Seat guests</button></div>
+        </article>
+        <article class="tcard tcard--avail" aria-label="Table 14, available">
+          <div class="tcard__top"><span class="tcard__n">14</span></div>
+          <p class="tcard__state">Available</p>
+          <p class="tcard__facts">No open visit</p>
+          <div class="tcard__act"><button class="btn btn--outline"><svg class="i"><use href="#i-seat"/></svg>Seat guests</button></div>
+        </article>
+        <article class="tcard tcard--avail" aria-label="Table 15, available">
+          <div class="tcard__top"><span class="tcard__n">15</span></div>
+          <p class="tcard__state">Available</p>
+          <p class="tcard__facts">No open visit</p>
+          <div class="tcard__act"><button class="btn btn--outline"><svg class="i"><use href="#i-seat"/></svg>Seat guests</button></div>
+        </article>
+        <article class="tcard tcard--off" aria-label="Table 16, disabled">
+          <div class="tcard__top"><span class="tcard__n">16</span></div>
+          <p class="tcard__state"><svg class="i"><use href="#i-lock"/></svg>Disabled</p>
+          <p class="tcard__facts">No seating or ordering</p>
+          <div class="tcard__act"><button class="btn btn--outline">Enable…</button></div>
+        </article>
+      </div>
+
+      <!-- table drawer (non-modal side panel; Escape closes, focus returns to the tile) -->
+      <aside class="drawer" aria-labelledby="dr-t">
+        <header class="drawer__head">
+          <div class="tno" aria-hidden="true"><span class="tno__k">Table</span><span class="tno__n">07</span></div>
+          <div>
+            <h2 class="drawer__t" id="dr-t">Table 07 <span class="pill pill--neutral" style="min-height:26px;vertical-align:3px"><i class="sw sw--dining" style="width:10px;height:10px"></i>Dining</span></h2>
+            <p class="drawer__s">Seated 19:04 · 48 min · 4 diners recorded by Nok</p>
+          </div>
+          <button class="iconbtn iconbtn--staff" aria-label="Close table 07"><svg class="i i--lg"><use href="#i-x"/></svg></button>
+        </header>
+        <div class="drawer__body">
+          <section class="dsec">
+            <div class="dsec__h"><h3>Guest access</h3><span class="meta">2 devices joined</span></div>
+            <dl class="kv">
+              <dt>Join PIN</dt><dd><span class="pin" aria-label="PIN hidden"><span>•</span><span>•</span><span>•</span><span>•</span></span></dd>
+            </dl>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn btn--outline btn--staff"><svg class="i"><use href="#i-key"/></svg>Show PIN</button>
+              <button class="btn btn--outline btn--staff"><svg class="i"><use href="#i-refresh"/></svg>Rotate PIN</button>
+              <button class="btn btn--danger btn--staff">Revoke access…</button>
+            </div>
+          </section>
+
+          <section class="dsec">
+            <div class="dsec__h"><h3>Rounds</h3><button class="btn btn--ghost btn--staff"><svg class="i"><use href="#i-plus"/></svg>Assist order</button></div>
+            <div class="rhead"><b>Round 2 · <span class="code" style="font-family:var(--font-display);letter-spacing:var(--track-ref);font-weight:500">RG-4K7P</span></b><span class="meta">sent 19:42</span></div>
+            <div class="rline"><span class="rline__q">1</span><span class="rline__th" lang="th">เนื้อสันในวากิวย่างซอสไวน์แดง</span><span class="pill pill--neutral"><svg class="i"><use href="#i-half"/></svg>Preparing</span></div>
+            <div class="rline"><span class="rline__q">1</span><span class="rline__th" lang="th">กุ้งแม่น้ำย่าง</span><span class="pill pill--neutral"><svg class="i"><use href="#i-half"/></svg>Preparing</span></div>
+            <div class="rline"><span class="rline__q">1</span><span class="rline__th" lang="th">เห็ดผัด</span><span class="pill pill--ok"><svg class="i"><use href="#i-check"/></svg>Served 19:49</span></div>
+            <div class="rline"><span class="rline__q">1</span><span class="rline__th" lang="th" style="color:var(--text-2)">สลัดรวมกับซอสบัลซามิก</span><span class="pill pill--alert"><svg class="i"><use href="#i-slash"/></svg>Cancelled</span></div>
+            <div class="rhead" style="margin-top:12px"><b>Round 1 · <span style="font-family:var(--font-display);letter-spacing:var(--track-ref);font-weight:500">RG-3H2M</span></b><span class="pill pill--ok"><svg class="i"><use href="#i-check"/></svg>All 3 served 19:31</span></div>
+            <div class="rhead" style="margin-top:12px;padding:10px 12px;border-radius:var(--radius-ctl);background:var(--heat-tint)">
+              <b style="display:flex;gap:6px;align-items:center"><svg class="i i--sm"><use href="#i-scale"/></svg><span lang="th">ไพร์มริบ</span> · 420 g · <span class="num">฿2,058</span></b>
+              <span style="color:var(--heat-text);font-weight:600;font-size:var(--fs-13)">Awaiting guest · expires 20:05</span>
+            </div>
+          </section>
+
+          <section class="dsec">
+            <div class="dsec__h"><h3>Bill</h3><span class="pill pill--line">Open · not requested</span></div>
+            <dl class="kv">
+              <dt>Accepted food, 2 rounds</dt><dd class="num" style="font-weight:600">฿3,630</dd>
+              <dt>Cancelled (not charged)</dt><dd class="num">฿260</dd>
+              <dt>Portion quote, not confirmed</dt><dd class="num">not included</dd>
+              <dt>Service charge / VAT</dt><dd>Not configured</dd>
+            </dl>
+          </section>
+
+          <section class="dsec">
+            <div class="dsec__h"><h3>History</h3><a class="textlink" href="#" style="font-size:var(--fs-14)">Full audit</a></div>
+            <ol class="hist">
+              <li><time>19:50</time><span><b>Portion quote sent</b> · Prime Rib 420 g · Nok</span></li>
+              <li><time>19:49</time><span><b>Served</b> · Sauteed Mushrooms · Ploy</span></li>
+              <li><time>19:46</time><span><b>Preparing</b> · 2 dishes · Kitchen 1</span></li>
+              <li><time>19:45</time><span><b>Cancelled</b> · Green Salad · out of stock · Nok</span></li>
+              <li><time>19:43</time><span><b>Accepted</b> · round 2 · Kitchen 1</span></li>
+              <li><time>19:42</time><span><b>Received</b> · round 2 · guest device</span></li>
+              <li><time>19:04</time><span><b>Visit opened</b> · 4 diners · Nok</span></li>
+            </ol>
+          </section>
+        </div>
+        <footer class="drawer__foot">
+          <div class="blockers" role="status">
+            <b><svg class="i i--sm"><use href="#i-info"/></svg>Complete checkout is not available yet</b>
+            <ul>
+              <li>2 dishes in round 2 are not served</li>
+              <li>1 portion quote is waiting for the guest</li>
+              <li>No finalised bill or confirmed payment</li>
+            </ul>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn--outline btn--staff"><svg class="i"><use href="#i-receipt"/></svg>Start bill…</button>
+            <button class="btn btn--primary btn--staff" aria-disabled="true">Complete checkout</button>
+          </div>
+        </footer>
+      </aside>
+    </div>
+  </div>
+</div>
+</body>
+</html>

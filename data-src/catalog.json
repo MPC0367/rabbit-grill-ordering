@@ -1,0 +1,4491 @@
+{
+  "source": {
+    "reference_url": "https://mpc0367.github.io/rabbit-grill/menu.html",
+    "primary_files": [
+      "doc/pages/food-01.jpg",
+      "doc/pages/food-02.jpg",
+      "doc/pages/food-03.jpg",
+      "doc/pages/food-04.jpg",
+      "doc/pages/food-05.jpg",
+      "doc/pages/food-06.jpg",
+      "doc/pages/food-07.jpg",
+      "doc/pages/food-08.jpg",
+      "doc/pages/food-09.jpg",
+      "doc/pages/food-10.jpg",
+      "doc/pages/food-11.jpg",
+      "doc/pages/food-12.jpg",
+      "doc/pages/food-13.jpg",
+      "doc/pages/food-14.jpg",
+      "doc/pages/bev-01.jpg",
+      "doc/pages/bev-02.jpg",
+      "doc/pages/bev-03.jpg",
+      "doc/pages/bev-04.jpg",
+      "doc/menu-avocado.jpg"
+    ],
+    "retrieved_at": "2026-08-29",
+    "audited_at": "2026-09-17"
+  },
+  "groups": [
+    {
+      "key": "food",
+      "name_th": "อาหาร",
+      "name_en": "Food",
+      "sort": 10
+    },
+    {
+      "key": "drinks",
+      "name_th": "เครื่องดื่ม",
+      "name_en": "Drinks",
+      "sort": 20
+    }
+  ],
+  "categories": [
+    {
+      "key": "beef-selection",
+      "group": "food",
+      "name_th": "เนื้อ",
+      "name_en": "Beef Selection",
+      "note_th": "ไพร์มริบคิดราคาตามน้ำหนัก",
+      "note_en": "Prime rib is priced by weight.",
+      "sort": 10,
+      "publish": true,
+      "seasonal": false,
+      "station": "kitchen",
+      "alcohol": false,
+      "source_note": "food-10 prints the handwritten label \"Beef Selection\". Prime Rib (food-09) has no section label and is grouped here as on the reference site. name_th is the reference site's translation; the scan prints no Thai category label. The notes restate the printed \"490 THB / 100 g\"; the Thai note is our translation."
+    },
+    {
+      "key": "from-the-grill",
+      "group": "food",
+      "name_th": "จานหลักจากเตา",
+      "name_en": "From the Grill",
+      "note_th": null,
+      "note_en": null,
+      "sort": 20,
+      "publish": true,
+      "seasonal": false,
+      "station": "kitchen",
+      "alcohol": false,
+      "source_note": "Printed section label is \"MAIN\" (food-06, food-07, food-08). \"From the Grill\" is the reference site's name, kept per brief 44E. name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "appetizers",
+      "group": "food",
+      "name_th": "ของเรียกน้ำย่อย",
+      "name_en": "Appetizers",
+      "note_th": null,
+      "note_en": null,
+      "sort": 30,
+      "publish": true,
+      "seasonal": false,
+      "station": "kitchen",
+      "alcohol": false,
+      "source_note": "Printed section label is \"APPERTIZER\" (food-02, food-04), corrected to \"Appetizers\" (recorded in doc/RESEARCH.md). name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "salads",
+      "group": "food",
+      "name_th": "สลัด",
+      "name_en": "Salads",
+      "note_th": null,
+      "note_en": null,
+      "sort": 40,
+      "publish": true,
+      "seasonal": false,
+      "station": "kitchen",
+      "alcohol": false,
+      "source_note": "Printed section label is \"SALAD\" (food-03, food-05). name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "seasonal-avocado",
+      "group": "food",
+      "name_th": "เมนูตามฤดูกาล · อะโวคาโด",
+      "name_en": "Seasonal — Avocado",
+      "note_th": "เมนูอะโวคาโดตามฤดูกาล กรุณาสอบถามพนักงานว่าวันนี้มีจำหน่ายหรือไม่",
+      "note_en": "A seasonal avocado menu. Please check with staff that it is being served today.",
+      "sort": 50,
+      "publish": false,
+      "seasonal": true,
+      "station": "kitchen",
+      "alcohol": false,
+      "source_note": "Printed on a separate card, doc/menu-avocado.jpg, headed \"NEW SEASONAL / AVOCADO\", with no dates or Thai text. Unpublished until the owner confirms it is currently offered. name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "rice",
+      "group": "food",
+      "name_th": "ข้าว",
+      "name_en": "Rice",
+      "note_th": null,
+      "note_en": null,
+      "sort": 60,
+      "publish": true,
+      "seasonal": false,
+      "station": "kitchen",
+      "alcohol": false,
+      "source_note": "Printed section label is \"RICE\" (food-13). name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "side-dishes",
+      "group": "food",
+      "name_th": "เครื่องเคียง",
+      "name_en": "Side Dishes",
+      "note_th": null,
+      "note_en": null,
+      "sort": 70,
+      "publish": true,
+      "seasonal": false,
+      "station": "kitchen",
+      "alcohol": false,
+      "source_note": "Printed section label is \"SIDEDISH\" (food-12). No Thai dish names are printed on this page. Nothing on the menu says which sides, if any, come with a main. name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "dessert",
+      "group": "food",
+      "name_th": "ของหวาน",
+      "name_en": "Dessert",
+      "note_th": null,
+      "note_en": null,
+      "sort": 80,
+      "publish": true,
+      "seasonal": false,
+      "station": "kitchen",
+      "alcohol": false,
+      "source_note": "Printed section label is \"DESSERT\" (food-14). No Thai dish names are printed on this page. name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "special-matcha",
+      "group": "drinks",
+      "name_th": "มัทฉะพิเศษ",
+      "name_en": "Special Matcha",
+      "note_th": "มัทฉะนำเข้าตรงจากญี่ปุ่น",
+      "note_en": "We source our matcha straight from Japan.",
+      "sort": 10,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": false,
+      "source_note": "bev-03, heading \"SPECIAL MATCHA\" with HOT / ICED columns; a dash means that temperature is not offered. Footer printed: \"WE SOURCE OUR MATCHA STRAIGHT FROM JAPAN.\" name_th and note_th are the reference site's translations; the scan prints no Thai text on this page."
+    },
+    {
+      "key": "coffee",
+      "group": "drinks",
+      "name_th": null,
+      "name_en": "Coffee",
+      "note_th": null,
+      "note_en": "Bean: Laos Bolaven single-origin (Medium - Dark roasted).",
+      "sort": 20,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": false,
+      "source_note": "bev-01, heading \"COFFEE\" with Menu / Hot / Iced columns. Missing from data/menu.json and the reference site. Printed under the table: \"bean : Laos Bolaven single-origin (Medium - Dark roasted)\". Also printed, and NOT configured as a modifier: \"SPECIAL BLEND / Balanced Blend - Bluetamp (+30 THB) / Brazil, Columbia, Ethiopia / Modern Style (Medium Light Roasted) โดดเด่นในเรื่องของ Flavors และกลิ่น & รสผลไม้ตระกูลเบอร์รี่ มีบอดี้ที่มีความครีมมี่ จบด้วยช็อคโกแลตหวานๆ\". The owner must say which coffees can take the +30 THB blend before it becomes an option. No Thai category label is printed."
+    },
+    {
+      "key": "hot-tea",
+      "group": "drinks",
+      "name_th": null,
+      "name_en": "Hot Tea",
+      "note_th": null,
+      "note_en": null,
+      "sort": 30,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": false,
+      "source_note": "bev-01, \"HOT TEA | Rosemary Tea 140\". Missing from data/menu.json and the reference site. No Thai category label is printed."
+    },
+    {
+      "key": "milky",
+      "group": "drinks",
+      "name_th": "นม",
+      "name_en": "Milky",
+      "note_th": null,
+      "note_en": null,
+      "sort": 40,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": false,
+      "source_note": "bev-02, heading \"MILKY\" under HOT / ICED columns; every HOT cell is a dash. data/menu.json flattened these to a single price. name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "soda",
+      "group": "drinks",
+      "name_th": "โซดา",
+      "name_en": "Soda",
+      "note_th": null,
+      "note_en": null,
+      "sort": 50,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": false,
+      "source_note": "bev-02, heading \"SODA\", one price per drink. name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "fresh-juice",
+      "group": "drinks",
+      "name_th": "น้ำผลไม้สด",
+      "name_en": "Fresh Juice",
+      "note_th": null,
+      "note_en": null,
+      "sort": 60,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": false,
+      "source_note": "bev-02, heading \"FRESH JUICE\", one price per drink. Overlaps the separate JUICE list on bev-01 (category juice). name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "juice",
+      "group": "drinks",
+      "name_th": null,
+      "name_en": "Juice",
+      "note_th": null,
+      "note_en": null,
+      "sort": 70,
+      "publish": false,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": false,
+      "source_note": "bev-01, heading \"JUICE\": Orange Juice 100, Coconut Water 100, Watermelon Juice 100, Mangosteen Juice 200. Missing from data/menu.json and the reference site. Two of its four entries repeat FRESH JUICE on bev-02, so it is unpublished until the owner says which list is current. No Thai category label is printed."
+    },
+    {
+      "key": "draft-beer",
+      "group": "drinks",
+      "name_th": "เบียร์สด",
+      "name_en": "Draft Beer",
+      "note_th": null,
+      "note_en": null,
+      "sort": 80,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": true,
+      "source_note": "bev-04, heading \"DRAFT BEER\" with the printed line \"PROMOTION  3 FREE 1\". The promotion is recorded here only: it is not active and no discount is configured, because the eligible drinks, dates, size mixing, free-item choice, stacking and bill treatment are unconfirmed. The reference site paraphrased it as \"Promotion — buy 3 get 1 free\" / \"โปรโมชั่น 3 แถม 1\". Volumes are printed per drink as \"( 250 ml. / 500 ml. )\". name_th is the reference site's translation; the scan prints no Thai category label."
+    },
+    {
+      "key": "bottled-beer",
+      "group": "drinks",
+      "name_th": "เบียร์ขวด",
+      "name_en": "Bottled Beer",
+      "note_th": null,
+      "note_en": null,
+      "sort": 90,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": true,
+      "source_note": "bev-04, heading \"BOTTLED BEER\". The reference site merged this with WHISKEY as \"Bottled Beer & Spirits\" / \"เบียร์ขวดและสุรา\"; name_th is the beer half of that site translation."
+    },
+    {
+      "key": "whiskey",
+      "group": "drinks",
+      "name_th": null,
+      "name_en": "Whiskey",
+      "note_th": null,
+      "note_en": null,
+      "sort": 100,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": true,
+      "source_note": "bev-04, heading \"WHISKEY\" with a single entry, Regency 550.- ( 350 ml. ). Printed as its own section; the reference site merged it into \"Bottled Beer & Spirits\". No Thai category label is printed."
+    },
+    {
+      "key": "soft-drinks",
+      "group": "drinks",
+      "name_th": null,
+      "name_en": "Soft Drinks",
+      "note_th": null,
+      "note_en": null,
+      "sort": 110,
+      "publish": true,
+      "seasonal": false,
+      "station": "bar",
+      "alcohol": false,
+      "source_note": "bev-04, heading \"SOFT DRINK\". The reference site labelled it \"เครื่องดื่ม\", which is the same as the Drinks group name, so name_th is left empty until the owner supplies a Thai label."
+    }
+  ],
+  "items": [
+    {
+      "key": "prime-rib",
+      "category": "beef-selection",
+      "sort": 10,
+      "name_th": "ไพร์มริบ",
+      "name_en": "Prime Rib",
+      "name_th_source": "reference_site_translation",
+      "source_text": "PRIME RIB / 490 THB / 100 g",
+      "source_ref": "doc/pages/food-09.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "measured_weight",
+      "price_baht": null,
+      "rate_baht": 490,
+      "rate_basis_grams": 100,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "primerib-full",
+      "image_alt_th": "ไพร์มริบหั่นชิ้นบนถาดสเตนเลส ด้านหลังมีซอสสองโถและถ้วยกระเทียมย่างกับโรสแมรี่",
+      "image_alt_en": "Sliced prime rib on a steel platter, with two sauce boats and a cup of roasted garlic and rosemary behind it",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "measured_weight",
+          "detail": "Printed as \"490 THB / 100 g\". No portion sizes, minimum weight, doneness or included sides are printed. Staff weigh and quote each portion; the guest confirms the quote before it becomes an order line."
+        },
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "australian-striploin",
+      "category": "beef-selection",
+      "sort": 20,
+      "name_th": "เนื้อสันนอกออสเตรเลีย",
+      "name_en": "Australian Striploin",
+      "name_th_source": "menu_scan",
+      "source_text": "Australain Striploin / เนื้อสันนอกออสเตรเลีย / 590.-",
+      "source_ref": "doc/pages/food-10.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 590,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "striploin",
+      "image_alt_th": "เนื้อสันนอกย่างหั่นชิ้น ด้านในสีชมพู บนถาดสเตนเลสสีเข้ม พร้อมโรสแมรี่และกระเทียมย่างผ่าครึ่ง",
+      "image_alt_en": "Sliced grilled striploin, pink inside, on a dark steel platter with rosemary and a halved roasted garlic bulb",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "typo_corrected",
+          "detail": "Printed \"Australain Striploin\"; displayed as \"Australian Striploin\" (one of the three corrections recorded in doc/RESEARCH.md, which misquotes the misprint as \"Australalain\")."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "wagyu-tenderloin",
+      "category": "beef-selection",
+      "sort": 30,
+      "name_th": "เนื้อสันในวากิวย่างซอสไวน์แดง",
+      "name_en": "Wagyu Tenderloin MB 6–7 with Red Wine Jus",
+      "name_th_source": "menu_scan",
+      "source_text": "Wagyu Tenderloin MB 6-7 with Red Wine Jus / เนื้อสันในวากิวย่างซอสไวน์แดง / 1,990 / 300 g",
+      "source_ref": "doc/pages/food-10.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 1990,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": "300 กรัม",
+      "portion_note_en": "300 g",
+      "variants": [],
+      "image": "wagyu-tenderloin",
+      "image_alt_th": "เนื้อสันในวากิวสองชิ้นหนา ด้านในสีแดงระเรื่อ ในซอสไวน์แดง พร้อมกิ่งโรสแมรี่ บนถาดสเตนเลส",
+      "image_alt_en": "Two thick slices of rare wagyu tenderloin in red wine jus with a rosemary sprig on a steel platter",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "grilled-tongue",
+      "category": "beef-selection",
+      "sort": 40,
+      "name_th": "ลิ้นวัวย่าง",
+      "name_en": "Grilled Tongue",
+      "name_th_source": "menu_scan",
+      "source_text": "Grilled Tongue / ลิ้นวัวย่าง / 590.-",
+      "source_ref": "doc/pages/food-11.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 590,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "grilled-tongue",
+      "image_alt_th": "ลิ้นวัวย่างหั่นชิ้นบนถาดสเตนเลส พร้อมมะนาว หอมดอง และซอสสีเขียวเล็กน้อย",
+      "image_alt_en": "Sliced grilled beef tongue on a steel platter with a lime wedge, pickled onion and a small green condiment",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "beef-tongue-stew",
+      "category": "beef-selection",
+      "sort": 50,
+      "name_th": "สตูว์ลิ้นวัว",
+      "name_en": "Beef Tongue Stew",
+      "name_th_source": "menu_scan",
+      "source_text": "Beef tongue stew / สตูว์ลิ้นวัว / 490.-",
+      "source_ref": "doc/pages/food-11.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 490,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "tongue-stew",
+      "image_alt_th": "ลิ้นวัวเป็นชิ้นในซอสสีน้ำตาลเงา วางบนครีมสีอ่อน พร้อมกิ่งโรสแมรี่ บนจานเซรามิกลายนูนสีเขียว",
+      "image_alt_en": "Pieces of beef tongue in a glossy brown sauce on a pale purée, with a rosemary sprig, on a green embossed plate",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "grilled-lamb-rack",
+      "category": "beef-selection",
+      "sort": 60,
+      "name_th": "ซี่โครงแกะย่าง",
+      "name_en": "Grilled Lamb Rack",
+      "name_th_source": "menu_scan",
+      "source_text": "Grilled Lamb Rack / ซี่โครงแกะย่าง / 890.-,1,590.-",
+      "source_ref": "doc/pages/food-11.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "price-a",
+          "name_th": "ราคา A",
+          "name_en": "Price A",
+          "price_baht": 890,
+          "available": true,
+          "source_text": "890.-"
+        },
+        {
+          "key": "price-b",
+          "name_th": "ราคา B",
+          "name_en": "Price B",
+          "price_baht": 1590,
+          "available": true,
+          "source_text": "1,590.-"
+        }
+      ],
+      "image": "lamb-rack",
+      "image_alt_th": "ซี่โครงแกะย่างตัดเป็นชิ้น ด้านในสีชมพู พร้อมกระเทียมย่างและโรสแมรี่ บนจานเซรามิกลายนูนสีเขียว",
+      "image_alt_en": "Grilled lamb rack cut into pink chops, with a roasted garlic bulb and rosemary on a green embossed plate",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "ambiguous_price",
+          "detail": "Two prices are printed (\"890.-,1,590.-\") with no label saying what separates them. \"Price A\" and \"Price B\" are neutral placeholders, not portion names. Not orderable until the owner names the options."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "grilled-baby-chicken",
+      "category": "from-the-grill",
+      "sort": 10,
+      "name_th": "ไก่ย่างตัวเล็กคลุกเครื่องเทศ",
+      "name_en": "Grilled Baby Chicken",
+      "name_th_source": "menu_scan",
+      "source_text": "Grilled Baby Chicken / ไก่ย่างตัวเล็กคลุกเครื่องเทศ / 590.-",
+      "source_ref": "doc/pages/food-06.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 590,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "baby-chicken",
+      "image_alt_th": "ไก่ตัวเล็กย่างทั้งตัวคลุกเครื่องเทศ พร้อมเลมอนย่างผ่าครึ่ง โรสแมรี่ พริกเขียว และซอสแดงหนึ่งถ้วย บนถาดสเตนเลส",
+      "image_alt_en": "A whole spice-crusted grilled small chicken with a charred lemon half, rosemary, green chillies and a cup of red sauce on a steel platter",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "grilled-pork",
+      "category": "from-the-grill",
+      "sort": 20,
+      "name_th": "หมูย่าง",
+      "name_en": "Grilled Pork",
+      "name_th_source": "menu_scan",
+      "source_text": "Grilled Pork / หมูย่าง / 390.-",
+      "source_ref": "doc/pages/food-06.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 390,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "grilled-pork",
+      "image_alt_th": "หมูย่างสามชิ้น พร้อมโรสแมรี่ หอมดอง พริกเขียว และมัสตาร์ดเม็ด บนถาดสเตนเลส",
+      "image_alt_en": "Three pieces of grilled pork with rosemary, pickled onion, green chillies and a dollop of grainy mustard on a steel platter",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "grilled-pork-ribs",
+      "category": "from-the-grill",
+      "sort": 30,
+      "name_th": "ซี่โครงหมูย่าง",
+      "name_en": "Grilled Pork Ribs",
+      "name_th_source": "menu_scan",
+      "source_text": "Grilled Pork Ribs / ซี่โครงหมูย่าง / 590.-",
+      "source_ref": "doc/pages/food-06.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 590,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "pork-ribs",
+      "image_alt_th": "ซี่โครงหมูย่างทั้งแผง พร้อมมันฝรั่งทอดชิ้นหนา ผักดอง และพริกเขียว บนถาดสเตนเลส",
+      "image_alt_en": "A rack of grilled pork ribs with thick-cut fries, pickled vegetables and green chillies on a steel platter",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "fish-and-chips",
+      "category": "from-the-grill",
+      "sort": 40,
+      "name_th": "ฟิชแอนดชิปส์",
+      "name_en": "Fish and Chips",
+      "name_th_source": "menu_scan",
+      "source_text": "Fish and Chips / ฟิชแอนดชิปส์ / 490.-",
+      "source_ref": "doc/pages/food-07.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 490,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "fish-chips",
+      "image_alt_th": "ปลาชุบเกล็ดขนมปังทอดทั้งตัวแบบผ่าแผ่ พร้อมมันฝรั่งทอด แตงกวาดอง หอมดอง เลมอน มะนาว ซอสขาว และซอสมะเขือเทศ",
+      "image_alt_en": "A butterflied breaded fried fish with thick-cut fries, gherkins, pickled onion, lemon, lime and cups of white sauce and ketchup",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "possible_typo",
+          "detail": "The handwritten Thai shows no ์ over ด (\"ฟิชแอนดชิปส์\"); the usual spelling is \"ฟิชแอนด์ชิปส์\". Kept as printed until the owner confirms."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "grilled-river-prawns",
+      "category": "from-the-grill",
+      "sort": 50,
+      "name_th": "กุ้งแม่น้ำย่าง",
+      "name_en": "Grilled River Prawns",
+      "name_th_source": "menu_scan",
+      "source_text": "Grilled River Prawns / กุ้งแม่น้ำย่าง / 990.-",
+      "source_ref": "doc/pages/food-07.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 990,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "river-prawns",
+      "image_alt_th": "กุ้งแม่น้ำย่างผ่าครึ่งในซอสสีส้ม พร้อมส้มลูกเล็กผ่าครึ่ง บนจานเซรามิกลายนูนสีเขียว",
+      "image_alt_en": "A halved grilled river prawn in an orange sauce with small citrus halves on a green embossed plate",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "grilled-squid",
+      "category": "from-the-grill",
+      "sort": 60,
+      "name_th": "ปลาหมึกย่าง",
+      "name_en": "Grilled Squid",
+      "name_th_source": "menu_scan",
+      "source_text": "Grilled Squid / ปลาหมึกย่าง / 390.-",
+      "source_ref": "doc/pages/food-08.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 390,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "grilled-squid",
+      "image_alt_th": "ปลาหมึกย่างบั้งลายพร้อมหนวด กะหล่ำดอก หอมดอง พริกเขียว และส้มลูกเล็ก บนจานเซรามิกลายนูนสีเขียว",
+      "image_alt_en": "Scored grilled squid with its tentacles, cauliflower, pickled onion, green chillies and a small citrus half on a green embossed plate",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "grilled-fish",
+      "category": "from-the-grill",
+      "sort": 70,
+      "name_th": "ปลาย่าง",
+      "name_en": "Grilled Fish",
+      "name_th_source": "menu_scan",
+      "source_text": "Grilled Fish / ปลาย่าง / 490.-",
+      "source_ref": "doc/pages/food-08.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 490,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "grilled-fish",
+      "image_alt_th": "ปลาหนังแดงย่างทั้งตัวแบบผ่าแผ่ พร้อมซอสขาว น้ำมันสมุนไพรสีเขียว และส้มลูกเล็ก บนจานเซรามิกลายนูนสีเขียว",
+      "image_alt_en": "A whole butterflied grilled red-skinned fish with a cup of white sauce, a cup of green herb oil and small citrus halves on a green embossed plate",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "corn-rib",
+      "category": "appetizers",
+      "sort": 10,
+      "name_th": "คอร์นริบ",
+      "name_en": "Corn Rib",
+      "name_th_source": "menu_scan",
+      "source_text": "Corn Rib / คอร์นริบ / 150.-",
+      "source_ref": "doc/pages/food-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 150,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "corn-rib",
+      "image_alt_th": "ข้าวโพดย่างหั่นเป็นแท่ง ราดซอสขาว โรยพริกป่นและสมุนไพร พร้อมมะนาวและเปลือกข้าวโพดย่าง บนถาดสเตนเลส",
+      "image_alt_en": "Grilled corn ribs with a white drizzle, red spice and herbs, lime wedges and charred husks on a steel platter",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "nashville-hot-chicken",
+      "category": "appetizers",
+      "sort": 20,
+      "name_th": "ไก่ทอดซอสเผ็ดแนชวิลล์",
+      "name_en": "Nashville Hot Chicken",
+      "name_th_source": "menu_scan",
+      "source_text": "Nashville Hot Chicken / ไก่ทอดซอสเผ็ดแนชวิลล์ / 240.-",
+      "source_ref": "doc/pages/food-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 240,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "nashville-chicken",
+      "image_alt_th": "ไก่ทอดเคลือบเครื่องเทศสีแดงบนกระดาษรองลายร้าน พร้อมผักดองและน้ำจิ้มครีมหนึ่งถ้วย",
+      "image_alt_en": "Pieces of red-spiced fried chicken on branded paper with pickles and a cup of creamy dip",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "fried-sweet-potato",
+      "category": "appetizers",
+      "sort": 30,
+      "name_th": "มันหวานทอด",
+      "name_en": "Fried Sweet Potato",
+      "name_th_source": "menu_scan",
+      "source_text": "Fried Sweet Potato / มันหวานทอด / 180.-",
+      "source_ref": "doc/pages/food-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 180,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "sweet-potato",
+      "image_alt_th": "มันหวานทอดเส้นสีส้ม โรยชีสขูดกองสูงและสมุนไพรสับ บนกระดาษรองลายร้าน",
+      "image_alt_en": "Orange sweet potato fries under a heap of grated cheese and chopped herbs on branded paper",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "beef-tartare-bone-marrow",
+      "category": "appetizers",
+      "sort": 40,
+      "name_th": "บีฟทาร์ทาร์เสิร์ฟพร้อมโบนแมโรว์",
+      "name_en": "Beef Tartare Bone Marrow",
+      "name_th_source": "menu_scan",
+      "source_text": "Beef Tartare Bone Marrow / บีฟทาร์ทาร์เสิร์ฟพร้อมโบนแมโรว์ / 490.-",
+      "source_ref": "doc/pages/food-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 490,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "bone-marrow",
+      "image_alt_th": "บีฟทาร์ทาร์โรยต้นหอม วางบนกระดูกผ่าซีก พร้อมขนมปังปิ้ง บนกระดาษรองลายร้าน",
+      "image_alt_en": "Beef tartare topped with spring onion on a split marrow bone, with grilled toast on branded paper",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "calamari-tartar-sauce",
+      "category": "appetizers",
+      "sort": 50,
+      "name_th": "หมึกชุบเกล็ดขนมปังทอดเสิร์ฟพร้อมซอสทาร์ทาร์",
+      "name_en": "Calamari Served with Tartar Sauce",
+      "name_th_source": "menu_scan",
+      "source_text": "Calamari Served with Tartar Sauce / หมึกชุบเกล็ดขนมปังทอดเสิร์ฟ / พร้อมซอสทาร์ทาร์ / 390.-",
+      "source_ref": "doc/pages/food-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 390,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "calamari",
+      "image_alt_th": "หมึกชุบเกล็ดขนมปังทอดเป็นเส้น พร้อมแตงกวาดอง มะนาว ซอสทาร์ทาร์สีขาว และซอสสีแดงอีกหนึ่งถ้วย",
+      "image_alt_en": "Breaded fried squid strips with gherkins, lime, a cup of white tartar sauce and a cup of red oil-based dip",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "grilled-caesar-salad",
+      "category": "salads",
+      "sort": 10,
+      "name_th": "กริลลซีซาร์สลัด",
+      "name_en": "Grilled Caesar Salad",
+      "name_th_source": "menu_scan",
+      "source_text": "Grilled Caesar Salad / กริลลซีซาร์สลัด / 260.-",
+      "source_ref": "doc/pages/food-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 260,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "caesar",
+      "image_alt_th": "ผักคอสย่างผ่าซีก โรยขนมปังกรอบ เบคอน ชีสขูด และน้ำสลัดครีม บนจานวงรีสีเข้ม",
+      "image_alt_en": "Grilled romaine wedges with croutons, bacon bits, grated cheese and creamy dressing on a dark oval plate",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "possible_typo",
+          "detail": "The handwritten Thai shows no ์ over the second ล (\"กริลลซีซาร์สลัด\"); the usual spelling is \"กริลล์ซีซาร์สลัด\". Kept as printed until the owner confirms."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "green-beans-peas-salad",
+      "category": "salads",
+      "sort": 20,
+      "name_th": "สลัดถั่วหวานกับซอสบัลซามิก",
+      "name_en": "Green Beans and Peas Salad",
+      "name_th_source": "menu_scan",
+      "source_text": "Green Beans and Peas Salad / สลัดถั่วหวานกับซอสบัลซามิก / 280.-",
+      "source_ref": "doc/pages/food-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 280,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "greenbean-peas",
+      "image_alt_th": "ถั่วแขก ถั่วลันเตา และร็อกเก็ต โรยชีสขาวและหอมแดง บนครีมสีขาว ในชามเซรามิกลายจุด",
+      "image_alt_en": "Green beans, peas and rocket with crumbled white cheese and red onion over a white cream in a speckled ceramic bowl",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "green-salad-balsamic",
+      "category": "salads",
+      "sort": 30,
+      "name_th": "สลัดรวมกับซอสบัลซามิก",
+      "name_en": "Green Salad with Balsamic Dressing",
+      "name_th_source": "menu_scan",
+      "source_text": "Green Salad with Balsamic Dressing / สลัดรวมกับซอสบัลซามิก / 260.-",
+      "source_ref": "doc/pages/food-05.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 260,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "green-salad",
+      "image_alt_th": "ผักสลัดรวมกับมะเขือเทศเชอร์รี่ แตงกวา ถั่ว และชีสขาวบี้ ในชามลายนูนสีขาว",
+      "image_alt_en": "Mixed leaves with cherry tomatoes, cucumber, green beans and crumbled white cheese in a white embossed bowl",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "tomato-salad",
+      "category": "salads",
+      "sort": 40,
+      "name_th": "สลัดมะเขือเทศ",
+      "name_en": "Tomato Salad",
+      "name_th_source": "menu_scan",
+      "source_text": "Tomato Salad / สลัดมะเขือเทศ / 100.-",
+      "source_ref": "doc/pages/food-05.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "tomato-salad",
+      "image_alt_th": "มะเขือเทศสีแดง ส้ม และเขียว หั่นชิ้น โรยสมุนไพรซอยและพริกไทย ในถ้วยขาสูงสเตนเลส",
+      "image_alt_en": "Red, orange and green tomato pieces with shredded herbs and black pepper in a stemmed steel coupe",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "burrata-tomato-salad",
+      "category": "salads",
+      "sort": 50,
+      "name_th": "ชีสบุเรต้าสลัดมะเขือเทศ",
+      "name_en": "Burrata Cheese and Tomato Salad",
+      "name_th_source": "menu_scan",
+      "source_text": "Burrata Cheese and Tomato Salad / ชีสบุเรต้าสลัดมะเขือเทศ / 490.-",
+      "source_ref": "doc/pages/food-05.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 490,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "burrata-tomato",
+      "image_alt_th": "ชีสบุเรต้าทั้งลูกบนมะเขือเทศเชอร์รี่ พร้อมร็อกเก็ตและบัลซามิก ในชามเซรามิกลายจุด",
+      "image_alt_en": "A whole burrata on cherry tomatoes with rocket and balsamic glaze in a speckled ceramic bowl",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "crispy-fried-avocado",
+      "category": "seasonal-avocado",
+      "sort": 10,
+      "name_th": "อะโวคาโดทอดกรอบ",
+      "name_en": "Crispy Fried Avocado",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Crispy Fried Avocado / 250.-",
+      "source_ref": "doc/menu-avocado.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 250,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "fried-avocado",
+      "image_alt_th": "อะโวคาโดชุบเกล็ดขนมปังทอดเป็นชิ้นยาว พร้อมมะนาวและน้ำจิ้มสีขาว บนกระดาษรองลายร้าน",
+      "image_alt_en": "Breaded fried avocado strips with a lime wedge and a cup of white dip on branded paper",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "seasonal_unconfirmed",
+          "detail": "Printed on the separate NEW SEASONAL AVOCADO card (doc/menu-avocado.jpg), which carries no dates. Current availability is not confirmed by the owner."
+        },
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "grilled-corn-avocado-salad",
+      "category": "seasonal-avocado",
+      "sort": 20,
+      "name_th": "สลัดข้าวโพดย่างกับอะโวคาโด",
+      "name_en": "Grilled Corn & Avocado Salad",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Grilled Corn & Avocado Salad / 280.-",
+      "source_ref": "doc/menu-avocado.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 280,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "corn-avocado-salad",
+      "image_alt_th": "ข้าวโพดย่างหั่นชิ้น อะโวคาโดหั่นเต๋า มะเขือเทศเชอร์รี่ หอมแดง และชีสขาวบี้ ในชามเซรามิกลายจุด",
+      "image_alt_en": "Charred corn pieces, avocado cubes, cherry tomatoes, red onion and crumbled white cheese in a speckled bowl",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "seasonal_unconfirmed",
+          "detail": "Printed on the separate NEW SEASONAL AVOCADO card (doc/menu-avocado.jpg), which carries no dates. Current availability is not confirmed by the owner."
+        },
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "crispy-corn-fritters-guacamole",
+      "category": "seasonal-avocado",
+      "sort": 30,
+      "name_th": "ข้าวโพดทอดกรอบกับกัวคาโมเล",
+      "name_en": "Crispy Corn Fritters with Guacamole",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Crispy Corn Fritters with Guacamole / 220.-",
+      "source_ref": "doc/menu-avocado.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 220,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "corn-fritters",
+      "image_alt_th": "ข้าวโพดทอดกรอบซ้อนกัน ราดซอสขาว วางคู่กัวคาโมเล มะเขือเทศเชอร์รี่ และมะนาว ในชามเซรามิกลายจุด",
+      "image_alt_en": "Stacked corn fritters with a white drizzle beside guacamole, cherry tomatoes and lime in a speckled bowl",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "seasonal_unconfirmed",
+          "detail": "Printed on the separate NEW SEASONAL AVOCADO card (doc/menu-avocado.jpg), which carries no dates. Current availability is not confirmed by the owner."
+        },
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "burrata-salad-roasted-tomatoes-guacamole",
+      "category": "seasonal-avocado",
+      "sort": 40,
+      "name_th": "สลัดบุรัตต้ากับมะเขือเทศอบและกัวคาโมเล",
+      "name_en": "Burrata Salad with Roasted Tomatoes & Guacamole",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Burrata Salad with Roasted Tomatoes & Guacamole / 590.-",
+      "source_ref": "doc/menu-avocado.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 590,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "burrata-guacamole",
+      "image_alt_th": "ชีสบุเรต้าราดบัลซามิกบนกัวคาโมเล พร้อมมะเขือเทศเชอร์รี่อบและอะโวคาโดหั่นเต๋า ในชามเซรามิกลายจุด",
+      "image_alt_en": "Burrata with balsamic glaze on guacamole, with roasted cherry tomatoes and avocado cubes in a speckled bowl",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "seasonal_unconfirmed",
+          "detail": "Printed on the separate NEW SEASONAL AVOCADO card (doc/menu-avocado.jpg), which carries no dates. Current availability is not confirmed by the owner."
+        },
+        {
+          "code": "possible_typo",
+          "detail": "The site translation spells burrata \"บุรัตต้า\", while the restaurant's own printed Thai on food-05 spells it \"บุเรต้า\". Choose one spelling with the owner."
+        },
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "basil-beef-rice",
+      "category": "rice",
+      "sort": 10,
+      "name_th": "ข้าวกะเพราคลุกเนื้อย่าง",
+      "name_en": "Rice with Stir-Fried Basil and Grilled Beef",
+      "name_th_source": "menu_scan",
+      "source_text": "Rice with Stir-Fried Basil and Grilled Beef / ข้าวกะเพราคลุกเนื้อย่าง / 390.-",
+      "source_ref": "doc/pages/food-13.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 390,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "basil-beef-rice",
+      "image_alt_th": "ข้าวผัดกะเพรากับเนื้อสับและพริกแดง โรยเนื้อย่างหั่นเต๋าด้านในสีชมพู ในชามเซรามิกลายจุด",
+      "image_alt_en": "Basil fried rice with minced meat and red chilli, topped with cubes of rare grilled beef in a speckled bowl",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "american-fried-rice",
+      "category": "rice",
+      "sort": 20,
+      "name_th": "ข้าวผัดอเมริกัน",
+      "name_en": "American Fried Rice",
+      "name_th_source": "menu_scan",
+      "source_text": "American Fried Rice / ข้าวผัดอเมริกัน / 350.-",
+      "source_ref": "doc/pages/food-13.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 350,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "american-fried-rice",
+      "image_alt_th": "ข้าวผัดสีส้มกับไข่ดาวไข่แดงสองฟอง เบคอน ไส้กรอก ไก่ทอด ผักดอง และซอสมะเขือเทศ บนถาดสเตนเลส",
+      "image_alt_en": "Orange fried rice with a double-yolk fried egg, bacon, sausage, fried chicken, pickles and a cup of ketchup on a steel platter",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "beef-fried-rice",
+      "category": "rice",
+      "sort": 30,
+      "name_th": "ข้าวผัดมันเนื้อย่าง",
+      "name_en": "Beef Fried Rice with Grilled Beef",
+      "name_th_source": "menu_scan",
+      "source_text": "Beef Fried Rice with Grilled Beef / ข้าวผัดมันเนื้อย่าง / 390.-",
+      "source_ref": "doc/pages/food-13.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 390,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "beef-fried-rice",
+      "image_alt_th": "ข้าวผัดโรยเนื้อย่างหั่นเต๋า กระเทียมเจียวแผ่น และสมุนไพร ในชามเซรามิกลายจุด",
+      "image_alt_en": "Fried rice topped with cubes of rare grilled beef, fried garlic chips and herbs in a speckled bowl",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "mashed-potato",
+      "category": "side-dishes",
+      "sort": 10,
+      "name_th": "มันบด",
+      "name_en": "Mashed Potato",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Mashed Potato / 120.-",
+      "source_ref": "doc/pages/food-12.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 120,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "mashed-potato",
+      "image_alt_th": "มันบดเนื้อเนียนสีอ่อนในจานวงรีสีเข้ม",
+      "image_alt_en": "Smooth mashed potato in a dark oval dish",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "sauteed-potato",
+      "category": "side-dishes",
+      "sort": 20,
+      "name_th": "มันฝรั่งผัด",
+      "name_en": "Sauteed Potato",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Sauteed Potato / 100.-",
+      "source_ref": "doc/pages/food-12.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "sauteed-potato",
+      "image_alt_th": "มันฝรั่งหั่นเต๋าผัดจนเหลือง โรยเกลือเกล็ด ในจานวงรีสีเข้ม",
+      "image_alt_en": "Golden sautéed potato cubes with flaky salt in a dark oval dish",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "french-fries",
+      "category": "side-dishes",
+      "sort": 30,
+      "name_th": "เฟรนช์ฟรายส์",
+      "name_en": "French Fries",
+      "name_th_source": "reference_site_translation",
+      "source_text": "French Fries / 90.-",
+      "source_ref": "doc/pages/food-12.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 90,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "french-fries",
+      "image_alt_th": "มันฝรั่งทอดชิ้นหนาบนกระดาษรองลายร้าน ในจานวงรีสีเข้ม",
+      "image_alt_en": "Thick-cut fries on branded paper in a dark oval dish",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "sauteed-green-beans-bacon",
+      "category": "side-dishes",
+      "sort": 40,
+      "name_th": "ถั่วแขกผัดเบคอน",
+      "name_en": "Sauteed Green Beans Bacon",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Sauteed Green beans Bacon / 120.-",
+      "source_ref": "doc/pages/food-12.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 120,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "greenbeans-bacon",
+      "image_alt_th": "ถั่วแขกผัดโรยเบคอนกรอบ ในจานวงรีสีเข้ม",
+      "image_alt_en": "Sautéed green beans scattered with bacon bits in a dark oval dish",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "garlic-confit",
+      "category": "side-dishes",
+      "sort": 50,
+      "name_th": "กระเทียมคอนฟี",
+      "name_en": "Garlic Confit",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Garlic Confit / 100.-",
+      "source_ref": "doc/pages/food-12.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "garlic-confit",
+      "image_alt_th": "กระเทียมคอนฟีสองหัวผ่าครึ่ง ในจานสีเข้ม",
+      "image_alt_en": "Two halved heads of confit garlic in a dark dish",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "sauteed-mini-broccoli",
+      "category": "side-dishes",
+      "sort": 60,
+      "name_th": "บรอกโคลีเล็กผัด",
+      "name_en": "Sauteed Mini Broccoli",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Sauteed Mini broccoli / 120.-",
+      "source_ref": "doc/pages/food-12.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 120,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "mini-broccoli",
+      "image_alt_th": "บรอกโคลีก้านยาวผัดจนเกรียม ในจานวงรีสีเข้ม",
+      "image_alt_en": "Charred long-stemmed mini broccoli in a dark oval dish",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "sauteed-mushrooms",
+      "category": "side-dishes",
+      "sort": 70,
+      "name_th": "เห็ดผัด",
+      "name_en": "Sauteed Mushrooms",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Sauteed Mushrooms / 120.-",
+      "source_ref": "doc/pages/food-12.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 120,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "mushrooms",
+      "image_alt_th": "เห็ดรวมผัดโรยสมุนไพร ในจานวงรีสีเข้ม",
+      "image_alt_en": "Sautéed mixed mushrooms with herbs in a dark oval dish",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "creme-brulee-lemon",
+      "category": "dessert",
+      "sort": 10,
+      "name_th": "เครมบรูเล่เลมอน",
+      "name_en": "Crème Brûlée Lemon",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Creme Brulee Lamon / 160.-",
+      "source_ref": "doc/pages/food-14.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 160,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "creme-brulee",
+      "image_alt_th": "เลมอนผ่าครึ่งสองซีกใส่ครีมบรูเล่หน้าคาราเมล โรยผิวเลมอน พร้อมดอกไม้เล็ก บนจานสเตนเลส",
+      "image_alt_en": "Two halved lemons filled with caramelised crème brûlée and lemon zest, with a small daisy on a steel plate",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "typo_corrected",
+          "detail": "Printed \"Creme Brulee Lamon\"; displayed as \"Crème Brûlée Lemon\" (correction recorded in doc/RESEARCH.md)."
+        },
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "tiramisu",
+      "category": "dessert",
+      "sort": 20,
+      "name_th": "ทีรามิสุ",
+      "name_en": "Tiramisu",
+      "name_th_source": "reference_site_translation",
+      "source_text": "Tiramisu / 180.-",
+      "source_ref": "doc/pages/food-14.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 180,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": "tiramisu",
+      "image_alt_th": "ทีรามิสุโรยผงโกโก้ในถ้วยขาสูงสเตนเลส",
+      "image_alt_en": "Tiramisu dusted with cocoa in a stemmed steel coupe",
+      "station": "kitchen",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "thai_is_site_translation",
+          "detail": "The scan prints no Thai name for this dish; name_th is the reference site's translation and needs owner approval."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "clear-matcha",
+      "category": "special-matcha",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Clear Matcha",
+      "name_th_source": null,
+      "source_text": "Clear Matcha | HOT - | ICED 130",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 130,
+          "available": true,
+          "source_text": "ICED: 130"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "coconut-matcha",
+      "category": "special-matcha",
+      "sort": 20,
+      "name_th": null,
+      "name_en": "Coconut Matcha",
+      "name_th_source": null,
+      "source_text": "Coconut Matcha | HOT - | ICED 150",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 150,
+          "available": true,
+          "source_text": "ICED: 150"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "coconut-matcha-cold-foam",
+      "category": "special-matcha",
+      "sort": 30,
+      "name_th": null,
+      "name_en": "Coconut Matcha Cold Foam",
+      "name_th_source": null,
+      "source_text": "Coconut Matcha Cold Foam | HOT - | ICED 165",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 165,
+          "available": true,
+          "source_text": "ICED: 165"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "matcha-latte-special",
+      "category": "special-matcha",
+      "sort": 40,
+      "name_th": null,
+      "name_en": "Matcha Latte",
+      "name_th_source": null,
+      "source_text": "Matcha Latte | HOT 120 | ICED 150",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": 120,
+          "available": true,
+          "source_text": "HOT: 120"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 150,
+          "available": true,
+          "source_text": "ICED: 150"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "duplicate_name",
+          "detail": "\"Matcha Latte\" is also printed under MILKY (iced 100) on bev-02. Kept as a separate record; the owner must say whether these are different recipes, sizes or a stale price."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "strawberry-matcha-latte",
+      "category": "special-matcha",
+      "sort": 50,
+      "name_th": null,
+      "name_en": "Strawberry Matcha Latte",
+      "name_th_source": null,
+      "source_text": "Strawberry Matcha Latte | HOT - | ICED 165",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 165,
+          "available": true,
+          "source_text": "ICED: 165"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "earl-grey-matcha-latte",
+      "category": "special-matcha",
+      "sort": 60,
+      "name_th": null,
+      "name_en": "Earl Grey Matcha Latte",
+      "name_th_source": null,
+      "source_text": "Earl Grey Matcha Latte | HOT - | ICED 165",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 165,
+          "available": true,
+          "source_text": "ICED: 165"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "red-bean-matcha-latte",
+      "category": "special-matcha",
+      "sort": 70,
+      "name_th": null,
+      "name_en": "Red Bean Matcha Latte",
+      "name_th_source": null,
+      "source_text": "Red Bean Matcha Latte | HOT - | ICED 160",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 160,
+          "available": true,
+          "source_text": "ICED: 160"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "biscoff-matcha-latte",
+      "category": "special-matcha",
+      "sort": 80,
+      "name_th": null,
+      "name_en": "Biscoff Matcha Latte",
+      "name_th_source": null,
+      "source_text": "Biscoff Matcha Latte | HOT - | ICED 160",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 160,
+          "available": true,
+          "source_text": "ICED: 160"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "nutella-matcha-latte",
+      "category": "special-matcha",
+      "sort": 90,
+      "name_th": null,
+      "name_en": "Nutella Matcha Latte",
+      "name_th_source": null,
+      "source_text": "Nutella Matcha Latte | HOT - | ICED 160",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 160,
+          "available": true,
+          "source_text": "ICED: 160"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "longan-matcha",
+      "category": "special-matcha",
+      "sort": 100,
+      "name_th": null,
+      "name_en": "Longan Matcha",
+      "name_th_source": null,
+      "source_text": "Longan Matcha | HOT - | ICED 150",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 150,
+          "available": true,
+          "source_text": "ICED: 150"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "orange-matcha",
+      "category": "special-matcha",
+      "sort": 110,
+      "name_th": null,
+      "name_en": "Orange Matcha",
+      "name_th_source": null,
+      "source_text": "Orange Matcha | HOT - | ICED 150",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 150,
+          "available": true,
+          "source_text": "ICED: 150"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "dirty-matcha",
+      "category": "special-matcha",
+      "sort": 120,
+      "name_th": null,
+      "name_en": "Dirty Matcha",
+      "name_th_source": null,
+      "source_text": "Dirty Matcha | HOT - | ICED 130",
+      "source_ref": "doc/pages/bev-03.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 130,
+          "available": true,
+          "source_text": "ICED: 130"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "short-black",
+      "category": "coffee",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Short Black",
+      "name_th_source": null,
+      "source_text": "Short Black | Hot 80 | Iced -",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": 80,
+          "available": true,
+          "source_text": "HOT: 80"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": null,
+          "available": false,
+          "source_text": "ICED: -"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "long-black",
+      "category": "coffee",
+      "sort": 20,
+      "name_th": null,
+      "name_en": "Long Black",
+      "name_th_source": null,
+      "source_text": "Long Black  80 | Hot 80 | Iced (blank)",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": 80,
+          "available": true,
+          "source_text": "Hot: 80"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": null,
+          "available": false,
+          "source_text": "Iced: (blank cell, no dash)"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "typo_corrected",
+          "detail": "Printed name is \"Long Black  80\": a stray \"80\" sits inside the name column. Displayed as \"Long Black\"."
+        },
+        {
+          "code": "unspecified_variant",
+          "detail": "The Iced cell is blank rather than a dash. The stray \"80\" in the name may be a misplaced Iced price. Iced is unavailable until the owner confirms."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "long-black-coconut",
+      "category": "coffee",
+      "sort": 30,
+      "name_th": null,
+      "name_en": "Long Black Coconut",
+      "name_th_source": null,
+      "source_text": "Long Black Coconut | Hot - | Iced 120",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 120,
+          "available": true,
+          "source_text": "ICED: 120"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "long-black-longan",
+      "category": "coffee",
+      "sort": 40,
+      "name_th": null,
+      "name_en": "Long Black Longan",
+      "name_th_source": null,
+      "source_text": "Long Black Longan | Hot - | Iced 120",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 120,
+          "available": true,
+          "source_text": "ICED: 120"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "piccolo-latte",
+      "category": "coffee",
+      "sort": 50,
+      "name_th": null,
+      "name_en": "Piccolo Latte",
+      "name_th_source": null,
+      "source_text": "Piccolo Latte | Hot 80 | Iced -",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": 80,
+          "available": true,
+          "source_text": "HOT: 80"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": null,
+          "available": false,
+          "source_text": "ICED: -"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "latte",
+      "category": "coffee",
+      "sort": 60,
+      "name_th": null,
+      "name_en": "Latte",
+      "name_th_source": null,
+      "source_text": "Latte | Hot 80 | Iced 80",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": 80,
+          "available": true,
+          "source_text": "HOT: 80"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 80,
+          "available": true,
+          "source_text": "ICED: 80"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "cappuccino",
+      "category": "coffee",
+      "sort": 70,
+      "name_th": null,
+      "name_en": "Cappuccino",
+      "name_th_source": null,
+      "source_text": "Cappuccino | Hot 80 | Iced 80",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": 80,
+          "available": true,
+          "source_text": "HOT: 80"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 80,
+          "available": true,
+          "source_text": "ICED: 80"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "mocha",
+      "category": "coffee",
+      "sort": 80,
+      "name_th": null,
+      "name_en": "Mocha",
+      "name_th_source": null,
+      "source_text": "Mocha | Hot - | Iced 80",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 80,
+          "available": true,
+          "source_text": "ICED: 80"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "ice-coffee",
+      "category": "coffee",
+      "sort": 90,
+      "name_th": null,
+      "name_en": "Ice Coffee",
+      "name_th_source": null,
+      "source_text": "Ice Coffee | Hot - | Iced 80",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 80,
+          "available": true,
+          "source_text": "ICED: 80"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "possible_typo",
+          "detail": "Printed \"Ice Coffee\"; likely \"Iced Coffee\". Kept as printed."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "dirty-coffee",
+      "category": "coffee",
+      "sort": 100,
+      "name_th": null,
+      "name_en": "Dirty Coffee",
+      "name_th_source": null,
+      "source_text": "Dirty Coffee | Hot - | Iced 120",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 120,
+          "available": true,
+          "source_text": "ICED: 120"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "caramel-latte",
+      "category": "coffee",
+      "sort": 110,
+      "name_th": null,
+      "name_en": "Caramel Latte",
+      "name_th_source": null,
+      "source_text": "Caramel Latte | Hot - | Iced 120",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 120,
+          "available": true,
+          "source_text": "ICED: 120"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "biscoff-latte",
+      "category": "coffee",
+      "sort": 120,
+      "name_th": null,
+      "name_en": "Biscoff Latte",
+      "name_th_source": null,
+      "source_text": "Biscoff Latte | Hot - | Iced 120",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 120,
+          "available": true,
+          "source_text": "ICED: 120"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "black-orange",
+      "category": "coffee",
+      "sort": 130,
+      "name_th": null,
+      "name_en": "Black Orange",
+      "name_th_source": null,
+      "source_text": "Black Orange | Hot - | Iced 120",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 120,
+          "available": true,
+          "source_text": "ICED: 120"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "rosemary-tea",
+      "category": "hot-tea",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Rosemary Tea",
+      "name_th_source": null,
+      "source_text": "HOT TEA | Rosemary Tea 140",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 140,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "caramel-fresh-milk",
+      "category": "milky",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Caramel Fresh Milk",
+      "name_th_source": null,
+      "source_text": "Caramel Fresh Milk | HOT - | ICED 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 100,
+          "available": true,
+          "source_text": "ICED: 100"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "chocolate",
+      "category": "milky",
+      "sort": 20,
+      "name_th": null,
+      "name_en": "Chocolate",
+      "name_th_source": null,
+      "source_text": "Chocolate | HOT - | ICED 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 100,
+          "available": true,
+          "source_text": "ICED: 100"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "strawberry-cocao",
+      "category": "milky",
+      "sort": 30,
+      "name_th": null,
+      "name_en": "Strawberry Cocao",
+      "name_th_source": null,
+      "source_text": "Strawberry Cocao | HOT - | ICED 130",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 130,
+          "available": true,
+          "source_text": "ICED: 130"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "possible_typo",
+          "detail": "Printed \"Strawberry Cocao\"; possibly \"Cocoa\". Kept as printed."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "matcha-latte-milky",
+      "category": "milky",
+      "sort": 40,
+      "name_th": null,
+      "name_en": "Matcha Latte",
+      "name_th_source": null,
+      "source_text": "Matcha Latte | HOT - | ICED 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 100,
+          "available": true,
+          "source_text": "ICED: 100"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "duplicate_name",
+          "detail": "\"Matcha Latte\" is also printed under SPECIAL MATCHA (hot 120 / iced 150) on bev-03. Kept as a separate record; the owner must say whether these are different recipes, sizes or a stale price."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "thai-tea",
+      "category": "milky",
+      "sort": 50,
+      "name_th": null,
+      "name_en": "Thai Tea",
+      "name_th_source": null,
+      "source_text": "Thai Tea | HOT - | ICED 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "hot",
+          "name_th": "ร้อน",
+          "name_en": "Hot",
+          "price_baht": null,
+          "available": false,
+          "source_text": "HOT: -"
+        },
+        {
+          "key": "iced",
+          "name_th": "เย็น",
+          "name_en": "Iced",
+          "price_baht": 100,
+          "available": true,
+          "source_text": "ICED: 100"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "strawberry-soda",
+      "category": "soda",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Strawberry Soda",
+      "name_th_source": null,
+      "source_text": "Strawberry Soda 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "blueberry-soda",
+      "category": "soda",
+      "sort": 20,
+      "name_th": null,
+      "name_en": "Blueberry Soda",
+      "name_th_source": null,
+      "source_text": "Blueberry Soda 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "apple-soda",
+      "category": "soda",
+      "sort": 30,
+      "name_th": null,
+      "name_en": "Apple Soda",
+      "name_th_source": null,
+      "source_text": "Apple Soda 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "cold-pressed-watermelon",
+      "category": "fresh-juice",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Cold Pressed Watermelon",
+      "name_th_source": null,
+      "source_text": "Cold Pressed Watermelon 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "orange-juice-fresh",
+      "category": "fresh-juice",
+      "sort": 20,
+      "name_th": null,
+      "name_en": "Orange Juice",
+      "name_th_source": null,
+      "source_text": "Orange Juice 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "duplicate_name",
+          "detail": "\"Orange Juice 100.-\" is printed again in the separate JUICE list on bev-01 (record orange-juice-juice)."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "coconut-water-fresh",
+      "category": "fresh-juice",
+      "sort": 30,
+      "name_th": null,
+      "name_en": "Coconut Water",
+      "name_th_source": null,
+      "source_text": "Coconut Water 100",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "duplicate_name",
+          "detail": "\"Coconut Water 100.-\" is printed again in the separate JUICE list on bev-01 (record coconut-water-juice)."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "longan-juice",
+      "category": "fresh-juice",
+      "sort": 40,
+      "name_th": "น้ำลำไย",
+      "name_en": "Longan Juice",
+      "name_th_source": "menu_scan",
+      "source_text": "Longan Juice (น้ำลำไย) 80",
+      "source_ref": "doc/pages/bev-02.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 80,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "orange-juice-juice",
+      "category": "juice",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Orange Juice",
+      "name_th_source": null,
+      "source_text": "JUICE | Orange Juice 100.-",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "duplicate_name",
+          "detail": "Same name and price as \"Orange Juice\" under FRESH JUICE on bev-02 (record orange-juice-fresh)."
+        },
+        {
+          "code": "needs_owner_explanation",
+          "detail": "bev-01 prints a JUICE list and bev-02 prints a FRESH JUICE list with overlapping items. Unpublished until the owner says which list is current."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "coconut-water-juice",
+      "category": "juice",
+      "sort": 20,
+      "name_th": null,
+      "name_en": "Coconut Water",
+      "name_th_source": null,
+      "source_text": "JUICE | Coconut Water 100.-",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "duplicate_name",
+          "detail": "Same name and price as \"Coconut Water\" under FRESH JUICE on bev-02 (record coconut-water-fresh)."
+        },
+        {
+          "code": "needs_owner_explanation",
+          "detail": "bev-01 prints a JUICE list and bev-02 prints a FRESH JUICE list with overlapping items. Unpublished until the owner says which list is current."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "watermelon-juice",
+      "category": "juice",
+      "sort": 30,
+      "name_th": null,
+      "name_en": "Watermelon Juice",
+      "name_th_source": null,
+      "source_text": "JUICE | Watermelon Juice 100.-",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 100,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "needs_owner_explanation",
+          "detail": "bev-01 prints a JUICE list and bev-02 prints a FRESH JUICE list with overlapping items. Unpublished until the owner says which list is current. This may be the same drink as \"Cold Pressed Watermelon\" (also 100) on bev-02."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "mangosteen-juice",
+      "category": "juice",
+      "sort": 40,
+      "name_th": null,
+      "name_en": "Mangosteen Juice",
+      "name_th_source": null,
+      "source_text": "JUICE | Mangosteen Juice 200.-",
+      "source_ref": "doc/pages/bev-01.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 200,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "needs_owner_explanation",
+          "detail": "bev-01 prints a JUICE list and bev-02 prints a FRESH JUICE list with overlapping items. Unpublished until the owner says which list is current. Mangosteen Juice appears only in this list; mangosteen is usually seasonal, but no season is printed."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "hoegaarden-white",
+      "category": "draft-beer",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Hoegaarden White",
+      "name_th_source": null,
+      "source_text": "Hoegaarden White 180.-/ 295.- ( 250 ml. / 500 ml. )",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "250ml",
+          "name_th": "250 มล.",
+          "name_en": "250 ml",
+          "price_baht": 180,
+          "available": true,
+          "source_text": "180.- ( 250 ml. )"
+        },
+        {
+          "key": "500ml",
+          "name_th": "500 มล.",
+          "name_en": "500 ml",
+          "price_baht": 295,
+          "available": true,
+          "source_text": "295.- ( 500 ml. )"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": true,
+      "flags": [
+        {
+          "code": "promotion_not_active",
+          "detail": "The category heading prints \"PROMOTION  3 FREE 1\". It is kept as a category source note only; no discount is configured or applied."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        },
+        {
+          "code": "alcohol_requires_staff",
+          "detail": "Alcoholic drink: staff confirm before service. Eligibility and service rules are not configured in this demo."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "hoegaarden-rosee",
+      "category": "draft-beer",
+      "sort": 20,
+      "name_th": null,
+      "name_en": "Hoegaarden Rosee",
+      "name_th_source": null,
+      "source_text": "Hoegaarden Rosee 180.-/ 295.- ( 250 ml. / 500 ml. )",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "250ml",
+          "name_th": "250 มล.",
+          "name_en": "250 ml",
+          "price_baht": 180,
+          "available": true,
+          "source_text": "180.- ( 250 ml. )"
+        },
+        {
+          "key": "500ml",
+          "name_th": "500 มล.",
+          "name_en": "500 ml",
+          "price_baht": 295,
+          "available": true,
+          "source_text": "295.- ( 500 ml. )"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": true,
+      "flags": [
+        {
+          "code": "promotion_not_active",
+          "detail": "The category heading prints \"PROMOTION  3 FREE 1\". It is kept as a category source note only; no discount is configured or applied."
+        },
+        {
+          "code": "possible_typo",
+          "detail": "Printed \"Hoegaarden Rosee\" without the accent (the reference site shows \"Rosée\"). Kept as printed."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        },
+        {
+          "code": "alcohol_requires_staff",
+          "detail": "Alcoholic drink: staff confirm before service. Eligibility and service rules are not configured in this demo."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "stellar",
+      "category": "draft-beer",
+      "sort": 30,
+      "name_th": null,
+      "name_en": "Stellar",
+      "name_th_source": null,
+      "source_text": "Stellar 180.-/ 295.- ( 250 ml. / 500 ml. )",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "variant",
+      "price_baht": null,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [
+        {
+          "key": "250ml",
+          "name_th": "250 มล.",
+          "name_en": "250 ml",
+          "price_baht": 180,
+          "available": true,
+          "source_text": "180.- ( 250 ml. )"
+        },
+        {
+          "key": "500ml",
+          "name_th": "500 มล.",
+          "name_en": "500 ml",
+          "price_baht": 295,
+          "available": true,
+          "source_text": "295.- ( 500 ml. )"
+        }
+      ],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": true,
+      "flags": [
+        {
+          "code": "promotion_not_active",
+          "detail": "The category heading prints \"PROMOTION  3 FREE 1\". It is kept as a category source note only; no discount is configured or applied."
+        },
+        {
+          "code": "possible_typo",
+          "detail": "Printed \"Stellar\"; the owner should confirm the beer brand name. Kept as printed."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        },
+        {
+          "code": "alcohol_requires_staff",
+          "detail": "Alcoholic drink: staff confirm before service. Eligibility and service rules are not configured in this demo."
+        }
+      ],
+      "orderable_in_demo": false
+    },
+    {
+      "key": "beer-budweiser",
+      "category": "bottled-beer",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Beer Budweiser",
+      "name_th_source": null,
+      "source_text": "BOTTLED BEER | Beer Budweiser 120.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 120,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": true,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        },
+        {
+          "code": "alcohol_requires_staff",
+          "detail": "Alcoholic drink: staff confirm before service. Eligibility and service rules are not configured in this demo."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "beer-singha",
+      "category": "bottled-beer",
+      "sort": 20,
+      "name_th": null,
+      "name_en": "Beer Singha",
+      "name_th_source": null,
+      "source_text": "BOTTLED BEER | Beer Singha 120.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 120,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": true,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        },
+        {
+          "code": "alcohol_requires_staff",
+          "detail": "Alcoholic drink: staff confirm before service. Eligibility and service rules are not configured in this demo."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "beer-chang-classic",
+      "category": "bottled-beer",
+      "sort": 30,
+      "name_th": null,
+      "name_en": "Beer Chang Classic",
+      "name_th_source": null,
+      "source_text": "BOTTLED BEER | Beer Chang Classic 110.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 110,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": true,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        },
+        {
+          "code": "alcohol_requires_staff",
+          "detail": "Alcoholic drink: staff confirm before service. Eligibility and service rules are not configured in this demo."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "regency",
+      "category": "whiskey",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Regency",
+      "name_th_source": null,
+      "source_text": "WHISKEY | Regency 550.- ( 350 ml. )",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 550,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": "350 มล.",
+      "portion_note_en": "350 ml",
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": true,
+      "flags": [
+        {
+          "code": "volume_in_wrong_field",
+          "detail": "data/menu.json stored \"350 มล.\" in the Thai-name field. The scan prints \"( 350 ml. )\" under the price; it is a volume, now held in portion_note."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        },
+        {
+          "code": "alcohol_requires_staff",
+          "detail": "Alcoholic drink: staff confirm before service. Eligibility and service rules are not configured in this demo."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "mont-fleur",
+      "category": "soft-drinks",
+      "sort": 10,
+      "name_th": null,
+      "name_en": "Mont Fleur",
+      "name_th_source": null,
+      "source_text": "SOFT DRINK | Mont Fleur 30.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 30,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "soda-singha",
+      "category": "soft-drinks",
+      "sort": 20,
+      "name_th": null,
+      "name_en": "Soda Singha",
+      "name_th_source": null,
+      "source_text": "SOFT DRINK | Soda Singha 30.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 30,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "singha-lemon-soda",
+      "category": "soft-drinks",
+      "sort": 30,
+      "name_th": null,
+      "name_en": "Singha Lemon Soda",
+      "name_th_source": null,
+      "source_text": "SOFT DRINK | Singha Lemon Soda 30.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 30,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "pepsi-original",
+      "category": "soft-drinks",
+      "sort": 40,
+      "name_th": null,
+      "name_en": "Pepsi Original",
+      "name_th_source": null,
+      "source_text": "SOFT DRINK | Pepsi Original 30.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 30,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "pepsi-zero",
+      "category": "soft-drinks",
+      "sort": 50,
+      "name_th": null,
+      "name_en": "Pepsi Zero",
+      "name_th_source": null,
+      "source_text": "SOFT DRINK | Pepsi Zero 30.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 30,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "sprite",
+      "category": "soft-drinks",
+      "sort": 60,
+      "name_th": null,
+      "name_en": "Sprite",
+      "name_th_source": null,
+      "source_text": "SOFT DRINK | Sprite 30.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 30,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": true
+    },
+    {
+      "key": "ice",
+      "category": "soft-drinks",
+      "sort": 70,
+      "name_th": null,
+      "name_en": "Ice",
+      "name_th_source": null,
+      "source_text": "SOFT DRINK | Ice 30.-",
+      "source_ref": "doc/pages/bev-04.jpg",
+      "desc_th": null,
+      "desc_en": null,
+      "pricing_type": "fixed",
+      "price_baht": 30,
+      "rate_baht": null,
+      "rate_basis_grams": null,
+      "portion_note_th": null,
+      "portion_note_en": null,
+      "variants": [],
+      "image": null,
+      "image_alt_th": null,
+      "image_alt_en": null,
+      "station": "bar",
+      "alcohol": false,
+      "flags": [
+        {
+          "code": "needs_owner_explanation",
+          "detail": "\"Ice 30.-\" is printed as a soft drink. Unclear whether it is a bucket, a glass or a per-person charge. Not orderable until the owner explains."
+        },
+        {
+          "code": "missing_thai_name",
+          "detail": "The scan prints an English name only and no Thai name has been supplied by the restaurant."
+        },
+        {
+          "code": "missing_description",
+          "detail": "No description is printed on the menu scan; none has been written."
+        },
+        {
+          "code": "missing_image",
+          "detail": "No photo of this drink exists in img/; the beverage menu pages are text only. Use a text-led card."
+        }
+      ],
+      "orderable_in_demo": false
+    }
+  ]
+}

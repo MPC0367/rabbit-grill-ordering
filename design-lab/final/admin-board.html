@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orders · Rabbit Grill staff</title>
+<!-- FINAL reference mock: live fulfilment board, 1440x900 (brief 17, 19, 35).
+     Fixtures: service Thu 17 Sep 2026, 19:52 Asia/Bangkok. Staff "Nok" is a fixture.
+     Table strip reconciles: Available 9 (01 04 06 08 10 11 13 14 15) · Dining 5 (02 03 07 09 12) · Checking out 1 (05) · Disabled 1 (16).
+     T07 RG-4K7P is the same round the guest sees in guest-track.html.
+     DESIGN PLACEHOLDER: the doneness chips on T03 illustrate the split-by-quantity layout only; no doneness options are confirmed. -->
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<link rel="stylesheet" href="../../client/src/styles/tokens.css">
+<link rel="stylesheet" href="final.css">
+</head>
+<body>
+<script src="sprite.js"></script>
+<div class="a-app">
+  <!-- charcoal rail: the only dark surface on operational pages -->
+  <aside class="rail" data-surface="dark" aria-label="Staff navigation">
+    <a class="wordmark" href="#" aria-label="Rabbit Grill Khao Yai, staff"><span class="wordmark__name" aria-hidden="true">Rabbit Grill</span><span class="wordmark__sub" aria-hidden="true">Khao Yai · Staff</span></a>
+    <nav class="rnav">
+      <a class="rnav__item" href="#" aria-current="page"><svg class="i"><use href="#i-orders"/></svg>Orders<span class="badge badge--ember" aria-label="2 new">2</span></a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-tables"/></svg>Tables</a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-cutlery"/></svg>Menu</a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-bars"/></svg>Insights</a>
+      <a class="rnav__item" href="#"><svg class="i"><use href="#i-more"/></svg>More</a>
+    </nav>
+    <div class="rail__foot">
+      <div class="rail__row"><svg class="i"><use href="#i-sound"/></svg>Alerts on<button class="textbtn">Test</button></div>
+      <a class="rail__row rail__row--link" href="#"><svg class="i"><use href="#i-lock"/></svg>Lock screen</a>
+      <div class="seg seg--box" role="group" aria-label="Language ภาษา"><button aria-pressed="false" lang="th">ไทย</button><button aria-pressed="true" lang="en">EN</button></div>
+      <p class="rail__time">Thu 17 Sep 2026<br>Asia/Bangkok</p>
+    </div>
+  </aside>
+
+  <div class="ws">
+    <header class="wshead">
+      <h1>Orders</h1>
+      <nav class="subtabs" aria-label="Orders views">
+        <a class="subtab" href="#" aria-current="page">Board</a>
+        <a class="subtab" href="#">Requests <span class="badge badge--alert">2</span></a>
+        <a class="subtab" href="#">History</a>
+      </nav>
+      <span class="demo">Demo data</span>
+      <div class="wshead__right">
+        <span class="conn" role="status">Live <span>synced 19:52:04</span></span>
+        <div class="ordering">
+          <span class="ordering__state">Guest ordering <b><svg class="i i--sm"><use href="#i-check"/></svg>Open</b></span>
+          <button class="ordering__btn" aria-haspopup="dialog"><svg class="i i--sm"><use href="#i-pause"/></svg>Pause…</button>
+        </div>
+        <div class="who"><span class="avatar" aria-hidden="true">NK</span><div><p class="who__n">Nok</p><p class="who__r">Floor manager</p></div></div>
+      </div>
+    </header>
+
+    <!-- live floor strip -->
+    <section class="floor" aria-label="Tables live">
+      <div class="floor__legend">
+        <p class="cap">Tables · live</p>
+        <div class="legend">
+          <span class="legend__i"><i class="sw sw--avail"></i>Available <b>9</b></span>
+          <span class="legend__i"><i class="sw sw--dining"></i>Dining <b>5</b></span>
+          <span class="legend__i"><i class="sw sw--bill"></i>Checking out <b>1</b></span>
+          <span class="legend__i"><i class="sw sw--off"></i>Disabled <b>1</b></span>
+        </div>
+      </div>
+      <a class="btn btn--ghost floor__link" href="#">Open Tables<svg class="i"><use href="#i-chev-r"/></svg></a>
+      <div class="strip">
+        <button class="ttile ttile--avail" aria-label="Table 01, available"><span class="ttile__n">01</span><span class="ttile__s">Free</span></button>
+        <button class="ttile ttile--dining" aria-label="Table 02, dining 1 hour 4 minutes, food ready at the pass"><span class="attn attn--ready">Ready</span><span class="ttile__n">02</span><span class="ttile__s">1h 04</span></button>
+        <button class="ttile ttile--dining" aria-label="Table 03, dining 6 minutes, new order"><span class="attn attn--new">New</span><span class="ttile__n">03</span><span class="ttile__s">6m</span></button>
+        <button class="ttile ttile--avail" aria-label="Table 04, available"><span class="ttile__n">04</span><span class="ttile__s">Free</span></button>
+        <button class="ttile ttile--bill" aria-label="Table 05, checking out"><span class="ttile__n">05</span><span class="ttile__s">Bill</span></button>
+        <button class="ttile ttile--avail" aria-label="Table 06, available"><span class="ttile__n">06</span><span class="ttile__s">Free</span></button>
+        <button class="ttile ttile--dining" aria-label="Table 07, dining 48 minutes, portion quote waiting for the guest"><span class="attn attn--quote">Quote</span><span class="ttile__n">07</span><span class="ttile__s">48m</span></button>
+        <button class="ttile ttile--avail" aria-label="Table 08, available"><span class="ttile__n">08</span><span class="ttile__s">Free</span></button>
+        <button class="ttile ttile--dining" aria-label="Table 09, dining 29 minutes, guest called staff"><span class="attn attn--call">Call</span><span class="ttile__n">09</span><span class="ttile__s">29m</span></button>
+        <button class="ttile ttile--avail" aria-label="Table 10, available"><span class="ttile__n">10</span><span class="ttile__s">Free</span></button>
+        <button class="ttile ttile--avail" aria-label="Table 11, available"><span class="ttile__n">11</span><span class="ttile__s">Free</span></button>
+        <button class="ttile ttile--dining" aria-label="Table 12, dining 22 minutes, new order"><span class="attn attn--new">New</span><span class="ttile__n">12</span><span class="ttile__s">22m</span></button>
+        <button class="ttile ttile--avail" aria-label="Table 13, available"><span class="ttile__n">13</span><span class="ttile__s">Free</span></button>
+        <button class="ttile ttile--avail" aria-label="Table 14, available"><span class="ttile__n">14</span><span class="ttile__s">Free</span></button>
+        <button class="ttile ttile--avail" aria-label="Table 15, available"><span class="ttile__n">15</span><span class="ttile__s">Free</span></button>
+        <button class="ttile ttile--off" aria-label="Table 16, disabled"><span class="ttile__n">16</span><span class="ttile__s">Off</span></button>
+      </div>
+    </section>
+
+    <!-- toolbar -->
+    <div class="toolbar" role="toolbar" aria-label="Board filters">
+      <div class="fchips" role="group" aria-label="Station">
+        <button aria-pressed="true">All stations</button><button aria-pressed="false">Kitchen <span class="count">6</span></button><button aria-pressed="false">Bar <span class="count">3</span></button>
+      </div>
+      <button class="selectbtn">Table <b>All</b><svg class="i"><use href="#i-chev-d"/></svg></button>
+      <button class="selectbtn"><svg class="i"><use href="#i-sort"/></svg>Sort <b>Oldest first</b><svg class="i"><use href="#i-chev-d"/></svg></button>
+      <button class="checkbtn" aria-pressed="false"><span class="box"></span>Show rejected · cancelled</button>
+      <label class="search search--staff"><span class="sr">Search table, reference or dish</span><svg class="i"><use href="#i-search"/></svg><input type="search" placeholder="Table, reference or dish"></label>
+    </div>
+
+    <!-- tablet and phone: one status at a time -->
+    <div class="boardtabs"><div class="seg seg--staff" role="group" aria-label="Status">
+      <button aria-pressed="true">New <span class="count">2</span></button><button aria-pressed="false">Accepted <span class="count">1</span></button><button aria-pressed="false">Preparing <span class="count">2</span></button><button aria-pressed="false">Almost done <span class="count">1</span></button><button aria-pressed="false">Ready <span class="count">1</span></button>
+    </div></div>
+
+    <div class="board">
+      <!-- NEW -->
+      <section class="col col--new" aria-labelledby="c-new">
+        <header class="col__head"><span class="glyph"><svg class="i"><use href="#i-plus"/></svg></span><h2 id="c-new">New</h2><span class="col__count">2</span><span class="col__hint">Accept to confirm</span></header>
+        <div class="col__stack">
+          <article class="ticket is-new" aria-label="Table 03, round 1, new, allergy note">
+            <header class="ticket__head">
+              <div class="tno" aria-hidden="true"><span class="tno__k">Table</span><span class="tno__n">03</span></div>
+              <div class="ticket__r1"><span class="ticket__ref">RG-4M2Q</span><span class="wait"><svg class="i"><use href="#i-clock"/></svg><b>4</b><small>min</small></span></div>
+              <p class="ticket__r2">Round 1 · sent 19:48</p>
+            </header>
+            <div class="ticket__flags"><span class="flag flag--oldest"><svg class="i"><use href="#i-clock"/></svg>Oldest waiting</span></div>
+            <div class="allergy" role="note">
+              <p class="allergy__k"><svg class="i"><use href="#i-alert"/></svg>Allergy</p>
+              <p class="allergy__q" lang="th">“แพ้ถั่วลิสง”</p>
+              <p class="allergy__s">As written by the guest · confirm with the table</p>
+            </div>
+            <ul class="lines">
+              <li class="line" style="border-top:0">
+                <span class="line__q">2<small>×</small></span>
+                <div>
+                  <p class="line__th" lang="th">เนื้อสันนอกออสเตรเลีย</p>
+                  <p class="line__en">Australian Striploin</p>
+                  <div class="line__chips"><span class="chip-mod" lang="th">มีเดียมแรร์ <span class="x">× 1</span></span><span class="chip-mod" lang="th">มีเดียม <span class="x">× 1</span></span><span class="tag tag--example">Example</span></div>
+                </div>
+              </li>
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">มันบด</p><p class="line__en">Mashed Potato</p></div></li>
+              <li class="line"><span class="line__q">2<small>×</small></span><div><p class="line__th" lang="th">เฟรนช์ฟรายส์</p><p class="line__en">French Fries</p></div></li>
+            </ul>
+            <div class="ticket__actions">
+              <button class="btn btn--primary"><svg class="i"><use href="#i-check"/></svg>Accept · <span class="btn__count">5</span></button>
+              <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Details and exceptions, including reject"><svg class="i"><use href="#i-more"/></svg></button>
+            </div>
+          </article>
+
+          <article class="ticket is-new" aria-label="Table 12, round 2, new, drinks">
+            <header class="ticket__head">
+              <div class="tno" aria-hidden="true"><span class="tno__k">Table</span><span class="tno__n">12</span></div>
+              <div class="ticket__r1"><span class="ticket__ref">RG-4M3T</span><span class="wait"><svg class="i"><use href="#i-clock"/></svg><b>1</b><small>min</small></span></div>
+              <p class="ticket__r2">Round 2 · sent 19:51</p>
+            </header>
+            <div class="ticket__flags"><span class="flag flag--just">Just in</span><span class="flag flag--station">Bar</span></div>
+            <ul class="lines">
+              <li class="line" style="border-top:0">
+                <span class="line__q">2<small>×</small></span>
+                <div>
+                  <p class="line__th">Hoegaarden White</p>
+                  <p class="line__en">Draft beer · no Thai name on file</p>
+                  <div class="line__chips"><span class="chip-mod">500 ml</span></div>
+                  <p class="line__st line__st--alert"><svg class="i"><use href="#i-glass"/></svg>Alcohol · staff to confirm</p>
+                </div>
+              </li>
+              <li class="line">
+                <span class="line__q">1<small>×</small></span>
+                <div>
+                  <p class="line__th">Matcha Latte</p>
+                  <p class="line__en">Special Matcha · no Thai name on file</p>
+                  <div class="line__chips"><span class="chip-mod">Iced</span></div>
+                </div>
+              </li>
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">น้ำลำไย</p><p class="line__en">Longan Juice</p></div></li>
+            </ul>
+            <div class="ticket__actions">
+              <button class="btn btn--primary"><svg class="i"><use href="#i-check"/></svg>Accept · <span class="btn__count">4</span></button>
+              <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Details and exceptions, including reject"><svg class="i"><use href="#i-more"/></svg></button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ACCEPTED -->
+      <section class="col" aria-labelledby="c-acc">
+        <header class="col__head"><span class="glyph"><svg class="i"><use href="#i-check"/></svg></span><h2 id="c-acc">Accepted</h2><span class="col__count">1</span></header>
+        <div class="col__stack">
+          <article class="ticket" aria-label="Table 02, round 3, accepted">
+            <header class="ticket__head">
+              <div class="tno" aria-hidden="true"><span class="tno__k">Table</span><span class="tno__n">02</span></div>
+              <div class="ticket__r1"><span class="ticket__ref">RG-4M1H</span><span class="wait"><svg class="i"><use href="#i-clock"/></svg><b>5</b><small>min</small></span></div>
+              <p class="ticket__r2">Round 3 · sent 19:47</p>
+            </header>
+            <ul class="lines">
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">เห็ดผัด</p><p class="line__en">Sauteed Mushrooms</p></div></li>
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">บรอกโคลีเล็กผัด</p><p class="line__en">Sauteed Mini Broccoli</p></div></li>
+            </ul>
+            <div class="lines"><p class="wellnote"><svg class="i"><use href="#i-note"/></svg><span><small>Guest note</small><span lang="th">ขอจานแบ่ง 2 ใบ</span></span></p></div>
+            <div class="ticket__actions">
+              <button class="btn btn--primary">Start preparing · <span class="btn__count">2</span></button>
+              <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Details and exceptions"><svg class="i"><use href="#i-more"/></svg></button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- PREPARING -->
+      <section class="col" aria-labelledby="c-prep">
+        <header class="col__head"><span class="glyph"><svg class="i"><use href="#i-pan"/></svg></span><h2 id="c-prep">Preparing</h2><span class="col__count">2</span></header>
+        <div class="col__stack">
+          <article class="ticket" aria-label="Table 07, round 2, preparing, 1 of 3 served">
+            <header class="ticket__head">
+              <div class="tno" aria-hidden="true"><span class="tno__k">Table</span><span class="tno__n">07</span></div>
+              <div class="ticket__r1"><span class="ticket__ref">RG-4K7P</span><span class="wait"><svg class="i"><use href="#i-clock"/></svg><b>10</b><small>min</small></span></div>
+              <p class="ticket__r2">Round 2 · sent 19:42</p>
+            </header>
+            <ul class="lines">
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">เนื้อสันในวากิวย่างซอสไวน์แดง</p><p class="line__en">Wagyu Tenderloin MB&nbsp;6&#8288;–&#8288;7 · 300&nbsp;g</p><p class="line__st line__st--cook"><svg class="i"><use href="#i-half"/></svg>Preparing · 19:46</p></div></li>
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">กุ้งแม่น้ำย่าง</p><p class="line__en">Grilled River Prawns</p><p class="line__st line__st--cook"><svg class="i"><use href="#i-half"/></svg>Preparing · 19:46</p></div></li>
+              <li class="line is-served"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">เห็ดผัด</p><p class="line__en">Sauteed Mushrooms</p><p class="line__st line__st--ok"><svg class="i"><use href="#i-check"/></svg>Served 19:49 · Ploy</p></div></li>
+              <li class="line is-cancelled"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">สลัดรวมกับซอสบัลซามิก</p><p class="line__en">Green Salad</p><p class="line__st line__st--alert"><svg class="i"><use href="#i-slash"/></svg>Cancelled 19:45 · out of stock</p></div></li>
+            </ul>
+            <div class="meter"><span class="meter__bar" aria-hidden="true"><i class="s"></i><i class="c"></i><i class="c"></i></span><span class="meter__t">1 served · 2 preparing</span></div>
+            <div class="ticket__actions">
+              <button class="btn btn--primary">Mark ready · <span class="btn__count">2</span></button>
+              <button class="btn btn--outline">Almost done</button>
+              <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Details and exceptions"><svg class="i"><use href="#i-more"/></svg></button>
+            </div>
+          </article>
+
+          <article class="ticket" aria-label="Table 12, round 1, preparing, longer than usual">
+            <header class="ticket__head">
+              <div class="tno" aria-hidden="true"><span class="tno__k">Table</span><span class="tno__n">12</span></div>
+              <div class="ticket__r1"><span class="ticket__ref">RG-4L1C</span><span class="wait wait--late"><svg class="i"><use href="#i-clock"/></svg><b>22</b><small>min</small></span></div>
+              <p class="ticket__r2">Round 1 · sent 19:30</p>
+            </header>
+            <div class="ticket__flags"><span class="flag flag--late"><svg class="i"><use href="#i-alert"/></svg>Longer than usual · over 20 min</span></div>
+            <ul class="lines">
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">ไพร์มริบ</p><p class="line__en">Prime Rib</p><p class="line__weight"><svg class="i"><use href="#i-scale"/></svg>380 g · ฿1,862 · guest confirmed 19:33</p></div></li>
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">มันบด</p><p class="line__en">Mashed Potato</p></div></li>
+            </ul>
+            <div class="ticket__actions">
+              <button class="btn btn--primary">Mark ready · <span class="btn__count">2</span></button>
+              <button class="btn btn--outline">Almost done</button>
+              <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Details and exceptions"><svg class="i"><use href="#i-more"/></svg></button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ALMOST DONE -->
+      <section class="col" aria-labelledby="c-almost">
+        <header class="col__head"><span class="glyph"><svg class="i"><use href="#i-half"/></svg></span><h2 id="c-almost">Almost done</h2><span class="col__count">1</span><span class="col__hint">optional</span></header>
+        <div class="col__stack">
+          <article class="ticket" aria-label="Table 09, round 1, almost done">
+            <header class="ticket__head">
+              <div class="tno" aria-hidden="true"><span class="tno__k">Table</span><span class="tno__n">09</span></div>
+              <div class="ticket__r1"><span class="ticket__ref">RG-4K2W</span><span class="wait"><svg class="i"><use href="#i-clock"/></svg><b>16</b><small>min</small></span></div>
+              <p class="ticket__r2">Round 1 · sent 19:36</p>
+            </header>
+            <ul class="lines">
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">ซี่โครงหมูย่าง</p><p class="line__en">Grilled Pork Ribs</p></div></li>
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">สลัดรวมกับซอสบัลซามิก</p><p class="line__en">Green Salad with Balsamic Dressing</p></div></li>
+            </ul>
+            <div class="ticket__actions">
+              <button class="btn btn--primary">Mark ready · <span class="btn__count">2</span></button>
+              <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Details and exceptions"><svg class="i"><use href="#i-more"/></svg></button>
+            </div>
+          </article>
+          <p class="col__help">Almost done is optional. Tickets can go straight from Preparing to Ready.</p>
+        </div>
+      </section>
+
+      <!-- READY: the pass -->
+      <section class="col col--ready" aria-labelledby="c-ready">
+        <header class="col__head"><span class="glyph"><svg class="i"><use href="#i-cloche"/></svg></span><h2 id="c-ready">Ready</h2><span class="col__count">1</span><span class="col__hint">at the pass</span></header>
+        <div class="col__stack">
+          <article class="ticket" aria-label="Table 02, round 2, ready 2 minutes">
+            <header class="ticket__head">
+              <div class="tno" aria-hidden="true"><span class="tno__k">Table</span><span class="tno__n">02</span></div>
+              <div class="ticket__r1"><span class="ticket__ref">RG-4K5N</span><span class="wait"><svg class="i"><use href="#i-clock"/></svg><b>2</b><small>min</small></span></div>
+              <p class="ticket__r2">Round 2 · ready 19:50</p>
+            </header>
+            <div class="ticket__flags"><span class="flag flag--ready"><svg class="i"><use href="#i-cloche"/></svg>Waiting to be served</span></div>
+            <ul class="lines">
+              <li class="line"><span class="line__q">1<small>×</small></span><div><p class="line__th" lang="th">ปลาย่าง</p><p class="line__en">Grilled Fish</p></div></li>
+            </ul>
+            <div class="ticket__actions">
+              <button class="btn btn--primary"><svg class="i"><use href="#i-check"/></svg>Mark served · <span class="btn__count">1</span></button>
+              <button class="iconbtn iconbtn--framed iconbtn--staff" aria-label="Details and exceptions"><svg class="i"><use href="#i-more"/></svg></button>
+            </div>
+          </article>
+          <div class="empty" style="padding:28px 12px">
+            <p class="support" style="font-size:var(--fs-13)">Food under the rail is waiting to be run. Finish order records served lines only; it never closes a table.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</body>
+</html>

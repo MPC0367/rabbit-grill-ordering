@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F3ECDD">
+<title>ติดตามอาหาร · โต๊ะ 07 · Rabbit Grill</title>
+<!-- FINAL reference mock: Track (brief 14, 35, 44A). Add ?full for full-page captures, #offline for the stale banner.
+     Fixture visit: table 07, round 1 RG-3H2M (฿530, all served), round 2 RG-4K7P (฿3,100 active + one cancelled line),
+     one Prime Rib portion quote awaiting the guest (not in the subtotal). Same round appears on admin-board.html. -->
+<script>if (/[?&]full/.test(location.search)) document.documentElement.classList.add('full');</script>
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<link rel="stylesheet" href="../../client/src/styles/tokens.css">
+<link rel="stylesheet" href="final.css">
+<style>
+  html.full .dock { position: static; }
+  .g-main { --dock-clearance: calc(var(--nav-h) + var(--safe-bottom) + 24px); max-width: var(--content-max); margin: 0 auto; }
+  html.full .g-main { padding-bottom: 16px; }
+  #offline-banner { display: none; }
+  :target#offline-banner, .is-offline #offline-banner { display: flex; }
+  .when-offline, .is-offline .when-online { display: none; }
+  .is-offline .when-offline { display: inline-flex; }
+</style>
+</head>
+<body>
+<script src="sprite.js"></script>
+<script>if (location.hash === '#offline') document.body.classList.add('is-offline');</script>
+<div class="g-app">
+  <header class="mast">
+    <div class="mast__in">
+      <p class="tabletag" aria-label="โต๊ะ 07"><span class="tabletag__k" aria-hidden="true">โต๊ะ</span><span class="tabletag__n num" aria-hidden="true">07</span></p>
+      <a class="wordmark" href="#" aria-label="Rabbit Grill Khao Yai"><span class="wordmark__name" lang="en" aria-hidden="true">Rabbit Grill</span><span class="wordmark__sub" lang="en" aria-hidden="true">Khao Yai</span></a>
+      <nav class="mast__nav" aria-label="เมนูหลัก">
+        <a href="#">เมนู</a><a href="#">รายการของฉัน <span class="badge">2</span></a><a href="#" aria-current="page">ติดตาม</a>
+      </nav>
+      <div class="mast__right">
+        <div class="seg seg--box" role="group" aria-label="ภาษา Language"><button aria-pressed="true" lang="th">ไทย</button><button aria-pressed="false" lang="en">EN</button></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="banner banner--offline" id="offline-banner" role="status">
+    <svg class="i"><use href="#i-wifi-off"/></svg>
+    <p><span class="banner__t">ขาดการเชื่อมต่อ</span> · สถานะด้านล่างอาจไม่ใช่ล่าสุด</p>
+    <button class="btn btn--outline">เรียกพนักงาน</button>
+  </div>
+
+  <main class="g-main" id="main">
+    <div class="pagehead">
+      <p class="pagehead__kick">โต๊ะ 07 · ส่งแล้ว 2 รอบ</p>
+      <div class="pagehead__t"><h1>ติดตามอาหาร</h1><p class="en" lang="en">Track</p></div>
+      <div class="pagehead__row">
+        <span class="pill pill--ok pill--live when-online" role="status">ข้อมูลสด <span class="num" style="font-weight:400">· อัปเดตล่าสุด 19:52</span></span>
+        <span class="pill pill--heat when-offline" role="status"><svg class="i"><use href="#i-clock"/></svg>ข้อมูลเมื่อ 19:52 · ยังไม่อัปเดต</span>
+      </div>
+      <p class="support" style="margin-top:8px">ออเดอร์ที่ส่งแล้วเป็นของทั้งโต๊ะ ทุกเครื่องที่โต๊ะ 07 เห็นสถานะเดียวกัน</p>
+    </div>
+
+    <div class="pair">
+      <button class="btn btn--outline btn--lg"><svg class="i"><use href="#i-bell"/></svg>เรียกพนักงาน</button>
+      <button class="btn btn--outline btn--lg"><svg class="i"><use href="#i-receipt"/></svg>ขอเช็กบิล</button>
+    </div>
+
+    <!-- Portion quote awaiting the guest (brief 44A). Not an order until confirmed. -->
+    <section class="card quote" aria-labelledby="q-t">
+      <p class="quote__k"><svg class="i i--sm"><use href="#i-scale"/></svg>รอคุณยืนยันปริมาณ</p>
+      <h2 class="quote__t" id="q-t">ไพร์มริบ <span class="en" lang="en" style="font-size:var(--fs-17)">Prime Rib</span></h2>
+      <dl>
+        <div class="lead"><dt>พนักงานชั่งแล้ว</dt><span class="lead__dots" aria-hidden="true"></span><dd>420 กรัม</dd></div>
+        <div class="lead"><dt>ราคาต่อ 100 กรัม</dt><span class="lead__dots" aria-hidden="true"></span><dd><span class="baht">฿</span>490</dd></div>
+        <div class="lead"><dt style="color:var(--text);font-weight:600">ยอดของจานนี้</dt><span class="lead__dots" aria-hidden="true"></span><dd class="total"><span class="baht">฿</span>2,058</dd></div>
+      </dl>
+      <p class="support">ยังไม่เริ่มย่างจนกว่าคุณจะยืนยัน · ใบเสนอนี้ใช้ได้ถึง <span class="num">20:05</span></p>
+      <div class="quote__actions">
+        <button class="btn btn--primary btn--lg">ยืนยันปริมาณนี้</button>
+        <button class="btn btn--outline btn--lg">ขอเปลี่ยน</button>
+      </div>
+    </section>
+
+    <!-- Current round -->
+    <article class="card round" aria-labelledby="r2-t">
+      <header class="round__head">
+        <div>
+          <h2 class="round__t" id="r2-t">รอบที่ 2</h2>
+          <p class="meta">ส่งเมื่อ <span class="num">19:42</span> · 4 รายการ · โต๊ะ 07</p>
+        </div>
+        <div>
+          <p class="round__refk">เลขอ้างอิง</p>
+          <p class="round__ref" lang="en">RG-4K7P</p>
+        </div>
+      </header>
+      <div class="perf" aria-hidden="true"></div>
+
+      <div class="state" aria-live="polite">
+        <p class="state__t">กำลังปรุง</p>
+        <p class="state__m">ครัวเริ่มปรุงแล้ว แต่ละจานอาจเสร็จไม่พร้อมกัน</p>
+      </div>
+
+      <ol class="tl" aria-label="ความคืบหน้ารอบที่ 2">
+        <li class="tl__step is-done">
+          <span class="tl__node"><svg class="i"><use href="#i-check"/></svg></span>
+          <div class="lead"><span class="tl__label">ได้รับออเดอร์แล้ว</span><span class="lead__dots" aria-hidden="true"></span><time class="tl__time lead__val">19:42</time></div>
+        </li>
+        <li class="tl__step is-done">
+          <span class="tl__node"><svg class="i"><use href="#i-check"/></svg></span>
+          <div class="lead"><span class="tl__label">ร้านยืนยันออเดอร์แล้ว</span><span class="lead__dots" aria-hidden="true"></span><time class="tl__time lead__val">19:43</time></div>
+        </li>
+        <li class="tl__step is-current" aria-current="step">
+          <span class="tl__node"></span>
+          <div class="lead"><span class="tl__label">กำลังปรุง</span><span class="lead__dots" aria-hidden="true"></span><span class="tag-now lead__val">ตอนนี้</span></div>
+          <p class="tl__sub">เริ่ม <span class="num">19:46</span> · เสิร์ฟแล้ว 1 จาน · กำลังปรุง 2 จาน</p>
+        </li>
+        <li class="tl__step is-todo"><span class="tl__node"></span><span class="tl__label">ใกล้เสร็จ</span></li>
+        <li class="tl__step is-todo"><span class="tl__node"></span><span class="tl__label">พร้อมเสิร์ฟ</span></li>
+        <li class="tl__step is-todo"><span class="tl__node"></span><span class="tl__label">เสิร์ฟแล้ว</span></li>
+      </ol>
+      <p class="tl__foot"><svg class="i"><use href="#i-info"/></svg>สถานะเปลี่ยนเมื่อครัวบันทึกจริงเท่านั้น ระบบไม่เดาเวลา</p>
+
+      <details class="dishes" open>
+        <summary><span>รายจาน <span class="meta">· เสิร์ฟแล้ว 1 · กำลังปรุง 2 · ยกเลิก 1</span></span><svg class="i"><use href="#i-chev-d"/></svg></summary>
+        <ul>
+          <li class="dline">
+            <div class="plate"><img src="../../public/media/dish/wagyu-tenderloin-240.webp" alt="" width="240" height="180"></div>
+            <div>
+              <p class="dline__name">เนื้อสันในวากิวย่างซอสไวน์แดง<span class="x">× 1</span></p>
+              <div class="lead"><span class="dline__st dline__st--cook"><svg class="i"><use href="#i-half"/></svg>กำลังปรุง</span><span class="lead__dots" aria-hidden="true"></span><span class="lead__val meta">เริ่ม <span class="tl__time">19:46</span></span></div>
+              <div class="trail" aria-hidden="true"><i class="d"></i><i class="d"></i><i class="n"></i><i></i><i></i><i></i></div>
+            </div>
+          </li>
+          <li class="dline">
+            <div class="plate"><img src="../../public/media/dish/river-prawns-240.webp" alt="" width="240" height="180"></div>
+            <div>
+              <p class="dline__name">กุ้งแม่น้ำย่าง<span class="x">× 1</span></p>
+              <div class="lead"><span class="dline__st dline__st--cook"><svg class="i"><use href="#i-half"/></svg>กำลังปรุง</span><span class="lead__dots" aria-hidden="true"></span><span class="lead__val meta">เริ่ม <span class="tl__time">19:46</span></span></div>
+              <div class="trail" aria-hidden="true"><i class="d"></i><i class="d"></i><i class="n"></i><i></i><i></i><i></i></div>
+            </div>
+          </li>
+          <li class="dline">
+            <div class="plate"><img src="../../public/media/dish/mushrooms-240.webp" alt="" width="240" height="180"></div>
+            <div>
+              <p class="dline__name">เห็ดผัด<span class="x">× 1</span></p>
+              <div class="lead"><span class="dline__st dline__st--ok"><svg class="i"><use href="#i-check"/></svg>เสิร์ฟแล้ว</span><span class="lead__dots" aria-hidden="true"></span><span class="lead__val"><span class="tl__time">19:49</span></span></div>
+              <div class="trail" aria-hidden="true"><i class="d"></i><i class="d"></i><i class="d"></i><i class="s"></i><i class="d"></i><i class="d"></i></div>
+              <p class="dline__why">ขั้นใกล้เสร็จ: ไม่ได้บันทึก</p>
+            </div>
+          </li>
+          <li class="dline dline--cancel">
+            <div class="plate"><img src="../../public/media/dish/green-salad-240.webp" alt="" width="240" height="180" style="filter:grayscale(1);opacity:.6"></div>
+            <div>
+              <p class="dline__name">สลัดรวมกับซอสบัลซามิก<span class="x">× 1</span></p>
+              <div class="lead"><span class="dline__st dline__st--alert"><svg class="i"><use href="#i-slash"/></svg>ร้านยกเลิก</span><span class="lead__dots" aria-hidden="true"></span><span class="lead__val"><span class="tl__time">19:45</span></span></div>
+              <p class="dline__why">เหตุผล: วัตถุดิบหมด · ไม่คิดในบิล</p>
+            </div>
+          </li>
+        </ul>
+      </details>
+    </article>
+
+    <!-- Earlier round, collapsed -->
+    <details class="card past">
+      <summary>
+        <span>
+          <span class="past__t"><svg class="i"><use href="#i-check-c"/></svg>เสิร์ฟครบทุกจาน <span class="num">19:31</span></span>
+          <span class="meta" style="display:block">รอบที่ 1 · <span lang="en" style="font-family:var(--font-display);letter-spacing:var(--track-ref)">RG-3H2M</span> · ส่งเมื่อ 19:08 · 3 รายการ</span>
+        </span>
+        <span class="thumbs" aria-hidden="true"><img src="../../public/media/dish/corn-rib-240.webp" alt=""><img src="../../public/media/dish/caesar-240.webp" alt=""><span>+1</span></span>
+        <svg class="i"><use href="#i-chev-d"/></svg>
+      </summary>
+    </details>
+
+    <!-- Draft nudge: this device still holds unsent items -->
+    <a class="nudge" href="#">
+      <span>
+        <span class="nudge__t" style="display:block">มี 2 รายการที่ยังไม่ได้ส่ง</span>
+        <span class="nudge__s">อยู่ในเครื่องนี้ · ส่งเป็นรอบที่ 3 ได้เลย</span>
+      </span>
+      <svg class="i"><use href="#i-chev-r"/></svg>
+    </a>
+
+    <section class="bill" aria-label="ยอดที่ส่งแล้ว">
+      <div class="lead"><span>ค่าอาหารที่ส่งแล้ว · 2 รอบ</span><span class="lead__dots" aria-hidden="true"></span><span class="lead__val price"><span class="baht">฿</span>3,630</span></div>
+      <p class="bill__note">ไม่รวมรายการที่ร้านยกเลิกและไพร์มริบที่รอยืนยัน ยอดสุดท้ายพนักงานจะยืนยันในบิล</p>
+      <a class="textlink" href="#">ดูบิลของโต๊ะ<svg class="i i--sm"><use href="#i-chev-r"/></svg></a>
+    </section>
+  </main>
+
+  <div class="dock">
+    <div class="gnav">
+      <nav class="bnav" aria-label="เมนูหลัก">
+        <a class="bnav__item" href="#"><svg class="i"><use href="#i-book"/></svg>เมนู</a>
+        <a class="bnav__item" href="#"><span class="bnav__icon"><svg class="i"><use href="#i-pad"/></svg><span class="badge badge--ring" aria-hidden="true">2</span></span>รายการของฉัน<span class="sr">2 รายการ</span></a>
+        <a class="bnav__item" href="#" aria-current="page"><svg class="i"><use href="#i-track"/></svg>ติดตาม</a>
+        <span class="mark" aria-hidden="true"></span>
+      </nav>
+      <button class="svckey" aria-haspopup="dialog"><span class="svckey__ring"><svg class="i"><use href="#i-bell"/></svg></span>บริการ</button>
+    </div>
+  </div>
+</div>
+<script>
+  function marks() {
+    const nav = document.querySelector('.bnav');
+    const el = nav.querySelector('[aria-current="page"]'), m = nav.querySelector('.mark');
+    m.style.width = '32px';
+    m.style.transform = `translateX(${el.offsetLeft + (el.offsetWidth - 32) / 2}px)`;
+  }
+  document.fonts.ready.then(marks);
+  addEventListener('resize', marks);
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "name": "rabbit-grill-ordering",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rabbit Grill Khao Yai - table QR ordering, fulfilment, checkout, insights and annual reports. One Node process, one SQLite database.",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.ts",
+    "build": "vite build",
+    "start": "node server/main.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:reset": "node scripts/db-reset.ts",
+    "seed": "node server/db/seed.ts",
+    "admin:create": "node scripts/admin-create.ts",
+    "jobs": "node server/jobs/cli.ts",
+    "assets": "node scripts/assets.ts",
+    "test": "node --test --test-concurrency=1 \"test/integration/**/*.test.ts\"",
+    "e2e": "node test/e2e/run.ts",
+    "shots": "node test/visual/shots.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/cormorant-garamond": "5.3.0",
+    "@fontsource-variable/noto-sans-thai": "5.3.0",
+    "@fontsource-variable/oswald": "5.3.0",
+    "@hono/node-server": "2.1.1",
+    "hono": "4.13.8",
+    "puppeteer-core": "25.11.0",
+    "qrcode": "1.5.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.5",
+    "@types/qrcode": "1.5.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "sharp": "0.35.4",
+    "typescript": "7.0.2",
+    "vite": "8.3.0"
+  }
+}

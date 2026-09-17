@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guest Menu · Menu Card</title>
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<script>if(location.hash==="#full")document.documentElement.classList.add("shot-full")</script>
+<style>
+/* ================================================================
+   THE MENU CARD — guest menu, Table 07, Thai active
+   Tokens are identical across the four mocks (see DIRECTION.md).
+   ================================================================ */
+:root{
+  --paper:#F3ECDD; --paper-2:#E9E0CB; --bone:#F8F4EA;
+  --ink:#17150F; --ink-2:#221E16; --ink-3:#2E2921;
+  --forest:#1E4230; --forest-2:#2C5A40; --oxblood:#6E1621;
+  --taupe:#6B5E4B; --ember:#CB6234; --ember-ink:#A8441E; --steel:#8E8B82;
+
+  --canvas:var(--paper); --surface:var(--bone); --well:var(--paper-2);
+  --text:var(--ink); --text-2:#5D574A; --label:var(--taupe);
+  --action:var(--forest); --action-2:var(--forest-2); --on-action:var(--bone);
+  --alert:var(--oxblood); --alert-tint:#EEE4DC;
+  --rule:rgba(23,21,15,.14); --rule-soft:rgba(23,21,15,.08); --rule-ink:var(--ink);
+  --leader:var(--steel); --focus:var(--ember);
+  --edge:#857D6E; /* control boundary: 3.46 on paper, 3.71 on bone */
+
+  --f-serif:"Cormorant Garamond Variable","Noto Sans Thai Variable",Georgia,serif;
+  --f-label:"Oswald Variable","Noto Sans Thai Variable","Arial Narrow",sans-serif;
+  --f-ui:"Noto Sans Thai Variable","Helvetica Neue",Arial,sans-serif;
+
+  --r-hair:2px; --r-ctl:6px; --r-sheet:16px;
+  --t-fast:160ms; --t-base:200ms; --ease:cubic-bezier(.2,.7,.3,1);
+  --tap:44px; --gut:16px;
+  --mast-h:60px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--f-ui);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  padding-bottom:calc(150px + env(safe-area-inset-bottom))}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3,p,ul,ol{margin:0;padding:0}
+ul,ol{list-style:none}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+svg{display:block;flex:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Latin-only labels carry the tracking; Thai never does */
+.cap{font-family:var(--f-label);font-weight:500;letter-spacing:0}
+.cap:lang(en){letter-spacing:.18em;text-transform:uppercase}
+
+/* ---------- masthead ---------- */
+.mast{position:sticky;top:0;z-index:20;background:var(--canvas);
+  border-bottom:1px solid var(--rule-ink);
+  box-shadow:0 3px 0 0 var(--canvas),0 4px 0 0 rgba(23,21,15,.28)}
+.mast-in{height:var(--mast-h);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:0 var(--gut)}
+.tabletag{justify-self:start;display:inline-flex;align-items:baseline;gap:6px;height:var(--tap);padding:0 12px;border:1px solid var(--rule-ink);border-radius:var(--r-hair);align-items:center}
+.tabletag .k{font-size:13px;line-height:1;color:var(--text-2)}
+.tabletag .n{font-family:var(--f-label);font-weight:500;font-size:21px;line-height:1;letter-spacing:.02em}
+.wordmark{display:flex;flex-direction:column;align-items:center;text-decoration:none;color:var(--text);line-height:1}
+.wordmark .w1{font-family:var(--f-serif);font-weight:600;font-size:18px;letter-spacing:.16em;text-transform:uppercase;padding-left:.16em}
+.wordmark .w2{margin-top:5px;font-family:var(--f-label);font-weight:500;font-size:10px;letter-spacing:.36em;text-transform:uppercase;color:var(--label);padding-left:.36em}
+.lang{justify-self:end;display:inline-flex;height:var(--tap);border:1px solid var(--edge);border-radius:var(--r-hair);overflow:hidden}
+.lang button{min-width:42px;padding:0 9px;font-size:14px;color:var(--text-2)}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bone);font-weight:600}
+.lang button:lang(en){font-family:var(--f-label);letter-spacing:.12em;font-size:13px}
+
+/* ---------- tools ---------- */
+.tools{padding:14px var(--gut) 0}
+.search{position:relative;display:flex;align-items:center}
+.search .ico{position:absolute;left:14px;color:var(--text-2);pointer-events:none}
+.search input{width:100%;height:var(--tap);padding:0 14px 0 44px;border:1px solid var(--edge);border-radius:var(--r-ctl);background:var(--surface);font-size:15px}
+.search input::placeholder{color:var(--text-2)}
+.seg{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;height:var(--tap);border:1px solid var(--rule-ink);border-radius:var(--r-ctl);overflow:hidden}
+.seg button{font-size:15px;color:var(--text-2);display:flex;align-items:center;justify-content:center;gap:8px}
+.seg button + button{border-left:1px solid var(--rule-ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bone);font-weight:600}
+.seg .ct{font-family:var(--f-label);font-size:12px;letter-spacing:.06em;opacity:.8}
+
+/* ---------- category row (sticky under the masthead) ---------- */
+.cats{position:sticky;top:calc(var(--mast-h) + 5px);z-index:15;margin-top:6px;background:var(--canvas);border-bottom:1px solid var(--rule)}
+.cats-in{display:flex;align-items:stretch}
+.cats-scroll{flex:1;min-width:0;display:flex;overflow-x:auto;scrollbar-width:none;padding-left:var(--gut);
+  -webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.cats-scroll::-webkit-scrollbar{display:none}
+.cat{flex:none;display:flex;align-items:center;gap:6px;height:48px;padding:0 12px 0 0;margin-right:10px;color:var(--text-2);font-size:15px;white-space:nowrap;position:relative}
+.cat .no{font-family:var(--f-label);font-size:11px;letter-spacing:.08em;color:var(--label);transform:translateY(-4px)}
+.cat[aria-current="true"]{color:var(--text);font-weight:600}
+.cat[aria-current="true"]::after{content:"";position:absolute;left:0;right:12px;bottom:-1px;height:2px;background:var(--ink)}
+.allcats{flex:none;display:flex;align-items:center;gap:6px;height:48px;padding:0 var(--gut) 0 12px;border-left:1px solid var(--rule);font-size:14px;font-weight:500;color:var(--text)}
+
+/* ---------- sections ---------- */
+.sec{padding:20px var(--gut) 0}
+.sec-head{margin-bottom:4px}
+.sec-no{display:flex;align-items:center;gap:10px;color:var(--label)}
+.sec-no .cap{font-size:12px}
+.sec-no::after{content:"";flex:1;height:1px;background:var(--rule)}
+.sec-title{margin-top:6px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px}
+.sec-th{font-size:23px;font-weight:600;line-height:1.45}
+.sec-en{font-family:var(--f-serif);font-style:italic;font-weight:500;font-size:19px;line-height:1.2;color:var(--label)}
+
+/* ---------- dish rows ---------- */
+.dish{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--rule-soft)}
+.dish:last-child{border-bottom:0}
+.plate{flex:none;align-self:flex-start;width:116px;aspect-ratio:4/3;padding:3px;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-hair);display:block}
+.plate img{width:100%;height:100%;object-fit:cover;border-radius:1px}
+.body{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto 1fr auto;column-gap:10px;min-height:87px}
+.body > .lead{grid-column:1/-1}
+.body > .den{grid-column:1;grid-row:2}
+.body > .meta{grid-column:1;grid-row:3;align-self:end}
+.body > .act{grid-column:2;grid-row:2/4;align-self:end;justify-self:end;margin-top:12px}
+.body > .weigh{grid-column:1/-1;grid-row:3}
+.body.stack > .act{grid-column:1/-1;grid-row:4;margin-top:10px}
+
+/* the signature: a printed-menu leader from name to value */
+.lead{display:flex;align-items:last baseline;gap:6px}
+.lead .nm{flex:0 1 auto;min-width:0}
+.lead .dots{flex:1 1 18px;min-width:18px;height:2px;
+  background-image:radial-gradient(circle at 1px 1px,var(--leader) .75px,transparent 1.05px);
+  background-size:5px 2px;background-repeat:repeat-x;background-position:0 0}
+.lead .val{flex:none}
+
+.dname{font-size:17px;font-weight:600;line-height:1.6}
+.price{font-family:var(--f-label);font-weight:500;font-size:18px;line-height:1;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.price .cur{font-family:var(--f-ui);font-size:.8em;font-weight:500;margin-right:1px}
+.price .unit{font-family:var(--f-ui);font-size:13px;font-weight:400;color:var(--text-2);letter-spacing:0}
+.den{font-family:var(--f-serif);font-style:italic;font-weight:500;font-size:16.5px;line-height:1.25;color:var(--label);margin-top:1px}
+.meta{font-size:13px;line-height:1.55;color:var(--text-2)}
+
+.btn-add{display:inline-flex;align-items:center;gap:6px;height:var(--tap);padding:0 16px 0 12px;border-radius:var(--r-ctl);background:var(--action);color:var(--on-action);font-size:15px;font-weight:600;transition:background var(--t-fast) var(--ease)}
+.btn-add:hover{background:var(--action-2)}
+.btn-line{display:inline-flex;align-items:center;gap:7px;height:var(--tap);padding:0 14px 0 11px;border-radius:var(--r-ctl);border:1px solid var(--action);color:var(--action);font-size:14.5px;font-weight:600;background:var(--surface)}
+
+.step{display:inline-flex;align-items:center;height:var(--tap);border:1px solid var(--action);border-radius:var(--r-ctl);background:var(--surface);color:var(--action)}
+.step button{width:42px;height:100%;display:grid;place-items:center}
+.step output{min-width:26px;text-align:center;font-family:var(--f-label);font-weight:500;font-size:17px;color:var(--text)}
+.incart{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--action);font-weight:500}
+
+/* sold out */
+.dish.is-out .plate img{filter:grayscale(1) contrast(.9);opacity:.62}
+.dish.is-out .dname,.dish.is-out .price{color:var(--text-2)}
+.state-out{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--alert)}
+
+/* by weight */
+.weigh{margin-top:6px;padding:8px 10px;border-left:2px solid var(--action);background:rgba(30,66,48,.06);font-size:13px;line-height:1.55;color:var(--text-2)}
+
+/* text-led row: no plate, the line itself is the card */
+.dish.textled .body{min-height:0}
+
+/* ---------- cart bar + bottom nav ---------- */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30}
+/* QA only: full-page capture puts the dock after the content instead of mid-page */
+.shot-full body{padding-bottom:0}
+.shot-full .dock{position:static;margin-top:28px}
+.cartbar{margin:0 10px 8px;display:flex;align-items:center;gap:12px;height:54px;padding:0 8px 0 16px;border-radius:var(--r-ctl);background:var(--action);color:var(--on-action);
+  box-shadow:0 6px 18px rgba(23,21,15,.18)}
+.cartbar .sum{flex:1;display:flex;align-items:baseline;gap:8px;font-size:15px}
+.cartbar .sum b{font-weight:600}
+.cartbar .sum .tot{font-family:var(--f-label);font-weight:500;font-size:19px;letter-spacing:.01em}
+.cartbar .go{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border-radius:4px;background:var(--bone);color:var(--forest);font-weight:600;font-size:14.5px}
+.nav{display:flex;align-items:stretch;background:var(--surface);border-top:1px solid var(--rule-ink);padding-bottom:env(safe-area-inset-bottom)}
+.nav a{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:62px;padding-top:4px;color:var(--text-2);text-decoration:none;font-size:13px;line-height:1.3}
+.nav a .ico{width:23px;height:23px}
+.nav a > .ico, .nav .svc .ring{margin-block:1px}
+.nav a > .ico{height:28px;padding-block:2.5px;width:23px}
+.nav a[aria-current="page"]{color:var(--text);font-weight:600}
+.nav a[aria-current="page"]::before{content:"";position:absolute;top:-1px;left:30%;right:30%;height:3px;background:var(--ink)}
+.nav .badge{position:absolute;top:7px;left:calc(50% + 6px);min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--oxblood);color:var(--bone);font-family:var(--f-label);font-size:12px;font-weight:500;line-height:19px;text-align:center;box-shadow:0 0 0 2px var(--surface)}
+.nav .svc{flex:0 0 84px;border-left:1px solid var(--rule)}
+.nav .svc .ring{display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--rule-ink);border-radius:50%}
+.nav .svc .ring .ico{width:18px;height:18px}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:1ms!important;animation-duration:1ms!important}}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="mast-in">
+    <div class="tabletag" aria-label="โต๊ะ 07"><span class="k">โต๊ะ</span><span class="n" lang="en">07</span></div>
+    <a class="wordmark" href="#" aria-label="Rabbit Grill Khao Yai"><span class="w1" lang="en">Rabbit Grill</span><span class="w2" lang="en">Khao Yai</span></a>
+    <div class="lang" role="group" aria-label="ภาษา">
+      <button aria-pressed="true">ไทย</button><button aria-pressed="false" lang="en">EN</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="tools">
+    <label class="search">
+      <span class="sr">ค้นหาเมนู</span>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+      <input type="search" placeholder="ค้นหาเมนู · ไทย หรือ English">
+    </label>
+    <div class="seg" role="group" aria-label="กลุ่มเมนู">
+      <button aria-pressed="true">อาหาร</button>
+      <button aria-pressed="false">เครื่องดื่ม</button>
+    </div>
+  </div>
+
+  <nav class="cats" aria-label="หมวดอาหาร">
+    <div class="cats-in">
+      <div class="cats-scroll">
+        <a class="cat" href="#beef" aria-current="true"><span class="no" lang="en">01</span>เนื้อ</a>
+        <a class="cat" href="#grill"><span class="no" lang="en">02</span>จานหลักจากเตา</a>
+        <a class="cat" href="#"><span class="no" lang="en">03</span>ของเรียกน้ำย่อย</a>
+        <a class="cat" href="#"><span class="no" lang="en">04</span>สลัด</a>
+        <a class="cat" href="#"><span class="no" lang="en">05</span>ข้าว</a>
+      </div>
+      <button class="allcats" aria-haspopup="dialog">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h11"/></svg>
+        ทุกหมวด
+      </button>
+    </div>
+  </nav>
+
+  <!-- 01 · Beef Selection -->
+  <section class="sec" id="beef" aria-labelledby="h-beef">
+    <div class="sec-head">
+      <div class="sec-no"><span class="cap" lang="en">No. 01</span></div>
+      <div class="sec-title"><h2 class="sec-th" id="h-beef">เนื้อ</h2><p class="sec-en" lang="en">Beef Selection</p></div>
+    </div>
+    <ul>
+      <!-- By weight: Prime Rib. Rate + basis from the menu (490 per 100 g). No Add: staff confirm the portion. -->
+      <li class="dish">
+        <button class="plate" aria-label="ดูรายละเอียด ไพร์มริบ"><img src="../../../img/primerib-full.jpg" alt="ไพร์มริบหั่นชิ้นบนถาดสแตนเลส" width="108" height="81"></button>
+        <div class="body stack">
+          <h3 class="lead"><span class="nm dname">ไพร์มริบ</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>490<span class="unit"> / 100 กรัม</span></span></h3>
+          <p class="den" lang="en">Prime Rib</p>
+          <p class="weigh">คิดราคาตามน้ำหนักจริง พนักงานจะแจ้งน้ำหนักและราคาให้คุณยืนยันก่อน</p>
+          <button class="act btn-line">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15M8 19h8M5 8h14"/><path d="M5 8l-2.5 5.5a2.5 2.5 0 0 0 5 0z"/><path d="M19 8l-2.5 5.5a2.5 2.5 0 0 0 5 0z"/></svg>
+              ขอยืนยันน้ำหนัก
+            </button>
+        </div>
+      </li>
+
+      <li class="dish">
+        <button class="plate" aria-label="ดูรายละเอียด เนื้อสันในวากิวย่างซอสไวน์แดง"><img src="../../../img/wagyu-tenderloin.jpg" alt="สันในวากิวหั่นราดซอสไวน์แดง" width="108" height="81"></button>
+        <div class="body">
+          <h3 class="lead"><span class="nm dname">เนื้อสันในวากิวย่างซอสไวน์แดง</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>1,990</span></h3>
+          <p class="den" lang="en">Wagyu Tenderloin MB 6–7 with Red Wine Jus</p>
+          <span class="meta">300 กรัม</span>
+            <button class="btn-add"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>เพิ่ม</button>
+        </div>
+      </li>
+
+      <!-- In the draft already: Add becomes a stepper -->
+      <li class="dish">
+        <button class="plate" aria-label="ดูรายละเอียด เนื้อสันนอกออสเตรเลีย"><img src="../../../img/striploin.jpg" alt="สันนอกย่างหั่นชิ้นกับกระเทียมอบและโรสแมรี่" width="108" height="81"></button>
+        <div class="body">
+          <h3 class="lead"><span class="nm dname">เนื้อสันนอกออสเตรเลีย</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>590</span></h3>
+          <p class="den" lang="en">Australian Striploin</p>
+          <span class="meta incart"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>ในรายการ</span>
+            <div class="act step" role="group" aria-label="จำนวน เนื้อสันนอกออสเตรเลีย">
+              <button aria-label="ลด"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+              <output aria-live="polite">1</output>
+              <button aria-label="เพิ่ม"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+            </div>
+        </div>
+      </li>
+
+      <!-- Sold out: text + icon, never orderable -->
+      <li class="dish is-out">
+        <button class="plate" aria-label="ดูรายละเอียด ลิ้นวัวย่าง (หมดชั่วคราว)"><img src="../../../img/grilled-tongue.jpg" alt="ลิ้นวัวย่างหั่นชิ้น" width="108" height="81"></button>
+        <div class="body">
+          <h3 class="lead"><span class="nm dname">ลิ้นวัวย่าง</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>590</span></h3>
+          <p class="den" lang="en">Grilled Tongue</p>
+          <span class="act state-out"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg>หมดชั่วคราว</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 02 · From the Grill -->
+  <section class="sec" id="grill" aria-labelledby="h-grill">
+    <div class="sec-head">
+      <div class="sec-no"><span class="cap" lang="en">No. 02</span></div>
+      <div class="sec-title"><h2 class="sec-th" id="h-grill">จานหลักจากเตา</h2><p class="sec-en" lang="en">From the Grill</p></div>
+    </div>
+    <ul>
+      <li class="dish">
+        <button class="plate" aria-label="ดูรายละเอียด กุ้งแม่น้ำย่าง"><img src="../../../img/river-prawns.jpg" alt="กุ้งแม่น้ำย่างผ่าครึ่ง" width="108" height="81"></button>
+        <div class="body">
+          <h3 class="lead"><span class="nm dname">กุ้งแม่น้ำย่าง</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>990</span></h3>
+          <p class="den" lang="en">Grilled River Prawns</p>
+          <button class="act btn-add"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>เพิ่ม</button>
+        </div>
+      </li>
+
+      <li class="dish">
+        <button class="plate" aria-label="ดูรายละเอียด ไก่ย่างตัวเล็กคลุกเครื่องเทศ"><img src="../../../img/baby-chicken.jpg" alt="ไก่ย่างทั้งตัวคลุกเครื่องเทศ" width="108" height="81"></button>
+        <div class="body">
+          <h3 class="lead"><span class="nm dname">ไก่ย่างตัวเล็กคลุกเครื่องเทศ</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>590</span></h3>
+          <p class="den" lang="en">Grilled Baby Chicken</p>
+          <button class="act btn-add"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>เพิ่ม</button>
+        </div>
+      </li>
+
+      <li class="dish">
+        <button class="plate" aria-label="ดูรายละเอียด ซี่โครงหมูย่าง"><img src="../../../img/pork-ribs.jpg" alt="ซี่โครงหมูย่างเคลือบซอส" width="108" height="81"></button>
+        <div class="body">
+          <h3 class="lead"><span class="nm dname">ซี่โครงหมูย่าง</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>590</span></h3>
+          <p class="den" lang="en">Grilled Pork Ribs</p>
+          <span class="meta incart"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>ในรายการ</span>
+            <div class="act step" role="group" aria-label="จำนวน ซี่โครงหมูย่าง">
+              <button aria-label="ลด"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+              <output>1</output>
+              <button aria-label="เพิ่ม"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+            </div>
+        </div>
+      </li>
+
+      <!-- Text-led card: the state an item takes when it has no approved photo (or the image fails).
+           The asset for Grilled Squid does exist; it is withheld here only to demonstrate the state. -->
+      <li class="dish textled">
+        <div class="body">
+          <h3 class="lead"><span class="nm dname">ปลาหมึกย่าง</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>390</span></h3>
+          <p class="den" lang="en">Grilled Squid</p>
+          <button class="act btn-add"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>เพิ่ม</button>
+        </div>
+      </li>
+    </ul>
+  </section>
+</main>
+
+<div class="dock">
+  <a class="cartbar" href="#" aria-label="ดูรายการของฉัน 2 รายการ รวม 1,180 บาท">
+    <span class="sum"><b>2 รายการ</b><span aria-hidden="true">·</span><span class="tot">฿1,180</span></span>
+    <span class="go">ดูรายการ<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px"><path d="M9 6l6 6-6 6"/></svg></span>
+  </a>
+  <nav class="nav" aria-label="เมนูหลัก">
+    <a href="#" aria-current="page">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5c3-1 6-.8 9 1 3-1.8 6-2 9-1V19c-3-1-6-.8-9 1-3-1.8-6-2-9-1z"/><path d="M12 6.5V20"/></svg>
+      เมนู
+    </a>
+    <a href="#">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 2.8v2.4M15 2.8v2.4M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg>
+      รายการของฉัน
+      <span class="badge" aria-label="2 รายการ">2</span>
+    </a>
+    <a href="#">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10"/><path d="M11 5h9M11 12h9M11 19h6"/></svg>
+      ติดตาม
+    </a>
+    <a href="#" class="svc" aria-haspopup="dialog">
+      <span class="ring"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 16v-5a5.5 5.5 0 0 1 11 0v5l1.5 2h-14z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></span>
+      บริการ
+    </a>
+  </nav>
+</div>
+</body>
+</html>

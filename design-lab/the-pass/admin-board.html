@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orders · Rabbit Grill Staff</title>
+<script>if(/[?&]full/.test(location.search))document.documentElement.classList.add('full')</script>
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<style>
+/* ================================================================
+   THE PASS — shared tokens + components (inlined into every mock)
+   Paper is the plate. Charcoal is the line. Forest is the hand that
+   acts. Ember is the heat lamp: it only ever falls on what is "now".
+   ================================================================ */
+:root {
+  /* brand (verified reference-site tokens) */
+  --paper:#F3ECDD; --paper-2:#E9E0CB; --bone:#F8F4EA;
+  --ink:#17150F; --ink-2:#221E16; --ink-3:#2E2921;
+  --forest:#1E4230; --forest-2:#2C5A40; --oxblood:#6E1621;
+  --taupe:#6B5E4B; --ember:#CB6234; --ember-ink:#A8441E; --steel:#8E8B82;
+
+  /* roles — light */
+  --canvas:var(--paper);
+  --surface:var(--bone);
+  --sunken:var(--paper-2);
+  --text:var(--ink);
+  --text-2:#5D574A;          /* 6.10 on paper · 6.53 on bone · 5.46 on paper-2 */
+  --text-3:var(--taupe);     /* 5.36 on paper · 5.75 on bone · 4.80 on paper-2 */
+  --rule:rgba(23,21,15,.14);
+  --numeral:#857D6F;         /* deepened steel for large section numerals: 3.46 on paper */
+  --control-line:#7A7264;    /* input borders, radio rings: 4.33 on bone · 4.04 on paper */
+  --rule-2:rgba(23,21,15,.26);
+  --action:var(--forest);
+  --action-2:var(--forest-2);
+  --on-action:var(--bone);   /* 10.19 */
+  --ok:var(--forest);
+  --ok-tint:#E3EAE2;         /* forest on it 9.13 */
+  --alert:var(--oxblood);
+  --alert-tint:#F4E3E0;      /* oxblood on it 9.40 */
+
+  /* roles — the line (dark) */
+  --line:var(--ink);
+  --line-2:var(--ink-2);
+  --line-3:var(--ink-3);
+  --on-line:var(--bone);     /* 16.62 on ink */
+  --on-line-2:#B9B2A2;       /* 8.65 on ink · 7.87 on ink-2 */
+  --line-rule:rgba(248,244,234,.14);
+
+  /* the heat lamp */
+  --lamp:var(--ember);                     /* graphic only on paper (3.35 ≥ 3:1) */
+  --lamp-text:var(--ember);                /* text only on ink (4.64) */
+  --lamp-spill:radial-gradient(ellipse 58% 100% at 50% 0,rgba(203,98,52,.26) 0,rgba(203,98,52,.10) 45%,rgba(203,98,52,0) 100%);
+  --lamp-spill-dark:radial-gradient(ellipse 58% 100% at 50% 0,rgba(203,98,52,.34) 0,rgba(203,98,52,.10) 50%,rgba(203,98,52,0) 100%);
+
+  /* type */
+  --f-ui:"Noto Sans Thai Variable", system-ui, "Segoe UI", sans-serif;
+  --f-disp:"Oswald Variable", "Noto Sans Thai Variable", "Arial Narrow", sans-serif;
+  --f-serif:"Cormorant Garamond Variable", "Noto Sans Thai Variable", Georgia, serif;
+
+  /* spacing — 4 px base */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px; --s12:48px;
+  --gut:16px;
+
+  /* radii */
+  --r-ticket:3px; --r-sm:6px; --r-md:8px; --r-lg:12px; --r-sheet:18px;
+
+  /* elevation */
+  --e1:0 1px 0 rgba(23,21,15,.06), 0 1px 2px rgba(23,21,15,.06);
+  --e2:0 2px 4px rgba(23,21,15,.06), 0 8px 20px -6px rgba(23,21,15,.16);
+  --e3:0 -10px 40px -8px rgba(23,21,15,.35);
+
+  /* motion (brief 42) */
+  --t-press:120ms; --t-ctl:180ms; --t-sheet:220ms; --t-step:220ms;
+  --ease:cubic-bezier(.2,.7,.3,1);
+  --ease-out:cubic-bezier(.16,.84,.28,1);
+
+  --hit:44px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--f-ui);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img,svg{display:block;max-width:100%}
+button,input,textarea{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button{background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3,h4,p,ul,ol,figure{margin:0;padding:0}
+ul,ol{list-style:none}
+p,h1,h2,h3{text-wrap:pretty}
+:focus-visible{outline:2px solid var(--forest);outline-offset:2px;border-radius:4px}
+.on-line :focus-visible{outline-color:var(--bone)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+:lang(th){letter-spacing:0}
+.ico{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ico--sm{width:16px;height:16px}
+.ico--lg{width:24px;height:24px}
+
+/* Latin label voice — Oswald caps; never applied to Thai */
+.cap{font-family:var(--f-disp);font-weight:500;font-size:12px;line-height:1.3;letter-spacing:.16em;text-transform:uppercase}
+.cap:lang(th){font-family:var(--f-ui);letter-spacing:0;text-transform:none;font-size:13px;font-weight:600}
+.en-serif{font-family:var(--f-serif);font-style:italic;font-weight:500;letter-spacing:.005em}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--hit);padding:0 16px;border-radius:var(--r-md);font-size:15px;font-weight:600;line-height:1.2;white-space:nowrap;transition:background-color var(--t-ctl) var(--ease),transform var(--t-press) var(--ease)}
+.btn:active{transform:scale(.97)}
+.btn--primary{background:var(--action);color:var(--on-action)}
+.btn--primary:hover{background:var(--action-2)}
+.btn--outline{border:1px solid var(--rule-2);background:var(--surface);color:var(--text)}
+.btn--quiet{color:var(--text);padding:0 10px}
+.btn--block{display:flex;width:100%}
+
+/* ---------- the lamp (signature) ---------- */
+.lamp{position:relative}
+.lamp::before{content:"";position:absolute;left:10%;right:10%;top:0;height:2px;background:var(--lamp);border-radius:0 0 2px 2px}
+.lamp::after{content:"";position:absolute;left:0;right:0;top:2px;height:26px;background:var(--lamp-spill);pointer-events:none}
+
+/* full-page capture: park fixed chrome at the end of the document */
+html.full .dock{position:static}
+html.full main{padding-bottom:24px!important}
+
+/* ---------- docket (ticket) ---------- */
+.docket{position:relative;background:var(--surface);border-radius:var(--r-ticket) var(--r-ticket) 0 0;
+  --tooth:6px;
+  -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - var(--tooth)) no-repeat,
+    conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/12px var(--tooth) repeat-x;
+          mask:linear-gradient(#000 0 0) top/100% calc(100% - var(--tooth)) no-repeat,
+    conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/12px var(--tooth) repeat-x}
+.docket-wrap{filter:drop-shadow(0 1px 1px rgba(23,21,15,.10)) drop-shadow(0 6px 10px rgba(23,21,15,.07))}
+.perf{height:0;border-top:1px dashed var(--rule-2);margin:0}
+
+/* ---------- badge ---------- */
+.badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ink);color:var(--bone);font-family:var(--f-disp);font-weight:600;font-size:12px;line-height:1;letter-spacing:.02em}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important;animation-iteration-count:1!important}
+}
+
+
+html,body{height:100%}
+body{display:grid;grid-template-columns:196px 1fr;overflow:hidden;font-size:15px}
+.th{font-family:var(--f-ui)}
+
+/* ---------- the rail (sidebar) ---------- */
+.rail{display:flex;flex-direction:column;background:var(--line);color:var(--on-line);padding:22px 0 18px}
+.rail__wm{padding:0 20px 22px;border-bottom:1px solid var(--line-rule)}
+.rail__wm b{display:block;font-family:var(--f-serif);font-weight:600;font-size:17px;line-height:1.05;letter-spacing:.2em;text-transform:uppercase}
+.rail__wm span{display:block;margin-top:6px;color:var(--on-line-2)}
+.nav{display:flex;flex-direction:column;gap:2px;padding:16px 10px}
+.nav a{position:relative;display:flex;align-items:center;gap:12px;height:48px;padding:0 12px;border-radius:6px;color:var(--on-line-2);font-size:15.5px;font-weight:500;overflow:hidden}
+.nav a:hover{background:var(--line-2);color:var(--bone)}
+.nav a[aria-current]{background:var(--line-3);color:var(--bone);font-weight:600}
+.nav a[aria-current] .ico{color:var(--ember)}
+.nav a[aria-current]::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:2px;border-radius:0 2px 2px 0;background:var(--ember)}
+.nav a[aria-current]::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 120% at 0 50%,rgba(203,98,52,.20),rgba(203,98,52,0) 100%);pointer-events:none}
+.nav .badge{margin-left:auto;background:var(--bone);color:var(--ink)}
+.nav .sub{margin-left:auto;font-size:12.5px;color:var(--on-line-2)}
+.rail__foot{margin-top:auto;padding:0 20px}
+.rail__foot .lang{display:flex;height:36px;padding:2px;border-radius:7px;background:var(--line-3)}
+.rail__foot .lang button{flex:1;border-radius:5px;font-size:13px;font-weight:600;color:var(--on-line-2)}
+.rail__foot .lang button[aria-pressed="true"]{background:var(--bone);color:var(--ink)}
+.rail__foot p{margin-top:12px;font-size:13px;line-height:1.5;color:var(--on-line-2)}
+
+/* ---------- workspace ---------- */
+.ws{display:flex;flex-direction:column;min-width:0;height:100vh}
+.top{display:flex;align-items:center;gap:20px;height:62px;padding:0 20px;border-bottom:1px solid var(--rule-2);background:var(--canvas)}
+.top h1{font-family:var(--f-disp);font-weight:600;font-size:26px;letter-spacing:.04em;text-transform:uppercase;line-height:1}
+.subtabs{display:flex;align-self:stretch;gap:4px}
+.subtabs a{position:relative;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:15px;font-weight:500;color:var(--text-2)}
+.subtabs a[aria-current]{color:var(--ink);font-weight:700}
+.subtabs a[aria-current]::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;background:var(--ink)}
+.subtabs .badge{background:var(--oxblood)}
+.top__sp{flex:1}
+.status{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text-2);white-space:nowrap}
+.status b{color:var(--forest);font-weight:700}
+.status .pip{width:8px;height:8px;border-radius:50%;background:var(--forest);box-shadow:0 0 0 3px var(--ok-tint)}
+.vr{width:1px;height:28px;background:var(--rule-2)}
+.open{display:flex;align-items:center;gap:10px;font-size:14px;white-space:nowrap}
+.open b{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--ink)}
+.open .btn{min-height:36px;padding:0 12px;font-size:14px}
+.me{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.me i{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--bone);font-style:normal;font-family:var(--f-disp);font-weight:500;font-size:14px;letter-spacing:.04em}
+.me p{font-size:14px;line-height:1.3;font-weight:600}
+.me p span{display:block;font-weight:400;font-size:13px;color:var(--text-2)}
+
+/* ---------- floor strip ---------- */
+.floor{display:flex;align-items:center;gap:18px;height:74px;padding:0 20px;background:var(--sunken);border-bottom:1px solid var(--rule)}
+.floor__k{display:flex;flex-direction:column;gap:2px;min-width:70px}
+.floor__k .cap{color:var(--text-3)}
+.floor__k a{font-size:13.5px;font-weight:600;color:var(--forest);display:flex;align-items:center;gap:2px}
+.counts{display:flex;gap:18px}
+.count{display:flex;align-items:center;gap:9px}
+.count b{font-family:var(--f-disp);font-weight:500;font-size:30px;line-height:1}
+.count span{font-size:13.5px;line-height:1.3;color:var(--text-2)}
+.gl{display:inline-block;width:12px;height:12px;border-radius:3px;flex:none}
+.gl--free{border:1.5px dashed var(--control-line);background:var(--surface)}
+.gl--dine{background:var(--ink)}
+.gl--pay{background:var(--forest);box-shadow:inset 0 0 0 2.5px var(--forest),inset 0 0 0 4px var(--bone)}
+.tiles{flex:1;display:grid;grid-template-columns:repeat(15,1fr);gap:5px;min-width:0}
+.tile{position:relative;display:flex;flex-direction:column;justify-content:space-between;height:54px;padding:5px 7px 6px;border-radius:5px;font-size:12.5px;line-height:1.1}
+.tile b{font-family:var(--f-disp);font-weight:500;font-size:18px;line-height:1;letter-spacing:.02em}
+.tile--free{background:var(--surface);border:1.5px dashed var(--control-line);color:var(--text-2)}
+.tile--free span{color:var(--text-2)}
+.tile--dine{background:var(--ink);color:var(--bone)}
+.tile--dine span{color:var(--on-line-2);font-family:var(--f-disp);letter-spacing:.03em}
+.tile--pay{background:var(--forest);color:var(--bone)}
+.tile--pay span{display:flex;align-items:center;gap:3px;color:#D5DDD4}
+.tile .att{position:absolute;top:-7px;right:-6px;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--oxblood);color:var(--bone);box-shadow:0 0 0 2px var(--sunken)}
+.tile .att .ico{width:13px;height:13px;stroke-width:2}
+.tile .att--order{background:var(--forest)}
+.tile .att--new{background:var(--bone);color:var(--ink);font-family:var(--f-disp);font-weight:600;font-size:10px;letter-spacing:.04em;width:auto;padding:0 5px;border-radius:9px;height:18px;box-shadow:0 0 0 1.5px var(--ink)}
+
+/* ---------- the board ---------- */
+.board{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;padding:10px 20px 0}
+.col{display:flex;flex-direction:column;min-height:0}
+.col__h{position:relative;display:flex;align-items:center;gap:8px;height:40px;padding:0 2px}
+.col__h h2{font-family:var(--f-disp);font-weight:600;font-size:15px;letter-spacing:.14em;text-transform:uppercase}
+.col__h .badge{background:var(--sunken);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2)}
+.col__h small{margin-left:auto;font-size:13px;color:var(--text-2)}
+.rod{height:6px;border-radius:3px;background:linear-gradient(#c9c6bd,#8E8B82 70%,#6f6c64);box-shadow:0 1px 0 rgba(255,255,255,.5),0 2px 3px rgba(23,21,15,.18)}
+.stack{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:10px 0 16px;overflow:hidden}
+
+/* the pass column — under the lamp */
+.col--pass .col__h{justify-content:flex-start}
+.col--pass .lampw{position:absolute;right:6px;top:-12px;width:46px;height:40px}
+.col--pass .stack{position:relative}
+.col--pass .stack::before{content:"";position:absolute;inset:0 -8px auto;height:260px;background:radial-gradient(ellipse 70% 100% at 50% 0,rgba(203,98,52,.20),rgba(203,98,52,.06) 55%,rgba(203,98,52,0) 100%);pointer-events:none}
+.col--pass .rod{background:linear-gradient(#e9a17f,#CB6234 60%,#A8441E);box-shadow:0 1px 0 rgba(255,255,255,.4),0 3px 10px rgba(203,98,52,.35)}
+
+/* ---------- ticket ---------- */
+.tk{position:relative;padding:11px 12px 16px;--tooth:5px}
+.tk__h{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.tk__t{font-family:var(--f-disp);font-weight:600;font-size:30px;line-height:.95;letter-spacing:.01em}
+.tk__t small{display:block;margin-top:5px;font-family:var(--f-ui);font-weight:500;font-size:12.5px;letter-spacing:0;color:var(--text-2)}
+.tk__w{text-align:right;font-size:12.5px;line-height:1.35;color:var(--text-2);white-space:nowrap}
+.tk__w b{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-family:var(--f-disp);font-weight:500;font-size:19px;line-height:1.2;color:var(--ink)}
+.tk__w .ico{width:15px;height:15px}
+.tk__t small .ref{font-family:var(--f-disp);font-weight:500;letter-spacing:.06em;color:var(--ink)}
+.tk__ref{margin-top:6px;font-size:12.5px;color:var(--text-2);display:flex;gap:6px}
+.tk__ref b{font-family:var(--f-disp);font-weight:500;letter-spacing:.06em;color:var(--ink)}
+.tk hr{margin:9px 0 2px;border:0;border-top:1.5px dashed var(--rule-2)}
+.li{display:grid;grid-template-columns:28px 1fr;gap:0 4px;padding:5px 0}
+.li + .li{border-top:1px solid var(--rule)}
+.li__q{font-family:var(--f-disp);font-weight:600;font-size:17px;line-height:1.3}
+.li__n{font-size:15px;line-height:1.45;font-weight:600;color:var(--ink)}
+.li__n[lang="en"]{font-size:14.5px}
+.li__e{font-size:12.5px;line-height:1.35;color:var(--text-2)}
+.mod{display:inline-flex;align-items:center;gap:4px;margin:0 0 0 4px;vertical-align:1px;padding:1px 7px;border-radius:4px;background:var(--ink);color:var(--bone);font-size:12.5px;font-weight:600;line-height:1.5}
+.li__s{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:12.5px;font-weight:600}
+.li__s .ico{width:14px;height:14px;stroke-width:2.2}
+.li--done .li__q,.li--done .li__n{color:var(--text-3);text-decoration:line-through;text-decoration-thickness:1px}
+.li--done .li__s{color:var(--forest)}
+.dotn{width:8px;height:8px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 1.5px var(--surface),0 0 0 3px var(--ember)}
+
+.allergy{display:grid;grid-template-columns:auto 1fr;gap:0 8px;margin:9px -12px 0;padding:7px 12px 8px;background:var(--oxblood);color:var(--bone)}
+.allergy .ico{margin-top:2px}
+.allergy .cap{color:var(--bone);letter-spacing:.18em}
+.allergy p{font-size:16px;line-height:1.4;font-weight:700}
+.allergy .row{display:flex;align-items:baseline;gap:10px}
+.allergy small{display:block;font-size:12px;line-height:1.35;color:#EAD3D3;font-weight:400}
+.flag{display:flex;align-items:center;gap:6px;margin-top:8px;padding:5px 8px;border-radius:4px;border:1px solid var(--rule-2);font-size:12.5px;font-weight:600;line-height:1.35}
+.note{display:flex;gap:6px;margin-top:8px;padding:6px 8px;border-radius:4px;background:var(--sunken);font-size:14px;line-height:1.45}
+.note .ico{width:16px;height:16px;margin-top:2px;color:var(--text-3)}
+.weigh{display:flex;align-items:center;gap:4px;margin-top:3px;font-size:12.5px;font-weight:600;color:var(--forest)}
+.weigh .ico{width:14px;height:14px}
+
+.act{display:flex;gap:6px;margin-top:10px}
+.act .btn{flex:1 1 auto;min-width:0;min-height:40px;padding:0 9px;font-size:13.5px;gap:5px}
+.act .btn--outline{flex:none}
+.act .more{flex:none;width:40px;padding:0}
+.btn--primary .ico{width:16px;height:16px}
+
+.prog{display:flex;align-items:center;gap:3px;margin-top:8px}
+.seg{width:18px;height:6px;border-radius:2px}
+.seg--done{background:var(--forest)}
+.seg--now{background:var(--ink);box-shadow:inset 0 -2px 0 var(--ember)}
+.prog em{font-style:normal;margin-left:6px;font-size:12.5px;font-weight:600;color:var(--ink)}
+.tk--new{box-shadow:inset 0 0 0 2px var(--forest)}
+.newtag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:3px;background:var(--forest);color:var(--bone);font-family:var(--f-disp);font-weight:500;font-size:11px;letter-spacing:.12em;margin-left:6px;vertical-align:4px}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M4 17.5h16"/><path d="M6 17.5a6 6 0 0 1 12 0"/><path d="M12 11.5V9.5"/><path d="M10.5 9.5h3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5.5 12h13"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M4 19.5h16l-1.6-9.5H5.6z"/><circle cx="12" cy="6.5" r="2.5"/><path d="M12 9v1"/><path d="M12 14.5l1.8-1.8"/></symbol>
+  <symbol id="i-slash" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M6.4 17.6L17.6 6.4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+  <symbol id="i-chev-u" viewBox="0 0 24 24"><path d="M6 14.5l6-6 6 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4.5"/><path d="M12 17.2v.1"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5c3-1 5.5-.8 8 1 2.5-1.8 5-2 8-1v13c-3-1-5.5-.8-8 1-2.5-1.8-5-2-8-1z"/><path d="M12 6.5v13"/></symbol>
+  <symbol id="i-docket" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8.5h6M9 12h6M9 15.5h3.5"/></symbol>
+  <symbol id="i-track" viewBox="0 0 24 24"><circle cx="7" cy="5.5" r="2"/><circle cx="7" cy="12" r="2"/><circle cx="7" cy="18.5" r="2"/><path d="M7 7.5v2.5M7 14v2.5"/><path d="M12 5.5h7M12 12h7M12 18.5h4.5"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-3-1.6-3 1.6-3-1.6-3 1.6z"/><path d="M9 9h6M9 12.5h6"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10.5V5a1.5 1.5 0 0 1 3 0v5.5"/><path d="M14 10.5V6.5a1.5 1.5 0 0 1 3 0v6.5c0 4-2.5 7-6 7-2.6 0-4-1.3-5.3-3.4L4 13.5a1.5 1.5 0 0 1 2.5-1.6L8 14"/></symbol>
+  <symbol id="i-lamp" viewBox="0 0 24 24"><path d="M12 1.5v5"/><path d="M10.2 6.5h3.6l.6 2.2c3.3.9 5.6 3.6 5.6 7.3H4c0-3.7 2.3-6.4 5.6-7.3z"/></symbol>
+  <symbol id="i-orders" viewBox="0 0 24 24"><path d="M3 4.5h18"/><path d="M5.5 4.5v10.2l1.5-1 1.5 1 1.5-1 1.5 1V4.5"/><path d="M13 4.5v7.2l1.5-1 1.5 1 1.5-1 1.5 1V4.5"/></symbol>
+  <symbol id="i-tables" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><rect x="13.5" y="13.5" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M7 3.5v17"/><path d="M4.5 3.5v5a2.5 2.5 0 0 0 5 0v-5"/><path d="M17 20.5v-17c-2.2 1-3.5 3.5-3.5 7v3.5H17"/></symbol>
+  <symbol id="i-insights" viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M6.5 16.5v-5M11 16.5V7M15.5 16.5v-7M20 16.5V4.5"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4"/><path d="M5.5 4.5h11l-2 4 2 4h-11"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 4.5h14v10l-5 5H5z"/><path d="M14 19.5v-5h5"/><path d="M8.5 9h7M8.5 12h4"/></symbol>
+  <symbol id="i-wine" viewBox="0 0 24 24"><path d="M8 3.5h8l-.5 5a3.5 3.5 0 0 1-7 0z"/><path d="M12 12v8M8.5 20.5h7"/></symbol>
+  <symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M4.5 12h15M14 6.5l5.5 5.5-5.5 5.5"/></symbol>
+</svg>
+
+
+<aside class="rail on-line">
+  <div class="rail__wm"><b>Rabbit<br>Grill</b><span class="cap">Staff · Khao Yai</span></div>
+  <nav class="nav" aria-label="Staff">
+    <a href="#" aria-current="page"><svg class="ico" aria-hidden="true"><use href="#i-orders"/></svg>Orders<span class="badge num" aria-label="2 new orders">2</span></a>
+    <a href="#"><svg class="ico" aria-hidden="true"><use href="#i-tables"/></svg>Tables</a>
+    <a href="#"><svg class="ico" aria-hidden="true"><use href="#i-menu"/></svg>Menu</a>
+    <a href="#"><svg class="ico" aria-hidden="true"><use href="#i-insights"/></svg>Insights</a>
+    <a href="#"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg>More</a>
+  </nav>
+  <div class="rail__foot">
+    <div class="lang" role="group" aria-label="Language"><button type="button" aria-pressed="false" lang="th" class="th">ไทย</button><button type="button" aria-pressed="true">EN</button></div>
+    <p>Thu 17 Sep<br>Asia/Bangkok time</p>
+  </div>
+</aside>
+
+<div class="ws">
+  <header class="top">
+    <h1>Orders</h1>
+    <nav class="subtabs" aria-label="Orders views">
+      <a href="#" aria-current="page">Board</a>
+      <a href="#">Requests <span class="badge num" aria-label="2 open requests">2</span></a>
+    </nav>
+    <span class="top__sp"></span>
+    <p class="status" role="status"><i class="pip" aria-hidden="true"></i><b>Live</b><span>synced <span class="num">19:56:08</span></span></p>
+    <span class="vr" aria-hidden="true"></span>
+    <div class="open"><b><svg class="ico ico--sm" aria-hidden="true" style="stroke-width:2.2"><use href="#i-check"/></svg>Ordering open</b><button type="button" class="btn btn--outline"><svg class="ico ico--sm" aria-hidden="true"><use href="#i-pause"/></svg>Pause</button></div>
+    <span class="vr" aria-hidden="true"></span>
+    <div class="me"><i aria-hidden="true">K1</i><p>Kitchen 1<span>Kitchen · signed in 16:02</span></p></div>
+  </header>
+
+  <!-- live table summary; the full grid lives in Tables -->
+  <section class="floor" aria-label="Tables summary">
+    <div class="floor__k"><span class="cap">Tables</span><a href="#">View all<svg class="ico ico--sm" aria-hidden="true"><use href="#i-chev-r"/></svg></a></div>
+    <div class="counts">
+      <p class="count"><i class="gl gl--free" aria-hidden="true"></i><b class="num">9</b><span>Available</span></p>
+      <p class="count"><i class="gl gl--dine" aria-hidden="true"></i><b class="num">5</b><span>Dining</span></p>
+      <p class="count"><i class="gl gl--pay" aria-hidden="true"></i><b class="num">1</b><span>Checking<br>out</span></p>
+    </div>
+    <ol class="tiles" aria-label="Tables 01 to 15">
+      <li class="tile tile--free" aria-label="Table 01, available"><b class="num">01</b><span>Free</span></li>
+      <li class="tile tile--dine" aria-label="Table 02, dining 1 hour 4 minutes"><b class="num">02</b><span class="num">1h 04</span></li>
+      <li class="tile tile--dine" aria-label="Table 03, dining 3 minutes, new order waiting"><b class="num">03</b><span class="num">3m</span><i class="att att--order" aria-hidden="true"><svg class="ico"><use href="#i-docket"/></svg></i></li>
+      <li class="tile tile--free" aria-label="Table 04, available"><b class="num">04</b><span>Free</span></li>
+      <li class="tile tile--pay" aria-label="Table 05, checking out, bill requested"><b class="num">05</b><span><svg class="ico ico--sm" aria-hidden="true" style="width:13px;height:13px"><use href="#i-receipt"/></svg>Bill</span><i class="att" aria-hidden="true"><svg class="ico"><use href="#i-bell"/></svg></i></li>
+      <li class="tile tile--free" aria-label="Table 06, available"><b class="num">06</b><span>Free</span></li>
+      <li class="tile tile--dine" aria-label="Table 07, dining 41 minutes"><b class="num">07</b><span class="num">41m</span></li>
+      <li class="tile tile--free" aria-label="Table 08, available"><b class="num">08</b><span>Free</span></li>
+      <li class="tile tile--dine" aria-label="Table 09, dining 29 minutes"><b class="num">09</b><span class="num">29m</span></li>
+      <li class="tile tile--free" aria-label="Table 10, available"><b class="num">10</b><span>Free</span></li>
+      <li class="tile tile--free" aria-label="Table 11, available"><b class="num">11</b><span>Free</span></li>
+      <li class="tile tile--dine" aria-label="Table 12, dining 22 minutes, staff call waiting"><b class="num">12</b><span class="num">22m</span><i class="att" aria-hidden="true"><svg class="ico"><use href="#i-bell"/></svg></i></li>
+      <li class="tile tile--free" aria-label="Table 13, available"><b class="num">13</b><span>Free</span></li>
+      <li class="tile tile--free" aria-label="Table 14, available"><b class="num">14</b><span>Free</span></li>
+      <li class="tile tile--free" aria-label="Table 15, available"><b class="num">15</b><span>Free</span></li>
+    </ol>
+  </section>
+
+  <main class="board" aria-label="Order board">
+    <!-- NEW -->
+    <section class="col" aria-labelledby="c1">
+      <div class="col__h"><h2 id="c1">New</h2><span class="badge num">2</span><small>Accept to confirm</small></div>
+      <div class="rod" aria-hidden="true"></div>
+      <div class="stack">
+        <article class="docket-wrap"><div class="docket tk tk--new">
+          <div class="tk__h">
+            <p class="tk__t num">T03<span class="newtag">NEW</span><small><b class="ref">RG-4M2Q</b> · Round 1</small></p>
+            <p class="tk__w"><b class="num"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>1 min</b>sent <span class="num">19:55</span></p>
+          </div>
+          
+          <div class="allergy" role="note">
+            <svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>
+            <div><p class="row"><span class="cap">Allergy</span><span class="th" lang="th" style="font-size:16px;font-weight:700">แพ้ถั่วลิสง</span></p><small>As written by the guest</small></div>
+          </div>
+          <hr>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">เนื้อสันนอกออสเตรเลีย</p><p class="li__e">Australian Striploin</p></div></div>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">มันบด</p><p class="li__e">Mashed Potato</p></div></div>
+          <div class="li"><span class="li__q num">2×</span><div><p class="li__n" lang="th">เฟรนช์ฟรายส์</p><p class="li__e">French Fries</p></div></div>
+          <div class="act"><button type="button" class="btn btn--primary">Accept<svg class="ico" aria-hidden="true"><use href="#i-arrow-r"/></svg></button><button type="button" class="btn btn--outline more" aria-label="Details and exceptions"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg></button></div>
+        </div></article>
+
+        <article class="docket-wrap"><div class="docket tk tk--new">
+          <div class="tk__h">
+            <p class="tk__t num">T12<span class="newtag">NEW</span><small><b class="ref">RG-4M3T</b> · Round 2</small></p>
+            <p class="tk__w"><b class="num"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>2 min</b>sent <span class="num">19:54</span></p>
+          </div>
+          
+          <hr>
+          <div class="li"><span class="li__q num">2×</span><div><p class="li__n" lang="en">Hoegaarden White <span class="mod">500 ml</span></p></div></div>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="en">Matcha Latte <span class="mod">Iced</span></p><p class="li__e">Special Matcha</p></div></div>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">น้ำลำไย</p><p class="li__e">Longan Juice</p></div></div>
+          <p class="flag"><svg class="ico ico--sm" aria-hidden="true"><use href="#i-wine"/></svg>Alcohol · staff to confirm</p>
+          <div class="act"><button type="button" class="btn btn--primary">Accept<svg class="ico" aria-hidden="true"><use href="#i-arrow-r"/></svg></button><button type="button" class="btn btn--outline more" aria-label="Details and exceptions"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg></button></div>
+        </div></article>
+      </div>
+    </section>
+
+    <!-- ACCEPTED -->
+    <section class="col" aria-labelledby="c2">
+      <div class="col__h"><h2 id="c2">Accepted</h2><span class="badge num">1</span></div>
+      <div class="rod" aria-hidden="true"></div>
+      <div class="stack">
+        <article class="docket-wrap"><div class="docket tk">
+          <div class="tk__h">
+            <p class="tk__t num">T02<small><b class="ref">RG-4M1H</b> · Round 3</small></p>
+            <p class="tk__w"><b class="num"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>5 min</b>sent <span class="num">19:51</span></p>
+          </div>
+          
+          <hr>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">เห็ดผัด</p><p class="li__e">Sauteed Mushrooms</p></div></div>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">บรอกโคลีเล็กผัด</p><p class="li__e">Sauteed Mini Broccoli</p></div></div>
+          <p class="note"><svg class="ico" aria-hidden="true"><use href="#i-note"/></svg><span lang="th">ขอจานแบ่ง 2 ใบ</span></p>
+          <div class="act"><button type="button" class="btn btn--primary">Start preparing</button><button type="button" class="btn btn--outline more" aria-label="Details and exceptions"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg></button></div>
+        </div></article>
+      </div>
+    </section>
+
+    <!-- PREPARING -->
+    <section class="col" aria-labelledby="c3">
+      <div class="col__h"><h2 id="c3">Preparing</h2><span class="badge num">2</span></div>
+      <div class="rod" aria-hidden="true"></div>
+      <div class="stack">
+        <article class="docket-wrap"><div class="docket tk">
+          <div class="tk__h">
+            <p class="tk__t num">T07<small><b class="ref">RG-4K7P</b> · Round 2</small></p>
+            <p class="tk__w"><b class="num"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>14 min</b>sent <span class="num">19:42</span></p>
+          </div>
+          
+          <p class="prog" aria-label="1 of 3 dishes served, 2 cooking"><span class="seg seg--done"></span><span class="seg seg--now"></span><span class="seg seg--now"></span><em>1 served · 2 cooking</em></p>
+          <hr>
+          <div class="li li--done"><span class="li__q num">1×</span><div><p class="li__n" lang="th">คอร์นริบ</p><p class="li__s"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Served <span class="num">19:50</span></p></div></div>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">กุ้งแม่น้ำย่าง</p><p class="li__e">Grilled River Prawns</p><p class="li__s"><i class="dotn" aria-hidden="true"></i>Cooking</p></div></div>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">ซี่โครงหมูย่าง</p><p class="li__e">Grilled Pork Ribs</p><p class="li__s"><i class="dotn" aria-hidden="true"></i>Cooking</p></div></div>
+          <div class="act"><button type="button" class="btn btn--outline">Almost done</button><button type="button" class="btn btn--primary">Mark 2 ready</button></div>
+        </div></article>
+
+        <article class="docket-wrap"><div class="docket tk">
+          <div class="tk__h">
+            <p class="tk__t num">T12<small><b class="ref">RG-4L1C</b> · Round 1</small></p>
+            <p class="tk__w"><b class="num"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>18 min</b>sent <span class="num">19:38</span></p>
+          </div>
+          
+          <hr>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">ไพร์มริบ</p><p class="li__e">Prime Rib</p><p class="weigh"><svg class="ico" aria-hidden="true"><use href="#i-scale"/></svg><span>420 g · confirmed 19:40</span></p></div></div>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">มันบด</p><p class="li__e">Mashed Potato</p></div></div>
+          <div class="act"><button type="button" class="btn btn--outline">Almost done</button><button type="button" class="btn btn--primary">Mark 2 ready</button></div>
+        </div></article>
+      </div>
+    </section>
+
+    <!-- ALMOST DONE (optional milestone) -->
+    <section class="col" aria-labelledby="c4">
+      <div class="col__h"><h2 id="c4">Almost done</h2><span class="badge num">1</span><small>optional</small></div>
+      <div class="rod" aria-hidden="true"></div>
+      <div class="stack">
+        <article class="docket-wrap"><div class="docket tk">
+          <div class="tk__h">
+            <p class="tk__t num">T09<small><b class="ref">RG-4K2W</b> · Round 1</small></p>
+            <p class="tk__w"><b class="num"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>26 min</b>sent <span class="num">19:30</span></p>
+          </div>
+          
+          <hr>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">เนื้อสันในวากิวย่างซอสไวน์แดง</p><p class="li__e">Wagyu Tenderloin MB 6–7 · 300 g</p></div></div>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">สลัดรวมกับซอสบัลซามิก</p><p class="li__e">Green Salad with Balsamic Dressing</p></div></div>
+          <div class="act"><button type="button" class="btn btn--primary">Mark ready<svg class="ico" aria-hidden="true"><use href="#i-arrow-r"/></svg></button><button type="button" class="btn btn--outline more" aria-label="Details and exceptions"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg></button></div>
+        </div></article>
+      </div>
+    </section>
+
+    <!-- READY — the pass, under the heat lamp -->
+    <section class="col col--pass" aria-labelledby="c5">
+      <div class="col__h"><h2 id="c5">Ready</h2><span class="badge num">2</span><small style="margin-left:6px">at the pass</small>
+        <svg class="lampw" viewBox="0 0 46 40" aria-hidden="true"><path d="M23 0v10" stroke="#17150F" stroke-width="1.5"/><path d="M19.6 10h6.8l1.1 4.4C34.4 16.3 39.5 22 39.5 30h-33c0-8 5.1-13.7 12-15.6z" fill="#17150F"/><path d="M15 33.5h16" stroke="#CB6234" stroke-width="3" stroke-linecap="round"/></svg>
+      </div>
+      <div class="rod" aria-hidden="true"></div>
+      <div class="stack">
+        <article class="docket-wrap"><div class="docket tk">
+          <div class="tk__h">
+            <p class="tk__t num">T02<small><b class="ref">RG-4K5N</b> · Round 2</small></p>
+            <p class="tk__w"><b class="num"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>3 min</b>ready <span class="num">19:53</span></p>
+          </div>
+          
+          <hr>
+          <div class="li"><span class="li__q num">1×</span><div><p class="li__n" lang="th">ปลาย่าง</p><p class="li__e">Grilled Fish</p></div></div>
+          <div class="act"><button type="button" class="btn btn--primary"><svg class="ico" aria-hidden="true" style="stroke-width:2.2"><use href="#i-check"/></svg>Mark served</button><button type="button" class="btn btn--outline more" aria-label="Details and exceptions"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg></button></div>
+        </div></article>
+
+        <article class="docket-wrap"><div class="docket tk">
+          <div class="tk__h">
+            <p class="tk__t num">T09<small><b class="ref">RG-4L3V</b> · Round 2</small></p>
+            <p class="tk__w"><b class="num"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>1 min</b>ready <span class="num">19:55</span></p>
+          </div>
+          
+          <hr>
+          <div class="li"><span class="li__q num">2×</span><div><p class="li__n" lang="en">Orange Juice</p><p class="li__e">No Thai name on file</p></div></div>
+          <div class="act"><button type="button" class="btn btn--primary"><svg class="ico" aria-hidden="true" style="stroke-width:2.2"><use href="#i-check"/></svg>Mark served</button><button type="button" class="btn btn--outline more" aria-label="Details and exceptions"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg></button></div>
+        </div></article>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

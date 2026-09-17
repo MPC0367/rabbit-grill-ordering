@@ -1,0 +1,188 @@
+/* =====================================================================
+   RABBIT GRILL KHAO YAI - base layer
+   Spec: docs/DESIGN.md §0.2 (page contract), §4 (typography), §5 (focus),
+   §7 (motion). Reads tokens from tokens.css only. Loaded after tokens and
+   before components.css (see client/src/main.tsx).
+   ===================================================================== */
+
+/* ---------- reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--canvas);
+  color: var(--text);
+  color-scheme: light;               /* guest surfaces are paper-led; no automatic dark mode in V1 */
+  -webkit-tap-highlight-color: transparent;
+  hanging-punctuation: first last;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--canvas);
+  color: var(--text);
+  /* Thai-safe default: Noto Sans Thai, 16/1.6, zero tracking (§4.2) */
+  font: var(--type-body-th);
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+img, svg, video, canvas, picture { display: block; max-width: 100%; }
+img, video { height: auto; }
+svg { overflow: visible; }
+
+button, input, textarea, select, optgroup {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  margin: 0;
+}
+button { background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; border-radius: 0; }
+button:disabled { cursor: not-allowed; }
+input, textarea, select { border-radius: 0; }
+textarea { resize: vertical; }
+a { color: inherit; text-decoration: none; }
+a:not([href]) { cursor: default; }
+
+h1, h2, h3, h4, h5, h6, p, ul, ol, figure, blockquote, dl, dd, fieldset, legend, pre { margin: 0; padding: 0; }
+fieldset { border: 0; min-width: 0; }
+legend { float: none; }
+ul, ol { list-style: none; }
+table { border-collapse: collapse; }
+summary { cursor: pointer; }
+output { display: inline-block; }
+dialog { color: inherit; }
+[hidden] { display: none !important; }
+
+/* Headings keep the Thai line-height floor even when a component sets only a size. */
+h1, h2, h3, h4, h5, h6 { line-height: var(--lh-thai-min); text-wrap: balance; }
+p { text-wrap: pretty; }
+
+/* ---------- Thai typography guard (§4.2) ----------
+   Thai is never tracked or transformed. Tracking tokens are already 0
+   under :lang(th) (tokens.css); this also covers literal letter-spacing
+   on elements that explicitly carry lang="th". */
+[lang="th"] { text-transform: none; }
+
+/* Oswald and Noto have no italic: never synthesise one. */
+em, i, cite, dfn { font-style: normal; }
+em { font-weight: var(--fw-semibold); }
+
+/* Numbers: tabular + lining wherever a helper class asks for it */
+.num { font-variant-numeric: tabular-nums lining-nums; font-feature-settings: var(--num-features); }
+
+/* ---------- selection ----------
+   Ember-on-bone text fails contrast (3.58), so selection is a warm tint
+   with ink text (14.46). The dark scope remaps both roles. */
+::selection { background: var(--heat-tint); color: var(--text); }
+
+/* ---------- focus (§5) ---------- */
+:focus { outline: none; }
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+  border-radius: 2px;
+}
+dialog:focus-visible, [tabindex="-1"]:focus-visible { outline: none; }
+
+/* ---------- utilities ---------- */
+.visually-hidden, .sr {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.skip {
+  position: fixed; left: 8px; top: 8px; z-index: var(--z-skip);
+  transform: translateY(-160%);
+  background: var(--inverse); color: var(--on-inverse);
+  padding: 10px 14px; border-radius: var(--radius-ctl);
+  font: var(--type-control-th);
+}
+.skip:focus, .skip:focus-visible { transform: none; }
+
+/* scroll lock while a modal sheet is open (ui/overlay.ts) */
+html.is-locked { overflow: hidden; }
+html.is-locked body { overscroll-behavior: none; }
+
+/* ---------- app loading (App.tsx Suspense fallback) ----------
+   Quiet: nothing appears for 400ms, then one small ring. No glow. */
+.app-loading {
+  min-height: 60vh;
+  min-height: 60dvh;
+  display: grid;
+  place-items: center;
+  background: var(--canvas);
+}
+.app-loading::before {
+  content: "";
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--edge);
+  border-right-color: transparent;
+  opacity: 0;
+  animation: app-loading-in var(--dur-fast) var(--ease-out) 400ms forwards, spin 900ms linear infinite;
+}
+@keyframes app-loading-in { to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(1turn); } }
+
+/* ---------- charcoal scope (§3.4) ----------
+   Roles remap in tokens.css; this gives the scope its own paint. */
+[data-surface="dark"] {
+  background: var(--canvas);
+  color: var(--text);
+}
+[data-surface="dark"] ::selection { background: var(--heat-tint); color: var(--text); }
+
+/* ---------- reduced motion (§7) ----------
+   Durations are already 1ms via tokens; this also stops keyframes that
+   use literal timings and any smooth scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+[data-motion="reduce"],
+[data-motion="reduce"] *,
+[data-motion="reduce"] *::before,
+[data-motion="reduce"] *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ---------- print basics (§3.4: white paper, black rules) ---------- */
+@media print {
+  html, body { background: var(--surface); color: var(--text); }
+  body { min-height: 0; }
+  * { box-shadow: none !important; text-shadow: none !important; }
+  .no-print, .skip, .dock, .toast-region, dialog, .app-loading { display: none !important; }
+  a { text-decoration: none; }
+  img { break-inside: avoid; }
+  h1, h2, h3 { break-after: avoid; }
+  table { break-inside: auto; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  @page { margin: 16mm; }
+}

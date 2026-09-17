@@ -1,0 +1,12 @@
+node_modules/
+dist/
+# Runtime data: the SQLite database, generated reports and uploads never go in git.
+var/
+.env
+*.log
+# QA output
+test/visual/out/
+test/e2e/out/
+design-lab/**/*.png
+Thumbs.db
+.DS_Store

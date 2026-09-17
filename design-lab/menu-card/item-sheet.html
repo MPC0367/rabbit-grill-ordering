@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Item Sheet · Menu Card</title>
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/noto-sans-thai/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/oswald/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/index.css">
+<link rel="stylesheet" href="../../node_modules/@fontsource-variable/cormorant-garamond/wght-italic.css">
+<style>
+/* ================================================================
+   THE MENU CARD — item detail sheet (open) over the dimmed menu
+   ================================================================ */
+:root{
+  --paper:#F3ECDD; --paper-2:#E9E0CB; --bone:#F8F4EA;
+  --ink:#17150F; --ink-2:#221E16; --ink-3:#2E2921;
+  --forest:#1E4230; --forest-2:#2C5A40; --oxblood:#6E1621;
+  --taupe:#6B5E4B; --ember:#CB6234; --ember-ink:#A8441E; --steel:#8E8B82;
+
+  --canvas:var(--paper); --surface:var(--bone); --well:var(--paper-2);
+  --text:var(--ink); --text-2:#5D574A; --label:var(--taupe);
+  --action:var(--forest); --action-2:var(--forest-2); --on-action:var(--bone);
+  --alert:var(--oxblood);
+  --rule:rgba(23,21,15,.14); --rule-soft:rgba(23,21,15,.08); --rule-ink:var(--ink);
+  --leader:var(--steel); --focus:var(--ember);
+  --edge:#857D6E; /* control boundary: 3.46 on paper, 3.71 on bone */
+  --scrim:rgba(23,21,15,.56);
+
+  --f-serif:"Cormorant Garamond Variable","Noto Sans Thai Variable",Georgia,serif;
+  --f-label:"Oswald Variable","Noto Sans Thai Variable","Arial Narrow",sans-serif;
+  --f-ui:"Noto Sans Thai Variable","Helvetica Neue",Arial,sans-serif;
+
+  --r-hair:2px; --r-ctl:6px; --r-sheet:16px;
+  --t-sheet:220ms; --ease:cubic-bezier(.2,.7,.3,1);
+  --tap:44px; --gut:16px; --mast-h:60px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--f-ui);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3,p,ul,ol,fieldset,legend{margin:0;padding:0}
+fieldset{border:0}
+ul,ol{list-style:none}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+svg{display:block;flex:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+.ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.cap{font-family:var(--f-label);font-weight:500;letter-spacing:0}
+.cap:lang(en){letter-spacing:.18em;text-transform:uppercase}
+.lead{display:flex;align-items:last baseline;gap:6px}
+.lead .nm{flex:0 1 auto;min-width:0}
+.lead .dots{flex:1 1 18px;min-width:18px;height:2px;background-image:radial-gradient(circle at 1px 1px,var(--leader) .75px,transparent 1.05px);background-size:5px 2px;background-repeat:repeat-x}
+.lead .val{flex:none}
+.price{font-family:var(--f-label);font-weight:500;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.price .cur{font-family:var(--f-ui);font-size:.8em;margin-right:1px}
+
+/* ---------- the menu behind (inert, dimmed) ---------- */
+.behind{height:100%;overflow:hidden}
+.mast{background:var(--canvas);border-bottom:1px solid var(--rule-ink);box-shadow:0 3px 0 0 var(--canvas),0 4px 0 0 rgba(23,21,15,.28)}
+.mast-in{height:var(--mast-h);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:0 var(--gut)}
+.tabletag{justify-self:start;display:inline-flex;align-items:center;gap:6px;height:var(--tap);padding:0 12px;border:1px solid var(--rule-ink);border-radius:var(--r-hair)}
+.tabletag .k{font-size:13px;line-height:1;color:var(--text-2)}
+.tabletag .n{font-family:var(--f-label);font-weight:500;font-size:21px;line-height:1}
+.wordmark{display:flex;flex-direction:column;align-items:center;line-height:1}
+.wordmark .w1{font-family:var(--f-serif);font-weight:600;font-size:18px;letter-spacing:.16em;text-transform:uppercase;padding-left:.16em}
+.wordmark .w2{margin-top:5px;font-family:var(--f-label);font-size:10px;letter-spacing:.36em;text-transform:uppercase;color:var(--label);padding-left:.36em}
+.lang{justify-self:end;display:inline-flex;height:var(--tap);border:1px solid var(--edge);border-radius:var(--r-hair);overflow:hidden}
+.lang span{display:grid;place-items:center;min-width:42px;padding:0 9px;font-size:14px;color:var(--text-2)}
+.lang span.on{background:var(--ink);color:var(--bone);font-weight:600}
+.bg-rows{padding:18px var(--gut)}
+.bg-row{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--rule-soft)}
+.bg-row .plate{flex:none;width:116px;aspect-ratio:4/3;padding:3px;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-hair)}
+.bg-row .plate img{width:100%;height:100%;object-fit:cover}
+.bg-row p{font-size:17px;font-weight:600}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40}
+
+/* ---------- the sheet ---------- */
+.sheet{position:fixed;left:0;right:0;bottom:0;top:36px;z-index:50;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--r-sheet) var(--r-sheet) 0 0;box-shadow:0 -10px 30px rgba(23,21,15,.22);
+  animation:rise var(--t-sheet) var(--ease) both}
+@keyframes rise{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}
+.grab{flex:none;display:flex;justify-content:center;padding-top:8px}
+.grab i{width:40px;height:4px;border-radius:2px;background:rgba(23,21,15,.22)}
+.sh-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 8px 4px var(--gut)}
+.sh-head .kick{display:flex;align-items:center;gap:8px;color:var(--label);font-size:13.5px}
+.sh-head .kick .cap{font-size:12px}
+.close{display:grid;place-items:center;width:var(--tap);height:var(--tap);border-radius:50%;color:var(--text)}
+.close .ico{width:22px;height:22px}
+.sh-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 var(--gut) 24px}
+
+.photo{padding:4px;background:var(--canvas);border:1px solid var(--rule);border-radius:var(--r-hair)}
+.photo img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.title{margin-top:16px}
+.title h2{font-size:25px;font-weight:600;line-height:1.5}
+.title .en{font-family:var(--f-serif);font-style:italic;font-weight:500;font-size:22px;line-height:1.2;color:var(--label)}
+.priceline{margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+.priceline .nm{font-size:15px;color:var(--text-2)}
+.priceline .price{font-size:24px}
+
+.block{margin-top:22px}
+.block-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.block-h{float:left;width:100%}
+.block-h .h3,.block-h h3{font-size:17px;font-weight:600;line-height:1.5}
+.block-h + .sub{clear:both}
+.block-h .rule-txt{font-size:13.5px;color:var(--text-2)}
+.req{display:inline-flex;align-items:center;height:24px;padding:0 8px;border:1px solid var(--ink);border-radius:3px;font-size:12.5px;font-weight:600;line-height:1}
+.block .sub{font-size:13.5px;color:var(--text-2);line-height:1.6}
+
+.opts{margin-top:8px;border-top:1px solid var(--rule-soft)}
+.opt{display:flex;align-items:center;gap:12px;min-height:52px;padding:4px 2px;border-bottom:1px solid var(--rule-soft);cursor:pointer}
+.opt:last-child{border-bottom:0}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.radio{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--taupe);background:var(--surface)}
+.opt .lead{flex:1}
+.opt .nm{font-size:15.5px}
+.opt .val{font-size:13.5px;color:var(--text-2)}
+.opt:has(input:checked) .radio{border-color:var(--forest);border-width:2px}
+.opt:has(input:checked) .radio::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--forest)}
+.opt:has(input:checked) .nm{font-weight:600}
+.opt:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
+
+.qty{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:14px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.qty h3{font-size:17px;font-weight:600}
+.step{display:inline-flex;align-items:center;height:var(--tap);border:1px solid var(--action);border-radius:var(--r-ctl);color:var(--action)}
+.step button{width:var(--tap);height:100%;display:grid;place-items:center}
+.step button[disabled]{color:rgba(30,66,48,.35);cursor:not-allowed}
+.step output{min-width:30px;text-align:center;font-family:var(--f-label);font-weight:500;font-size:19px;color:var(--text)}
+
+.note label{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.note label .h3{font-size:17px;font-weight:600;line-height:1.5}
+.note textarea{display:block;width:100%;margin-top:8px;min-height:84px;padding:10px 12px;border:1px solid var(--rule-ink);border-radius:var(--r-ctl);background:var(--canvas);font-size:15px;line-height:1.6;resize:none}
+.note .meta{margin-top:6px;display:flex;justify-content:space-between;gap:12px;font-size:13px;line-height:1.55;color:var(--text-2)}
+.note .count{flex:none;font-family:var(--f-label);font-weight:500;letter-spacing:.04em;font-size:13px}
+
+.allergen{margin-top:22px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;padding:14px;border-radius:var(--r-ctl);background:var(--well)}
+.allergen .i{grid-row:1/3;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--ink)}
+.allergen h3{font-size:15.5px;font-weight:600;line-height:1.5}
+.allergen p{font-size:14px;line-height:1.6;color:var(--text-2)}
+.allergen button{grid-column:2;justify-self:start;margin-top:8px;display:inline-flex;align-items:center;gap:8px;height:var(--tap);padding:0 14px 0 11px;border:1px solid var(--ink);border-radius:var(--r-ctl);background:var(--surface);font-size:14.5px;font-weight:600}
+
+.sh-foot{flex:none;padding:10px var(--gut) calc(12px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--rule);box-shadow:0 -6px 14px rgba(23,21,15,.05)}
+.addbtn{width:100%;height:54px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:var(--r-ctl);background:var(--action);color:var(--on-action);font-size:16.5px;font-weight:600}
+.addbtn .lead{flex:1;align-items:center}
+.addbtn .dots{--leader:rgba(248,244,234,.5);align-self:center;margin-top:6px}
+.addbtn .price{font-size:21px}
+
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}*,*::before,*::after{transition-duration:1ms!important}}
+</style>
+<script>
+  // QA: #end scrolls the sheet body to its bottom so the lower half can be captured
+  addEventListener('load',()=>{ if(location.hash==='#end'){ const b=document.querySelector('.sh-body'); b.scrollTop=b.scrollHeight; } });
+</script>
+</head>
+<body>
+
+<!-- ===== The menu, dimmed and inert behind the sheet ===== -->
+<div class="behind" aria-hidden="true" inert>
+  <header class="mast">
+    <div class="mast-in">
+      <div class="tabletag"><span class="k">โต๊ะ</span><span class="n">07</span></div>
+      <div class="wordmark"><span class="w1">Rabbit Grill</span><span class="w2">Khao Yai</span></div>
+      <div class="lang"><span class="on">ไทย</span><span>EN</span></div>
+    </div>
+  </header>
+  <div class="bg-rows">
+    <div class="bg-row"><span class="plate"><img src="../../../img/primerib-full.jpg" alt=""></span><p>ไพร์มริบ</p></div>
+    <div class="bg-row"><span class="plate"><img src="../../../img/wagyu-tenderloin.jpg" alt=""></span><p>เนื้อสันในวากิวย่างซอสไวน์แดง</p></div>
+    <div class="bg-row"><span class="plate"><img src="../../../img/striploin.jpg" alt=""></span><p>เนื้อสันนอกออสเตรเลีย</p></div>
+  </div>
+</div>
+<div class="scrim"></div>
+
+<!-- ===== Sheet ===== -->
+<section class="sheet" role="dialog" aria-modal="true" aria-labelledby="dish-title">
+  <div class="grab" aria-hidden="true"><i></i></div>
+  <div class="sh-head">
+    <p class="kick"><span class="cap" lang="en">No. 01</span><span aria-hidden="true">·</span>เนื้อ</p>
+    <button class="close" aria-label="ปิด"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+
+  <div class="sh-body">
+    <figure class="photo" style="margin:0"><img src="../../../img/striploin.jpg" alt="สันนอกออสเตรเลียย่าง หั่นเป็นชิ้น วางบนถาดสแตนเลสกับกระเทียมอบและโรสแมรี่" width="350" height="197"></figure>
+
+    <div class="title">
+      <h2 id="dish-title">เนื้อสันนอกออสเตรเลีย</h2>
+      <p class="en" lang="en">Australian Striploin</p>
+    </div>
+    <div class="priceline lead"><span class="nm">ราคา</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>590</span></div>
+
+    <!-- ============================================================
+         DESIGN PLACEHOLDER — NOT A RESTAURANT CLAIM.
+         This choice group only shows how an OWNER-CONFIGURED required
+         single-choice group will look. Rabbit Grill has not confirmed
+         that this dish offers doneness choices, nor these labels.
+         The live app renders only groups staff have configured.
+         ============================================================ -->
+    <fieldset class="block" aria-describedby="g1-rule">
+      <legend class="block-h"><span class="h3">ระดับความสุก</span><span class="req">ต้องเลือก</span></legend>
+      <p class="sub" id="g1-rule">เลือก 1 อย่าง</p>
+      <div class="opts" role="radiogroup">
+        <label class="opt"><input type="radio" name="g1"><span class="radio" aria-hidden="true"></span><span class="lead"><span class="nm">มีเดียมแรร์</span><span class="dots" aria-hidden="true"></span><span class="val">รวมในราคา</span></span></label>
+        <label class="opt"><input type="radio" name="g1" checked><span class="radio" aria-hidden="true"></span><span class="lead"><span class="nm">มีเดียม</span><span class="dots" aria-hidden="true"></span><span class="val">รวมในราคา</span></span></label>
+        <label class="opt"><input type="radio" name="g1"><span class="radio" aria-hidden="true"></span><span class="lead"><span class="nm">มีเดียมเวลล์</span><span class="dots" aria-hidden="true"></span><span class="val">รวมในราคา</span></span></label>
+      </div>
+    </fieldset>
+
+    <div class="qty">
+      <h3 id="qty-l">จำนวน</h3>
+      <div class="step" role="group" aria-labelledby="qty-l">
+        <button disabled aria-label="ลดจำนวน"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+        <output aria-live="polite">1</output>
+        <button aria-label="เพิ่มจำนวน"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+      </div>
+    </div>
+
+    <div class="block note">
+      <label for="note"><span class="h3">หมายเหตุถึงครัว</span><span class="sub">ไม่บังคับ</span></label>
+      <textarea id="note" maxlength="140" aria-describedby="note-help note-count">ขอซอสแยกค่ะ</textarea>
+      <div class="meta">
+        <span id="note-help">พนักงานจะยืนยันคำขอก่อน คำขอไม่ใช่การรับประกัน</span>
+        <span class="count" id="note-count" aria-live="polite">11 / 140</span>
+      </div>
+    </div>
+
+    <!-- Allergen data for this dish is unverified: say so, and route to a person -->
+    <div class="allergen">
+      <span class="i" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M12 11v6M12 7.5v.5" style="stroke-width:2"/></svg></span>
+      <h3>สารก่อภูมิแพ้</h3>
+      <p>ร้านยังไม่ได้ยืนยันข้อมูลสารก่อภูมิแพ้ของจานนี้ หากคุณแพ้อาหาร กรุณาคุยกับพนักงานก่อนสั่ง</p>
+      <button><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 16v-5a5.5 5.5 0 0 1 11 0v5l1.5 2h-14z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>เรียกพนักงาน</button>
+    </div>
+  </div>
+
+  <div class="sh-foot">
+    <button class="addbtn" aria-label="เพิ่มลงรายการ 1 จาน ราคา 590 บาท">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>
+      <span class="lead"><span class="nm">เพิ่ม</span><span class="dots" aria-hidden="true"></span><span class="val price"><span class="cur">฿</span>590</span></span>
+    </button>
+  </div>
+</section>
+</body>
+</html>
