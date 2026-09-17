@@ -166,7 +166,12 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
 });
 
 // ---------------------------------------------------------------- Select
-export interface SelectOption { value: string; label: string; disabled?: boolean }
+/**
+ * `lang` marks a label that is not in the interface language - a Thai dish
+ * name listed in an English filter, or the reverse - so screen readers
+ * pronounce it correctly (DESIGN.md section 12).
+ */
+export interface SelectOption { value: string; label: string; disabled?: boolean; lang?: 'th' | 'en' }
 
 export interface SelectProps extends FieldShellProps, Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
   options?: ReadonlyArray<SelectOption>;
@@ -191,7 +196,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
           {...rest}
         >
           {placeholder ? <option value="" disabled>{placeholder}</option> : null}
-          {options?.map((o) => <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>)}
+          {options?.map((o) => <option key={o.value} value={o.value} disabled={o.disabled} lang={o.lang}>{o.label}</option>)}
           {children}
         </select>
         <Icon name="chev-d" />

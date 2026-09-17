@@ -10,9 +10,9 @@ import { clock, dateLabel, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { setQuery, useRoute } from '../../lib/router.ts';
 import {
-  Banner, Button, DataTable, DateRangeNav, Dialog, EmptyState, LinkButton, PageHeader, Pill, Price, SectionHeader,
-  StatCard, StatGrid, Tag, useToast, type DataColumn,
+  Banner, Button, Dialog, EmptyState, LinkButton, Pill, Price, Tag, useToast,
 } from '../../ui/index.ts';
+import { DataTable, DateRangeNav, PageHeader, SectionHeader, StatCard, StatGrid, type DataColumn } from '../../ui/admin/index.ts';
 import { useBusinessToday } from '../insights/query.ts';
 import { errorText, isAmbiguous, isApiError, pendingKey, useLiveResource, useStaff } from '../tables/shared.ts';
 import { paymentStatusKey } from './useBill.tsx';

@@ -4,7 +4,7 @@
 import { useId, useState, type HTMLAttributes, type ReactNode } from 'react';
 import { num } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { cx, Ico, safeId } from './parts.tsx';
+import { cx, Ico, safeId, useDataText, type DataText } from './parts.tsx';
 
 export type RankChange = { label: 'up' | 'down' | 'flat' | 'new' | 'no_baseline'; delta?: number | null };
 
@@ -24,7 +24,10 @@ export interface RankingRowProps {
   name: string;
   nameLang?: string;
   english?: string | null;
-  category?: string;
+  /** Category name. Pass the record's `Bilingual` so a Thai name on an English screen carries `lang`. */
+  category?: DataText;
+  /** Page-language note after the category ("Thai name only"): outside the category's `lang`. */
+  categoryNote?: ReactNode;
   servings: number;
   /** "13%" (plus a unit note for by-weight rows: "5% · servings"). */
   shareText?: string;
@@ -84,12 +87,13 @@ function ContextCell({ context }: { context: RankContext }) {
 }
 
 export function RankingRow({
-  rank, image, name, nameLang, english, category, servings, shareText, bar, orders, visits, change, context, variants,
+  rank, image, name, nameLang, english, category, categoryNote, servings, shareText, bar, orders, visits, change, context, variants,
   imageLoading = 'lazy', className,
 }: RankingRowProps) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const varId = `rv-${safeId(useId())}`;
+  const cat = useDataText()(category);
   const width = `${Math.round(Math.max(0, Math.min(1, bar ?? 0)) * 100)}%`;
   return (
     <>
@@ -104,7 +108,14 @@ export function RankingRow({
         <div className="rank__name" role="rowheader">
           <b lang={nameLang}>{name}</b>
           {english ? <span className="en" lang="en">{english}</span> : null}
-          {category ? <span className="rank__cat">{english ? ' · ' : ''}{category}</span> : null}
+          {cat || categoryNote ? (
+            <span className="rank__cat">
+              {english ? ' · ' : ''}
+              {cat ? <span lang={cat.lang}>{cat.text}</span> : null}
+              {cat && categoryNote ? ' · ' : ''}
+              {categoryNote}
+            </span>
+          ) : null}
           {variants && variants.length > 0 ? (
             <button type="button" className="rank__more" aria-expanded={open} aria-controls={varId} onClick={() => setOpen(!open)}>
               <Ico name="chev-d" size="xs" className={open ? 'is-open' : undefined} />

@@ -11,9 +11,9 @@ import { useResource } from '../../lib/live.tsx';
 import { useMedia } from '../../lib/store.ts';
 import { useRoute } from '../../lib/router.ts';
 import {
-  Banner, Button, Checkbox, DataTable, EmptyState, Pill, SectionHeader, Sheet, Tag, TextField, useToast,
-  prefersReducedMotion, type SortState,
+  Banner, Button, Checkbox, EmptyState, Pill, Sheet, Tag, TextField, useToast, prefersReducedMotion,
 } from '../../ui/index.ts';
+import { DataTable, SectionHeader, type SortState } from '../../ui/admin/index.ts';
 import { useStaff } from '../shell/session.tsx';
 import StaffEditor from './StaffEditor.tsx';
 import { PASSWORD_MIN, passwordProblem, RolePicker } from './teamParts.tsx';

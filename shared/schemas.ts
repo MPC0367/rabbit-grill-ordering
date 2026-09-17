@@ -150,18 +150,28 @@ export const AssistOrderBody = z.object({
   expected_subtotal_minor: nonNegMinor,
 });
 
-export const StaffQuoteBody = z.object({ visit_id: id, lines: z.array(CartLineInput).max(60) });
-
 /**
- * A paper-order line. A weighed cut also carries the weight staff recorded on
- * the ticket (`measured.grams`); it is priced at the item's approved rate, and
- * one line is one cut (quantity 1). Only manual recovery accepts it - guests
- * and staff-assisted rounds get a weighing quote instead.
+ * A staff-entered cart line that may carry a weight. A weighed cut carries the
+ * grams staff recorded (`measured.grams`); it is priced at the item's approved
+ * rate, and one line is one cut (quantity 1). Guest bodies use CartLineInput,
+ * which has no `measured` at all, so a guest cart still gets
+ * `measured_weight_needs_quote` (D-S8-21).
  */
-export const RecoverLineInput = CartLineInput.extend({
+export const StaffLineInput = CartLineInput.extend({
   measured: z.object({ grams: z.number().int().min(MEASURED_GRAMS.min).max(MEASURED_GRAMS.max) }).nullish(),
 });
-export type RecoverLineInput = z.infer<typeof RecoverLineInput>;
+export type StaffLineInput = z.infer<typeof StaffLineInput>;
+
+/**
+ * The staff quote prices weighed cuts itself (D-F-01), so the picker that is
+ * about to record a paper ticket sees the server's price, not one it worked
+ * out locally. Recording the order is still manual recovery's alone.
+ */
+export const StaffQuoteBody = z.object({ visit_id: id, lines: z.array(StaffLineInput).max(60) });
+
+/** A paper-order line: the same shape, named for where it is submitted. */
+export const RecoverLineInput = StaffLineInput;
+export type RecoverLineInput = StaffLineInput;
 
 export const RecoverOrderBody = z.object({
   visit_id: id,

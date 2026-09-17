@@ -6,7 +6,7 @@ import {
   EXCEPTION_TRANSITIONS, FORWARD_TRANSITIONS, forwardIndex, isActive, FORWARD,
   type LineStatus, type Station,
 } from '../../../../../shared/status.ts';
-import type { BoardStage } from '../../../ui/index.ts';
+import type { BoardStage } from '../../../ui/admin/index.ts';
 import { compareLabels } from '../support.ts';
 
 export type StationFilter = Station | 'all';

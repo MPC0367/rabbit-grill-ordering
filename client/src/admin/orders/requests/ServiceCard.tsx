@@ -7,7 +7,8 @@ import type { ServiceStatus } from '../../../../../shared/status.ts';
 import { api } from '../../../lib/api.ts';
 import { clock } from '../../../lib/format.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
-import { Button, Dialog, GuestNote, Icon, Pill, StatusPill, TableBox, useAnnounce, useToast } from '../../../ui/index.ts';
+import { Button, Dialog, Icon, Pill, StatusPill, useAnnounce, useToast } from '../../../ui/index.ts';
+import { GuestNote, TableBox } from '../../../ui/admin/index.ts';
 import { errorText, minutesSince, staleCurrent, tn, toApiError } from '../support.ts';
 
 const TYPE_ICON = {

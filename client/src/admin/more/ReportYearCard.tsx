@@ -6,7 +6,8 @@ import type { ReportJobDTO, ReportYearDTO } from '../../../../shared/dto.ts';
 import type { ReportLabel } from '../../../../shared/status.ts';
 import { dateLabel, dateTime, num } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { Banner, Button, EmptyState, JobList, JobStatusRow, Tag } from '../../ui/index.ts';
+import { Banner, Button, EmptyState, Tag } from '../../ui/index.ts';
+import { JobList, JobStatusRow } from '../../ui/admin/index.ts';
 import { langOf } from './shared.tsx';
 
 export type ReportKind = ReportJobDTO['kind'];

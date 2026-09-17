@@ -8,8 +8,9 @@ import { api, ApiError } from '../../lib/api.ts';
 import { dateTime } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import {
-  Banner, Button, ChoiceGroup, Icon, IconButton, KeyValue, RadioCard, Select, Tag, TextArea, TextField, useToast,
+  Banner, Button, ChoiceGroup, Icon, IconButton, RadioCard, Select, Tag, TextArea, TextField, useToast,
 } from '../../ui/index.ts';
+import { KeyValue } from '../../ui/admin/index.ts';
 import { useErrorText, useMenuData } from './model.tsx';
 import { ReviewPill, useNameText } from './parts.tsx';
 

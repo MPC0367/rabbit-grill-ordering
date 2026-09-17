@@ -67,5 +67,6 @@ export type { LengthMeasure } from './cx.ts';
 export { useGlideMark, rovingKeyDown, scrollIntoViewInline, useEscape } from './hooks.ts';
 export { useHistoryDismiss, useScrollLock, useFocusReturn } from './overlay.ts';
 
-// staff and data kit (C0b)
-export * from './admin/index.ts';
+// The staff and data kit is NOT re-exported here: importing it from this
+// barrel pulled staff modules into guest pages in development (one module
+// graph, no tree shaking). Staff screens import it from './admin/index.ts'.

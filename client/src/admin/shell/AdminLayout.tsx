@@ -11,10 +11,8 @@ import { clock, dateLabel } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useLive, type WireEvent } from '../../lib/live.tsx';
 import { useRoute } from '../../lib/router.ts';
-import {
-  AdminRail, announce, Banner, Button, ConnectionIndicator, RailFooter, RailNav, SubTabs, useToast, WorkspaceHeader,
-  type RailItem, type SubTabItem,
-} from '../../ui/index.ts';
+import { announce, Banner, Button, ConnectionIndicator, useToast } from '../../ui/index.ts';
+import { AdminRail, RailFooter, RailNav, SubTabs, WorkspaceHeader, type RailItem, type SubTabItem } from '../../ui/admin/index.ts';
 import { useBusinessToday } from '../insights/query.ts';
 import { useAttention, portionsToWeigh, weighCountIsExact } from './attention.tsx';
 import { IdentityMenu } from './IdentityMenu.tsx';

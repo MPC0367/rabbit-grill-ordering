@@ -5,8 +5,10 @@
 //    (client/src/admin/orders/board/model.ts, D-FX-OPS-02 / D-S8-20).
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { MenuItemDTO, OrderLineDTO } from '../../shared/dto.ts';
-import { sameLine, toInput, unitPrice, type DraftLine } from '../../client/src/admin/orders/assist/draft.ts';
+import type { MenuItemDTO, OrderLineDTO, QuoteDTO, QuoteLineDTO } from '../../shared/dto.ts';
+import {
+  cutNotPricedByServer, draftLineMinor, draftSubtotal, sameLine, toInput, unitPrice, type DraftLine,
+} from '../../client/src/admin/orders/assist/draft.ts';
 import { staffConfirmOf } from '../../client/src/admin/orders/board/model.ts';
 
 function item(over: Partial<MenuItemDTO> = {}): MenuItemDTO {
@@ -82,5 +84,58 @@ describe('staff confirmation comes from the line, not from today’s menu', () =
 
   test('a line from before the snapshot (no flags) shows nothing', () => {
     assert.deepEqual(staffConfirmOf(line({})), { alcohol: false, chip: false });
+  });
+});
+
+describe('what the panel shows a line costs', () => {
+  const rib = item();
+  const fries = item({ id: 'i2', key: 'fries', pricing_type: 'fixed', price_minor: 9000, rate_minor: null, rate_basis_grams: null });
+  const itemOf = (id: string) => (id === 'i2' ? fries : rib);
+
+  const qline = (over: Partial<QuoteLineDTO>): QuoteLineDTO => ({
+    line_index: 0, ok: true, item_id: 'i1', name: { th: null, en: 'Dish' }, variant_name: null, modifiers: [],
+    unit_price_minor: 0, modifiers_minor: 0, quantity: 1, line_total_minor: 0, ...over,
+  });
+  const quote = (lines: QuoteLineDTO[], subtotal: number): QuoteDTO => ({
+    lines, issues: [], subtotal_minor: subtotal, charges_preview: [], estimated_total_minor: subtotal, catalog_version: 'v1',
+  });
+
+  const cut = draftLine({ measured_grams: 380 });
+  const twoFries = draftLine({ uid: 'l2', item_id: 'i2', quantity: 2 });
+
+  test('a server that prices the cut decides the money, not this device', () => {
+    // The server rounds the same way, but its figure is the one that is charged:
+    // here it priced the cut at 1,700.00 and the panel must say so, not 1,710.00.
+    const q = quote([
+      qline({ line_index: 0, measured_grams: 380, quantity: 1, line_total_minor: 170000 }),
+      qline({ line_index: 1, item_id: 'i2', quantity: 2, line_total_minor: 18000 }),
+    ], 188000);
+    assert.equal(cutNotPricedByServer(cut, 0, q), false);
+    assert.equal(draftLineMinor(cut, 0, rib, q), 170000);
+    assert.equal(draftLineMinor(twoFries, 1, fries, q), 18000);
+    assert.equal(draftSubtotal([cut, twoFries], itemOf, q), 188000);
+  });
+
+  test('a server that cannot price the cut yet: the fallback fills that line only', () => {
+    // The quote priced the fries and left the cut out of its subtotal.
+    const q = quote([
+      qline({ line_index: 0, ok: false, measured_grams: null, line_total_minor: 0 }),
+      qline({ line_index: 1, item_id: 'i2', quantity: 2, line_total_minor: 18000 }),
+    ], 18000);
+    assert.equal(cutNotPricedByServer(cut, 0, q), true);
+    assert.equal(draftLineMinor(cut, 0, rib, q), 171000);
+    assert.equal(draftLineMinor(twoFries, 1, fries, q), 18000);
+    // 180.00 from the server plus the 1,710.00 cut: the foot is never short.
+    assert.equal(draftSubtotal([cut, twoFries], itemOf, q), 189000);
+  });
+
+  test('before the first quote arrives every line is this device’s own figure', () => {
+    assert.equal(draftLineMinor(cut, 0, rib, null), 171000);
+    assert.equal(draftLineMinor(twoFries, 1, fries, null), 18000);
+    assert.equal(draftSubtotal([cut, twoFries], itemOf, null), 189000);
+  });
+
+  test('a dish with no weight is never treated as an unpriced cut', () => {
+    assert.equal(cutNotPricedByServer(twoFries, 1, quote([], 0)), false);
   });
 });

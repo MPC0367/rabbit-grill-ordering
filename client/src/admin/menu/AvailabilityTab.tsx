@@ -7,9 +7,9 @@ import { api } from '../../lib/api.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { setQuery, useRoute } from '../../lib/router.ts';
 import {
-  Button, CheckButton, Chip, Dialog, EmptyState, FilterChips, Icon, Pill, SelectButton, StaffSearch, Switch, Tag, TextLink,
-  useToast, type ChipOption,
+  Button, Chip, Dialog, EmptyState, Icon, Pill, Switch, Tag, TextLink, useToast,
 } from '../../ui/index.ts';
+import { CheckButton, FilterChips, SelectButton, StaffSearch, type ChipOption } from '../../ui/admin/index.ts';
 import {
   itemHref, matchesItem, useCan, useErrorText, useMenuData, type AdminCategory, type GroupKey,
 } from './model.tsx';
@@ -117,7 +117,12 @@ export default function AvailabilityTab() {
   ];
   const catOptions = [
     { value: 'all', label: t('catalog.filter.allCategories') },
-    ...categories.map((c) => ({ value: c.id, label: pick(c.name).text })),
+    // Keep the source language on a name that has no interface-language
+    // version, so screen readers pronounce it correctly.
+    ...categories.map((c) => {
+      const named = pick(c.name);
+      return { value: c.id, label: named.text, lang: named.fallback ? named.lang : undefined };
+    }),
   ];
 
   return (
@@ -345,8 +350,13 @@ function AvailabilityRow({ item, soldOut, busy, error, canToggle, canEdit, onTog
                 <span className="visually-hidden"> {v.available ? t('catalog.avail.variantOn') : t('catalog.avail.variantOff')}</span>
               </Chip>
             ))}
+            {/* Every row on this page repeats these words, so the link names
+                its own dish for a screen reader (round-1 finding 14). */}
             {canEdit ? (
-              <TextLink href={`${itemHref(item.id)}#pricing`} className="av-row__link">{t('catalog.avail.editVariants')}</TextLink>
+              <TextLink href={`${itemHref(item.id)}#pricing`} className="av-row__link">
+                {t('catalog.avail.editVariants')}
+                <span className="visually-hidden"> · <span lang={pick(item.name).lang}>{nameText(item.name)}</span></span>
+              </TextLink>
             ) : null}
           </div>
         ) : null}

@@ -16,7 +16,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import type {
   AdminCatalogDTO, AdminItemDTO, AllergenState, Bilingual, CatalogDTO, MenuCategoryDTO, MenuItemDTO,
-  ModifierGroupDTO, PublicConfigDTO,
+  ModifierGroupDTO, PublicConfigDTO, StaffCatalogStateDTO,
 } from '../../shared/dto.ts';
 import { SERVICE_TYPES } from '../../shared/status.ts';
 import { businessDate, businessRangeUtc, nowIso } from '../../shared/time.ts';
@@ -27,7 +27,8 @@ import { AppError } from '../lib/errors.ts';
 import { cutoffHour, getSettings } from '../lib/settings.ts';
 import { publicOrderingState } from './guards.ts';
 import {
-  bi, catalogVersion, getCategory, hasPrice, getItem, itemGroups, itemVariants, parseAliases, prepKind, seasonalActive, unavailableReason,
+  bi, catalogVersion, getCategory, hasPrice, getItem, itemGroups, itemVariants, OPERATIONAL_REASONS, parseAliases,
+  prepKind, seasonalActive, unavailableReason,
   type CategoryRow, type GroupRow, type ItemRow, type OptionRow, type VariantRow,
 } from './pricing.ts';
 
@@ -435,6 +436,43 @@ export function publicConfig(): PublicConfigDTO {
     business_day_cutoff_hour: s.business_day_cutoff_hour,
     business_date: businessDate(Date.now(), s.business_day_cutoff_hour),
   };
+}
+
+// ------------------------------------------------------------------ staff orderability
+/**
+ * What a staff picker needs and the guest menu does not say (D-F-02): every
+ * item's orderable state, the first reason it is not orderable, and - since
+ * only the first reason is ever reported - whether the dish may still be
+ * entered from a paper ticket.
+ *
+ * `recovery_blocked_reason` is computed exactly as the recovery endpoint does
+ * it (`unavailableReason` with the operational states ignored, D-S8-19), so a
+ * picker that greys out a dish and the server that refuses it can never
+ * disagree. Archived items are included: a picker holding a stale menu can
+ * then say why the dish vanished.
+ */
+export function staffCatalogState(): StaffCatalogStateDTO {
+  const data = loadCatalog();
+  const items = data.items.map((item) => {
+    const cat = data.categoryById.get(item.category_id)!;
+    const variants = data.variants.get(item.id) ?? [];
+    const groups = itemGroupsFrom(data, item.id);
+    const reason = orderReason(item, cat, variants, groups);
+    const blocked = unavailableReason(item, cat, variants, { ignore: OPERATIONAL_REASONS });
+    return {
+      item_id: item.id,
+      orderable: reason === null,
+      reason,
+      recoverable: blocked === null,
+      recovery_blocked_reason: blocked,
+      status: item.status,
+      review_status: item.review_status,
+      sold_out: item.sold_out === 1,
+      category_paused: cat.ordering_paused === 1,
+      measured_weight: item.pricing_type === 'measured_weight',
+    };
+  });
+  return { version: catalogVersion(), items, generated_at: nowIso() };
 }
 
 // ------------------------------------------------------------------ admin catalog

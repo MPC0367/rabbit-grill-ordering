@@ -1,7 +1,7 @@
 // Visit audit entries as drawer history rows: time, one bold event, details
 // and the person (newest first). Unknown actions still show, in plain words.
 import type { AuditEntryDTO } from '../../../../shared/dto.ts';
-import type { HistoryItem } from '../../ui/index.ts';
+import type { HistoryItem } from '../../ui/admin/index.ts';
 import { clock, money } from '../../lib/format.ts';
 import { tn } from './shared.ts';
 

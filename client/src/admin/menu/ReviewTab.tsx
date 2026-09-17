@@ -7,9 +7,8 @@ import { api, ApiError } from '../../lib/api.ts';
 import { useConfig } from '../../lib/config.tsx';
 import { dateTime, money, num } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import {
-  Button, CheckButton, Dialog, Icon, LinkButton, StatCard, StatGrid, Tag, useToast,
-} from '../../ui/index.ts';
+import { Button, Dialog, Icon, LinkButton, Tag, useToast } from '../../ui/index.ts';
+import { CheckButton, StatCard, StatGrid } from '../../ui/admin/index.ts';
 import { wouldDisappearInLive } from './attention.ts';
 import { itemHref, useCan, useErrorText, useMenuData } from './model.tsx';
 import {

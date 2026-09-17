@@ -12,9 +12,9 @@ import { useI18n } from '../../lib/i18n.tsx';
 import { navigate, useRoute } from '../../lib/router.ts';
 import { useNow } from '../../lib/store.ts';
 import {
-  Banner, Button, Dialog, EmptyState, LinkButton, Skeleton, SubTabs, TablesSummaryBar, cx, normalizeSearch,
-  useAnnounce, useToast, type TableFilter,
+  Banner, Button, Dialog, EmptyState, LinkButton, Skeleton, cx, normalizeSearch, useAnnounce, useToast,
 } from '../../ui/index.ts';
+import { SubTabs, TablesSummaryBar, type TableFilter } from '../../ui/admin/index.ts';
 import { paidAt } from '../billing/useBill.tsx';
 import SeatDialog from './SeatDialog.tsx';
 import TableDrawer from './TableDrawer.tsx';

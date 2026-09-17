@@ -8,6 +8,7 @@
 import { EventEmitter } from 'node:events';
 import type { Context } from 'hono';
 import { streamSSE } from 'hono/streaming';
+import { config } from '../config.ts';
 import { afterCommit, insert, many, one } from '../db/index.ts';
 import { dbEpoch } from './meta.ts';
 import { nowIso } from '../../shared/time.ts';
@@ -145,6 +146,15 @@ export function hiddenTopicsFor(has: (p: Permission) => boolean): string[] {
 /**
  * Stream events to one client. Sends `hello` first (with the current cursor)
  * so the client knows to refetch; replays from Last-Event-ID when given.
+ *
+ * Heartbeat (D-F-03): every `config.streamPingMs` the stream sends a NAMED
+ * `ping` event and the `: keep-alive` comment. The comment is what keeps
+ * proxies from closing an idle connection; the named event is the only one of
+ * the two a browser's EventSource ever shows to JavaScript, so it is what lets
+ * the client tell "quiet restaurant" from "half-open socket". `hello` carries
+ * `ping_ms` so the client's watchdog waits a multiple of the server's real
+ * interval. Pings carry no id: the client's Last-Event-ID must keep pointing
+ * at the last real event.
  */
 export function sseStream(c: Context, filter: Filter): Response {
   const headerId = Number(c.req.header('last-event-id') ?? c.req.query('since') ?? NaN);
@@ -170,13 +180,17 @@ export function sseStream(c: Context, filter: Filter): Response {
     // `epoch` identifies the database file: a client that reconnects to a
     // restored or reset database sees it change and starts from this cursor
     // instead of keeping its own event history (D-K-01).
+    const pingMs = config.streamPingMs;
     await stream.writeSSE({
       event: 'hello',
       id: String(cursor),
-      data: JSON.stringify({ cursor, server_time: nowIso(), replay, epoch: dbEpoch() }),
+      data: JSON.stringify({ cursor, server_time: nowIso(), replay, epoch: dbEpoch(), ping_ms: pingMs }),
       retry: 3000,
     });
 
+    // Never sleep past the next heartbeat (the 15 s ceiling is also the
+    // fallback poll for a poke that never arrived).
+    const idleMs = Math.min(15_000, pingMs);
     let lastBeat = Date.now();
     while (!closed) {
       if (filter.stillValid && !filter.stillValid()) {
@@ -196,12 +210,14 @@ export function sseStream(c: Context, filter: Filter): Response {
         cursor = r.id;
         await stream.writeSSE({ event: 'change', id: String(r.id), data: JSON.stringify(toWire(r)) });
       }
-      if (Date.now() - lastBeat > 20_000) {
+      if (Date.now() - lastBeat >= pingMs) {
+        // No id: a ping must not move the client's Last-Event-ID.
+        await stream.writeSSE({ event: 'ping', data: JSON.stringify({ at: nowIso(), ping_ms: pingMs }) });
         await stream.write(': keep-alive\n\n');
         lastBeat = Date.now();
       }
       await new Promise<void>((resolve) => {
-        const t = setTimeout(resolve, 15_000);
+        const t = setTimeout(resolve, idleMs);
         wake = () => { clearTimeout(t); wake = null; resolve(); };
       });
     }

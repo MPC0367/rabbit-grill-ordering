@@ -17,7 +17,7 @@ import { AppError } from '../lib/errors.ts';
 import { body } from '../lib/http.ts';
 import { hit, LIMITS } from '../lib/ratelimit.ts';
 import { cutoffHour, invalidateSettings } from '../lib/settings.ts';
-import { adminCatalog, publicCatalog, publicConfig } from '../domain/catalog.ts';
+import { adminCatalog, publicCatalog, publicConfig, staffCatalogState } from '../domain/catalog.ts';
 import {
   createCategory, createItem, createModifierGroup, reorder, resolveFlag, reviewItem, setAvailability, setItemStatus,
   staffOrderingState, updateCategory, updateItem, updateModifierGroup, updateOrderingState,
@@ -62,6 +62,13 @@ export const catalogPublic = new Hono<AppEnv>()
 // ------------------------------------------------------------------ staff
 export const catalogStaff = new Hono<AppEnv>()
   .get('/menu', requireStaff('menu.view'), (c) => c.json(adminCatalog()))
+
+  // Orderability for the staff pickers: the guest menu plus the reasons it
+  // does not carry (what may still be recovered from paper, D-S8-19/D-F-02).
+  .get('/menu/orderability', requireStaff('orders.view'), (c) => {
+    c.header('Cache-Control', 'no-store');
+    return c.json(staffCatalogState());
+  })
 
   .get('/menu/export.csv', requireStaff('menu.view'), (c) =>
     c.body(exportCatalogCsv(), 200, csvResponseHeaders(`rabbit-grill-menu-${todayBusinessDate(cutoffHour())}.csv`)))

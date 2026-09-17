@@ -7,9 +7,8 @@ import { useResource, type Resource } from '../../../lib/live.tsx';
 import { qs } from '../../../lib/api.ts';
 import { clock } from '../../../lib/format.ts';
 import { useNow } from '../../../lib/store.ts';
-import {
-  Banner, Button, CheckButton, EmptyState, SectionHeader, Skeleton, useAnnounce,
-} from '../../../ui/index.ts';
+import { Banner, Button, EmptyState, Skeleton, useAnnounce } from '../../../ui/index.ts';
+import { CheckButton, SectionHeader } from '../../../ui/admin/index.ts';
 import { useStaff } from '../../shell/session.tsx';
 import AssistOrderPanel from '../AssistOrderPanel.tsx';
 import { errorText, SAFETY_REFRESH_MS, todayDate } from '../support.ts';

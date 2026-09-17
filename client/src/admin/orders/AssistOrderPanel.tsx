@@ -9,12 +9,15 @@ import { clock, dateTime, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useResource } from '../../lib/live.tsx';
 import {
-  Banner, Button, ChoiceGroup, Drawer, EmptyState, Icon, IconButton, KeyValue, RadioCard, Skeleton, Stepper,
-  TableBox, TableStatePill, TextArea, TextField, useAnnounce, useToast,
+  Banner, Button, ChoiceGroup, Drawer, EmptyState, Icon, IconButton, RadioCard, Skeleton, Stepper,
+  TextArea, TextField, useAnnounce, useToast,
 } from '../../ui/index.ts';
+import { KeyValue, TableBox, TableStatePill } from '../../ui/admin/index.ts';
 import { useStaff } from '../shell/session.tsx';
 import { CatalogPicker, type PortionAsk } from './assist/CatalogPicker.tsx';
-import { sameLine, toInput, unitPrice, useDraft, type DraftLine, type RecoverFields } from './assist/draft.ts';
+import {
+  draftLineMinor, draftSubtotal, sameLine, toInput, useDraft, type DraftLine, type RecoverFields,
+} from './assist/draft.ts';
 import {
   bangkokInputToIso, bangkokLocalInput, clearPendingKey, errorText, pendingKey, staffName, sumQty, tn, toApiError,
 } from './support.ts';
@@ -65,8 +68,10 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
   }, [recover, draft.recover.time, update]);
 
   // Server quote for the current lines (same pricing path as guests), debounced.
+  // `measured_grams` is part of the key: the server prices a weighed cut from
+  // the grams, so changing them must re-quote.
   const quoteSeq = useRef(0);
-  const linesKey = JSON.stringify(lines.map((l) => [l.item_id, l.variant_id, l.quantity, l.modifiers, l.note, l.allergy_note]));
+  const linesKey = JSON.stringify(lines.map((l) => [l.item_id, l.variant_id, l.quantity, l.modifiers, l.note, l.allergy_note, l.measured_grams ?? null]));
   useEffect(() => {
     if (!allowed || !menu.data) return;
     if (lines.length === 0) { setQuote(null); setQuoteError(null); return; }
@@ -281,15 +286,10 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
 
   // ---------------------------------------------------------------- body
   const issuesFor = (i: number) => (quote?.issues ?? []).filter((x) => x.line_index === i);
-  /** A weighed cut the quote could not price (the quote endpoint takes no grams): its own arithmetic. */
-  const weighedMinor = (l: DraftLine, i: number) => (
-    l.measured_grams != null && quote?.lines.find((x) => x.line_index === i)?.measured_grams == null
-      ? unitPrice(items.get(l.item_id), l) ?? 0
-      : 0
-  );
-  const subtotal = quote
-    ? quote.subtotal_minor + lines.reduce((s, l, i) => s + weighedMinor(l, i), 0)
-    : lines.reduce((s, l) => s + (unitPrice(items.get(l.item_id), l) ?? 0) * (l.measured_grams != null ? 1 : l.quantity), 0);
+  const itemOf = (id: string) => items.get(id);
+  // Money comes from the server quote (assist/draft.ts keeps the arithmetic and
+  // the one-release fallback for a server that cannot price a weighed cut yet).
+  const subtotal = draftSubtotal(lines, itemOf, quote);
   const showMoney = can('orders.view_bill_values');
 
   let body;
@@ -415,18 +415,16 @@ export default function AssistOrderPanel({ visitId, mode = 'assist', onClose, on
           {lines.map((l, i) => {
             const item = items.get(l.item_id);
             const n = staffName(item?.name);
-            const qline = quote?.lines.find((x) => x.line_index === i);
             const weighed = l.measured_grams != null;
-            // The quote cannot price a paper cut; the recover endpoint does.
+            // A server that cannot price a paper cut says so on every quote;
+            // the recover endpoint prices it, so that is not staff's problem.
             const issues = issuesFor(i).filter((x) => !(weighed && x.code === 'measured_weight_needs_quote'));
             const variant = item?.variants.find((x) => x.id === l.variant_id);
             const mods = l.modifiers.flatMap((m) => {
               const g = item?.modifier_groups.find((x) => x.id === m.group_id);
               return m.option_ids.map((id) => g?.options.find((o) => o.id === id)).filter(Boolean).map((o) => pick(o!.name));
             });
-            const lineTotal = weighed && qline?.measured_grams == null
-              ? (unitPrice(item, l) ?? 0)
-              : qline?.line_total_minor ?? ((unitPrice(item, l) ?? 0) * l.quantity);
+            const lineTotal = draftLineMinor(l, i, item, quote);
             return (
               <li key={l.uid} className={`ao-line${issues.length ? ' has-issue' : ''}`}>
                 <div className="ao-line__main">

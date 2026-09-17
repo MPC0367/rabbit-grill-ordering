@@ -10,9 +10,12 @@ import { useLive, useResource } from '../../../lib/live.tsx';
 import { navigate, setQuery, useRoute } from '../../../lib/router.ts';
 import { useMedia, useNow } from '../../../lib/store.ts';
 import {
-  attentionKinds, Banner, BOARD_STAGES, BoardColumn, BoardGrid, BoardStatusSwitch, BoardToolbar, Button, EmptyState,
-  normalizeSearch, Skeleton, TableStrip, TextLink, useAnnounce, useToast, type BoardStage, type FloorTable, type TicketFlagSpec,
+  Banner, Button, EmptyState, normalizeSearch, Skeleton, TextLink, useAnnounce, useToast,
 } from '../../../ui/index.ts';
+import {
+  attentionKinds, BOARD_STAGES, BoardColumn, BoardGrid, BoardStatusSwitch, BoardToolbar, TableStrip, type BoardStage,
+  type FloorTable, type TicketFlagSpec,
+} from '../../../ui/admin/index.ts';
 import { useStaff } from '../../shell/session.tsx';
 import AssistOrderPanel from '../AssistOrderPanel.tsx';
 import {

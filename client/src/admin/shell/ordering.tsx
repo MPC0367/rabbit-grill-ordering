@@ -8,8 +8,9 @@ import { clock } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useLiveResource } from './live-resource.ts';
 import {
-  Banner, Button, Checkbox, OrderingControl, SegmentedControl, Sheet, TextArea, TextField, useToast,
+  Banner, Button, Checkbox, SegmentedControl, Sheet, TextArea, TextField, useToast,
 } from '../../ui/index.ts';
+import { OrderingControl } from '../../ui/admin/index.ts';
 import { useAttention } from './attention.tsx';
 import { useStaff } from './session.tsx';
 

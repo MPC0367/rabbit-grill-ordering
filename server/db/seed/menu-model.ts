@@ -130,7 +130,7 @@ export const OPENING_PREP_MINUTES = 10 * 60 + 30;
 
 /** Fixture sold-out spells: Wagyu out for a full week in July 2025. */
 export const STATIC_SOLD_OUT: Array<{ key: string; from: string; to: string; reason: string }> = [
-  { key: 'wagyu-tenderloin', from: '2025-07-07', to: '2025-07-14', reason: 'Supplier delivery missed' },
+  { key: 'wagyu-tenderloin', from: '2025-07-07', to: '2025-07-14', reason: 'ซัพพลายเออร์ส่งของไม่ทัน' },
 ];
 
 /** Fixture evenings when Grilled River Prawns ran out (marked sold out by the kitchen). */

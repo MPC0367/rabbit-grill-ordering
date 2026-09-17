@@ -5,7 +5,8 @@ import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, ty
 import type { Locale } from '../../../../shared/settings.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { navigate } from '../../lib/router.ts';
-import { Icon, StaffChip, type IconName } from '../../ui/index.ts';
+import { Icon, type IconName } from '../../ui/index.ts';
+import { StaffChip } from '../../ui/admin/index.ts';
 import { useStaff } from './session.tsx';
 import type { AlertSound } from './sound.ts';
 

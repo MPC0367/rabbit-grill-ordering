@@ -9,9 +9,8 @@ import { useResource } from '../../../lib/live.tsx';
 import { qs } from '../../../lib/api.ts';
 import { navigate, setQuery, useRoute } from '../../../lib/router.ts';
 import { useNow } from '../../../lib/store.ts';
-import {
-  Button, DateRangeNav, EmptyState, FilterChips, normalizeSearch, Skeleton, StaffSearch,
-} from '../../../ui/index.ts';
+import { Button, EmptyState, normalizeSearch, Skeleton } from '../../../ui/index.ts';
+import { DateRangeNav, FilterChips, StaffSearch } from '../../../ui/admin/index.ts';
 import { useStaff } from '../../shell/session.tsx';
 import { errorText, tn, todayDate } from '../support.ts';
 import { useBoardActions, type OrdersResponse } from './actions.ts';

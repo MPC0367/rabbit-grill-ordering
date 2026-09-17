@@ -23,18 +23,47 @@ import type { SeedTable } from './tables.ts';
 import { bangkokMs, MINUTE, type Rng } from './util.ts';
 
 // ------------------------------------------------------------------ fixture wording
+//
+// Reasons are free text, stored exactly as the staff member typed them, so the
+// fixture writes what a Rabbit Grill staff member would actually have typed
+// (D-F-04). Two shapes, both already used by the fixtures:
+//  - a reason a GUEST reads on their phone (a rejected or cancelled dish) is
+//    written the way the floor writes for a bilingual dining room: Thai, then
+//    a short English gloss after " - " (the same shape as the allergy note
+//    fixture in seed/live.ts);
+//  - a reason only staff and the owner ever read (a bill reopened, a table
+//    closed unpaid, a restock) is Thai alone, because that is all anyone would
+//    have typed.
+// Text the PRODUCT writes is never translated here: it must stay byte-identical
+// to what the running server would store.
 const DRINK_NOTES = ['no ice', 'น้ำแข็งน้อย', 'หวานน้อย', 'less sweet'];
 const FOOD_NOTES = ['ไม่เผ็ด', 'sauce on the side', 'ไม่ใส่ผักชี', 'แยกซอส', 'no chili'];
-const SOLD_OUT_REASON = 'Sold out tonight';
-const DUPLICATE_REASON = 'Duplicate of the previous round (checked with the table)';
-const OTHER_REJECT_REASONS = ['Kitchen cannot make this right now', 'Ingredient ran short - staff offered an alternative'];
-const CHANGED_MIND = 'Guest changed their mind';
-const CANCEL_REASONS = [CHANGED_MIND, CHANGED_MIND, 'Taking too long - guest cancelled', 'Entered twice by mistake', 'Kitchen ran out after accepting'];
-const COMP_REASONS = ['Comp: long wait for mains', 'Comp: dish sent back to the kitchen'];
+const SOLD_OUT_REASON = 'ของหมดแล้วคืนนี้ - sold out tonight';
+const RESTOCKED_REASON = 'เติมของแล้วสำหรับรอบบริการถัดไป';
+const DUPLICATE_REASON = 'สั่งซ้ำกับรอบที่แล้ว เช็กกับโต๊ะแล้ว - duplicate of the previous round, checked with the table';
+const OTHER_REJECT_REASONS = [
+  'ครัวทำรายการนี้ไม่ได้ตอนนี้ - kitchen cannot make this right now',
+  'วัตถุดิบไม่พอ เสนอเมนูอื่นให้ลูกค้าแล้ว - ingredient ran short, staff offered an alternative',
+];
+const CHANGED_MIND = 'ลูกค้าเปลี่ยนใจ - guest changed their mind';
+const CANCEL_REASONS = [
+  CHANGED_MIND, CHANGED_MIND,
+  'รออาหารนานเกินไป ลูกค้าขอยกเลิก - taking too long, guest cancelled',
+  'คีย์ซ้ำโดยไม่ตั้งใจ - entered twice by mistake',
+  'รับออร์เดอร์แล้วของหมด - kitchen ran out after accepting',
+];
+const COMP_REASONS = ['ชดเชย: รออาหารจานหลักนาน', 'ชดเชย: ลูกค้าส่งอาหารคืนครัว'];
+const REOPEN_FOR_COMP_REASON = 'เปิดบิลใหม่เพื่อลงรายการชดเชย';
+/** Written by the PRODUCT at checkout, not by staff: keep it identical to server/domain/service.ts. */
 const BILL_HANDLED_AT_CHECKOUT = 'Bill handled at checkout';
-const DECLINED_BY_GUEST = 'Declined by guest';
-const LATE_ROUND_REASON = 'Guest ordered one more round after the bill was printed';
-const EXCEPTION_REASONS = ['Guest left without paying - reported to the owner', 'Settlement to be confirmed with the owner next day'];
+const HELP_NO_LONGER_NEEDED = 'ลูกค้าไม่ต้องการความช่วยเหลือแล้ว';
+const DECLINED_BY_GUEST = 'ลูกค้าไม่รับราคานี้';
+/** Quote notes: the guest reads these on the weighing sheet. */
+const REWEIGHED_NOTE = 'ชั่งใหม่หลังแต่งเนื้อแล้ว - re-weighed after trimming';
+const REQUOTED_NOTE = 'เสนอราคาใหม่หลังใบเดิมหมดอายุ - quoted again after the first quote expired';
+const PORTION_CANCELLED_REASON = 'ลูกค้าเปลี่ยนใจก่อนชั่ง';
+const LATE_ROUND_REASON = 'ลูกค้าสั่งเพิ่มอีกรอบหลังออกบิลแล้ว';
+const EXCEPTION_REASONS = ['ลูกค้ากลับโดยยังไม่ชำระ แจ้งเจ้าของร้านแล้ว', 'รอเจ้าของร้านยืนยันการชำระในวันถัดไป'];
 const RATINGS = [5, 4, 3, 2, 1];
 const RATING_WEIGHTS = [55, 30, 10, 3, 2];
 
@@ -323,7 +352,7 @@ function playRound(env: DayEnv, vs: VisitSim, plan: RoundPlan, queue: QueueEntry
       const until = nextMorning(env.date);
       av.add(item.id, acceptAt, until);
       env.availabilityChanges.push({ itemId: item.id, available: false, reason: 'sold_out', at: acceptAt, by: kitchen, auditReason: SOLD_OUT_REASON });
-      env.availabilityChanges.push({ itemId: item.id, available: true, reason: 'restocked', at: until, by: kitchen, auditReason: 'Restocked for the next service' });
+      env.availabilityChanges.push({ itemId: item.id, available: true, reason: 'restocked', at: until, by: kitchen, auditReason: RESTOCKED_REASON });
       // the table orders something else instead
       const replacementAt = acceptAt + r.between(2, 6) * MINUTE;
       insertQueue(queue, { at: replacementAt, kind: 'round', vs, plan: { at: replacementAt, guest: plan.guest, lines: 1, index: plan.index + 1, replacement: course } });
@@ -392,7 +421,7 @@ function playPortion(env: DayEnv, vs: VisitSim, at: number): void {
 
   if (r.chance(0.03)) {
     p.status = 'cancelled';
-    p.resolved = { at: requestAt + r.between(2, 6) * MINUTE, by: staff.floor.display_name, reason: 'Guest changed their mind before weighing' };
+    p.resolved = { at: requestAt + r.between(2, 6) * MINUTE, by: staff.floor.display_name, reason: PORTION_CANCELLED_REASON };
     p.version = 2;
     return;
   }
@@ -404,11 +433,11 @@ function playPortion(env: DayEnv, vs: VisitSim, at: number): void {
   if (r.chance(0.21)) {
     quote.status = 'superseded';
     grams = clamp(grams + r.pick([-1, 1]) * r.int(2, 6) * 10, 250, 600);
-    quote = quoteFor(env, item, 2, grams, quote.created + r.between(1, 4) * MINUTE, kitchen, 'Re-weighed after trimming');
+    quote = quoteFor(env, item, 2, grams, quote.created + r.between(1, 4) * MINUTE, kitchen, REWEIGHED_NOTE);
     p.quotes.push(quote);
   } else if (r.chance(0.05)) {
     quote.status = 'expired';
-    quote = quoteFor(env, item, 2, grams, quote.expires + r.between(1, 3) * MINUTE, kitchen, 'Quoted again after the first quote expired');
+    quote = quoteFor(env, item, 2, grams, quote.expires + r.between(1, 3) * MINUTE, kitchen, REQUOTED_NOTE);
     p.quotes.push(quote);
   }
   p.version = 1 + p.quotes.length;
@@ -511,7 +540,7 @@ export function checkoutVisit(env: DayEnv, vs: VisitSim, queueLate: (vs: VisitSi
       s.status = 'cancelled';
       s.cancelled = { at: s.ack!.at + r.between(0.5, 3) * MINUTE, by: s.ack!.by };
       s.done = null;
-      s.close_reason = 'Guest no longer needed help';
+      s.close_reason = HELP_NO_LONGER_NEEDED;
     }
     vs.services.push(s);
   }
@@ -563,7 +592,7 @@ export function checkoutVisit(env: DayEnv, vs: VisitSim, queueLate: (vs: VisitSi
       const target = chargeable.reduce((a, b) => (b.line_total_minor < a.line_total_minor ? b : a));
       const reason = r.pick(COMP_REASONS);
       rev.status = 'superseded';
-      rev.superseded = { at: reopenAt, by: manager.id, reason: 'Reopened to apply a comp' };
+      rev.superseded = { at: reopenAt, by: manager.id, reason: REOPEN_FOR_COMP_REASON };
       const adj: SimAdjustment = { id: r.id('adj'), kind: 'comp', amount_minor: -target.line_total_minor, reason, line_id: target.id, by: manager.id, at: reopenAt + 30_000 };
       vs.adjustments.push(adj);
       vs.audits.push({ actor: staffActor(manager), action: 'bill.reopen', type: 'bill', id: vs.bill.id, at: reopenAt, reason: rev.superseded.reason });

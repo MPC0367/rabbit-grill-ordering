@@ -9,10 +9,10 @@ import type { AdminCatalogDTO, MenuStatsDTO, RankingRowDTO, StatsPeriod } from '
 import { useI18n } from '../../lib/i18n.tsx';
 import { useRoute } from '../../lib/router.ts';
 import { clock, num } from '../../lib/format.ts';
+import { EmptyState, Icon, SegmentedControl, announce, dishImageUrl, normalizeSearch } from '../../ui/index.ts';
 import {
-  DefinitionButton, EmptyState, FilterChips, Icon, RankingRow, RankingTable, SectionHeader, SegmentedControl, SelectButton,
-  StaffSearch, announce, dishImageUrl, normalizeSearch, type RankContext,
-} from '../../ui/index.ts';
+  DefinitionButton, FilterChips, RankingRow, RankingTable, SectionHeader, SelectButton, StaffSearch, type RankContext,
+} from '../../ui/admin/index.ts';
 import { ErrorPanel, LoadingBlock, PageBar, PeriodBar, useLiveResource, useSticky } from './parts.tsx';
 import {
   MEASURES, periodParams, pushQuery, queryString, readCategory, readDirection, readMeasure, readPeriod, readTop,
@@ -110,7 +110,9 @@ export default function MenuStats({ includeFixture, headingId }: { includeFixtur
 
   // Category choices: whole groups first, then each category in menu order.
   const catOptions = useMemo(() => {
-    const opts: Array<{ value: string; label: string }> = [
+    // A category with no name in the interface language keeps its own lang, so
+    // a Thai name in an English filter is still announced as Thai.
+    const opts: Array<{ value: string; label: string; lang?: 'th' | 'en' }> = [
       { value: 'food', label: t('insights.menu.cat.food') },
       { value: 'drinks', label: t('insights.menu.cat.drinks') },
       { value: 'all', label: t('insights.menu.cat.all') },
@@ -120,12 +122,18 @@ export default function MenuStats({ includeFixture, headingId }: { includeFixtur
       for (const id of g.category_ids) {
         const c = cats.find((x) => x.id === id);
         if (!c) continue;
-        const name = pick(c.name).text;
-        opts.push({ value: c.id, label: c.status === 'published' ? name : `${name} · ${t('insights.menu.cat.notListed')}` });
+        const named = pick(c.name);
+        opts.push({
+          value: c.id,
+          label: c.status === 'published' ? named.text : `${named.text} · ${t('insights.menu.cat.notListed')}`,
+          lang: named.fallback ? named.lang : undefined,
+        });
       }
     }
     for (const c of cats) {
-      if (!opts.some((o) => o.value === c.id)) opts.push({ value: c.id, label: pick(c.name).text });
+      if (opts.some((o) => o.value === c.id)) continue;
+      const named = pick(c.name);
+      opts.push({ value: c.id, label: named.text, lang: named.fallback ? named.lang : undefined });
     }
     if (!opts.some((o) => o.value === category)) opts.push({ value: category, label: t('insights.menu.cat.unknown') });
     return opts;

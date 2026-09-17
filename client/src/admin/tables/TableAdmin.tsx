@@ -7,9 +7,9 @@ import { dateLabel, dateTime } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { businessDate } from '../../../../shared/time.ts';
 import {
-  Button, CheckButton, Checkbox, DataTable, Dialog, EmptyState, LinkButton, Pill, SectionHeader, Sheet, Skeleton, Switch,
-  TableStatePill, Tag, TextField, useToast, type DataColumn,
+  Button, Checkbox, Dialog, EmptyState, LinkButton, Pill, Sheet, Skeleton, Switch, Tag, TextField, useToast,
 } from '../../ui/index.ts';
+import { CheckButton, DataTable, SectionHeader, TableStatePill, type DataColumn } from '../../ui/admin/index.ts';
 import { errorText, isApiError, qrDownloadHref, useStaff } from './shared.ts';
 
 // ------------------------------------------------------------------ manage view

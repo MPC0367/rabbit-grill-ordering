@@ -42,9 +42,16 @@ export interface BillController {
   next: NextBillStep | null;
   open: (kind: DialogKind, target?: BillTarget) => void;
   can: (p: Permission) => boolean;
-  /** Every billing dialog; render once. */
+  /** Every billing dialog; render once. With `payOwner`, not the payment. */
   dialogs: ReactNode;
   refresh: () => Promise<void>;
+  /**
+   * True while the payment step is open. With `payOwner: true` the host renders
+   * the payment itself (the drawer's phone step) instead of a second dialog.
+   */
+  payOpen: boolean;
+  /** Handlers for a payment surface the host renders; see `payOwner`. */
+  pay: { close: () => void; recorded: (next: StaffBillDTO) => Promise<void>; stale: () => Promise<void> };
 }
 
 export function billHasContent(b: StaffBillDTO): boolean {
@@ -78,6 +85,12 @@ interface Options {
   onChange?: () => void;
   /** false: load nothing (another controller is in use). */
   enabled?: boolean;
+  /**
+   * true: the host renders the payment itself and `dialogs` leaves it out. The
+   * table drawer sets this on phones so recording a payment is a step inside
+   * the drawer, not a dialog stacked on it (round-1 finding 31).
+   */
+  payOwner?: boolean;
 }
 
 export function useBillController(visitId: string, opts: Options = {}): BillController {
@@ -218,6 +231,12 @@ export function useBillController(visitId: string, opts: Options = {}): BillCont
 
   const next = useMemo(() => nextBillStep(bill, can, t), [bill, can, t]);
 
+  const pay = useMemo(() => ({
+    close,
+    recorded: async (nextBill: StaffBillDTO) => { await changed(nextBill); close(); },
+    stale: async () => { await res.refresh(); onChange?.(); },
+  }), [close, changed, res, onChange]);
+
   const kind = dialog?.kind;
   const rev = bill?.current_revision ?? null;
   const itemCount = bill ? bill.lines.reduce((n, l) => n + l.quantity, 0) : 0;
@@ -317,8 +336,8 @@ export function useBillController(visitId: string, opts: Options = {}): BillCont
         <p className="c5-note">{t('billing.void.body')}</p>
       </Dialog>
 
-      {kind === 'pay' && bill ? (
-        <PaymentDialog bill={bill} onClose={close} onRecorded={async (next) => { await changed(next); close(); }} onStale={async () => { await res.refresh(); onChange?.(); }} />
+      {kind === 'pay' && bill && !opts.payOwner ? (
+        <PaymentDialog bill={bill} onClose={close} onRecorded={pay.recorded} onStale={pay.stale} />
       ) : null}
       {kind === 'adjust' && bill ? (
         <AdjustmentDialog bill={bill} onClose={close} onSaved={async (next) => { await changed(next); close(); }} onStale={async () => { await res.refresh(); onChange?.(); }} />
@@ -326,7 +345,7 @@ export function useBillController(visitId: string, opts: Options = {}): BillCont
     </>
   );
 
-  return { visitId, res, bill, next, open, can, dialogs, refresh: res.refresh };
+  return { visitId, res, bill, next, open, can, dialogs, refresh: res.refresh, payOpen: kind === 'pay' && Boolean(bill), pay };
 }
 
 export function paymentStatusKey(p: PaymentDTO): string {

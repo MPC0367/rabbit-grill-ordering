@@ -6,7 +6,8 @@ import type { OrderLineDTO, StaffOrderDTO } from '../../../../../shared/dto.ts';
 import type { Permission } from '../../../../../shared/permissions.ts';
 import { clock } from '../../../lib/format.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
-import { Button, type BoardStage } from '../../../ui/index.ts';
+import { Button } from '../../../ui/index.ts';
+import { type BoardStage } from '../../../ui/admin/index.ts';
 import { minutesSince, staffName, sumQty, tn } from '../support.ts';
 import { readySince, tableOf } from './model.ts';
 

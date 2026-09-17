@@ -9,9 +9,9 @@ import { money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { Link, setQuery, useRoute } from '../../lib/router.ts';
 import {
-  Button, CheckButton, Chip, EmptyState, FilterChips, Icon, IconButton, Pill, StaffSearch, Tag, useAnnounce, useToast,
-  type ChipOption,
+  Button, Chip, EmptyState, Icon, IconButton, Pill, Tag, useAnnounce, useToast,
 } from '../../ui/index.ts';
+import { CheckButton, FilterChips, StaffSearch, type ChipOption } from '../../ui/admin/index.ts';
 import { attentionOf } from './attention.ts';
 import CategoryEditor from './CategoryEditor.tsx';
 import ModifierGroupEditor from './ModifierGroupEditor.tsx';

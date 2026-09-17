@@ -3,54 +3,15 @@
 // (idempotent; a lost answer is recovered with the same key), plus the
 // manager exception path with a reason.
 import { useEffect, useId, useMemo, useState } from 'react';
-import type { CheckoutResultDTO, StaffBillDTO, VisitDetailDTO } from '../../../../shared/dto.ts';
-import { ACTIVE_UNSERVED } from '../../../../shared/status.ts';
+import type { CheckoutResultDTO, VisitDetailDTO } from '../../../../shared/dto.ts';
 import { api } from '../../lib/api.ts';
-import { money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useMedia } from '../../lib/store.ts';
-import { Button, CheckoutBlockers, Dialog } from '../../ui/index.ts';
+import { Button, Dialog } from '../../ui/index.ts';
+import { CheckoutBlockers } from '../../ui/admin/index.ts';
 import type { BillController } from '../billing/useBill.tsx';
+import { checkoutWords } from './counts.ts';
 import { errorText, isAmbiguous, isApiError, pendingKey } from './shared.ts';
-
-type T = (k: string, v?: Record<string, string | number>) => string;
-
-/** Plain-words blockers (stop checkout) and notices (closed automatically at checkout). */
-export function checkoutWords(t: T, bill: StaffBillDTO, detail: VisitDetailDTO | undefined): { blockers: string[]; notices: string[] } {
-  const blockers: string[] = [];
-  const notices: string[] = [];
-  const codes = new Set(bill.checkout_blockers);
-  if (codes.has('unresolved_orders')) {
-    const rounds = [...(detail?.orders ?? [])].sort((a, b) => a.round_no - b.round_no);
-    let described = false;
-    for (const o of rounds) {
-      // Counted in items (order lines), the same unit as the tile's "not served" figure.
-      const waiting = o.lines.filter((l) => l.status === 'submitted').length;
-      const cooking = o.lines.filter((l) => l.status !== 'submitted' && ACTIVE_UNSERVED.includes(l.status)).length;
-      if (waiting > 0) { blockers.push(t(waiting === 1 ? 'tables.block.toAcceptOne' : 'tables.block.toAccept', { n: waiting, r: o.round_no })); described = true; }
-      if (cooking > 0) { blockers.push(t(cooking === 1 ? 'tables.block.unservedOne' : 'tables.block.unserved', { n: cooking, r: o.round_no })); described = true; }
-    }
-    if (!described) blockers.push(t('tables.block.unservedAny', { n: bill.unresolved.unserved_lines }));
-  }
-  if (codes.has('bill_not_finalized')) {
-    if (bill.revision_stale) blockers.push(t('tables.block.stale'));
-    else if (bill.visit_status === 'open') blockers.push(t('tables.block.notStarted'));
-    else blockers.push(t('tables.block.notFinalised'));
-  }
-  if (codes.has('unpaid_bill')) {
-    const due = bill.current_revision && !bill.revision_stale ? bill.current_revision.total_minor : bill.running_total_minor ?? bill.total_minor;
-    blockers.push(t('tables.block.unpaid', { amount: money(due) }));
-  }
-  if (codes.has('open_requests')) {
-    const n = bill.unresolved.open_requests;
-    notices.push(t(n === 1 ? 'tables.notice.requestsOne' : 'tables.notice.requests', { n }));
-  }
-  if (codes.has('open_portions')) {
-    const n = bill.unresolved.open_portion_requests;
-    notices.push(t(n === 1 ? 'tables.notice.portionsOne' : 'tables.notice.portions', { n }));
-  }
-  return { blockers, notices };
-}
 
 interface Props {
   detail: VisitDetailDTO;
@@ -123,6 +84,8 @@ export default function CheckoutDock({ detail, ctl, onCompleted, refresh }: Prop
       size="staff"
       icon="receipt"
       opensDialog
+      // Leaving the drawer's phone payment step puts focus back here.
+      data-pay-return={next.step === 'pay' ? '' : undefined}
       aria-disabled={next.blockedBy ? true : undefined}
       aria-describedby={next.blockedBy ? `${blockId}-next` : undefined}
       onClick={() => { if (!next.blockedBy) ctl.open(next.step); }}
@@ -166,6 +129,9 @@ export default function CheckoutDock({ detail, ctl, onCompleted, refresh }: Prop
             variant="primary"
             size="staff"
             opensDialog
+            // Where focus lands after the payment step once the bill is settled
+            // and the next billing step above it is gone.
+            data-pay-return=""
             aria-disabled={!ready || undefined}
             aria-describedby={!ready && words.blockers.length > 0 ? blockId : undefined}
             onClick={() => { if (ready) { setError(null); setDialog('complete'); } }}

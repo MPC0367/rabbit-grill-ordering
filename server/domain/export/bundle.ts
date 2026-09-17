@@ -471,6 +471,28 @@ const DESCRIPTIONS: Record<string, string> = {
   'bills.csv': 'Every bill revision finalized in the year, with settled amounts.',
 };
 
+/**
+ * Guest ratings, always with the sample they come from (D-F-06). Ratings are
+ * self-selected, so the count is printed beside the average every time and the
+ * average is never printed alone. Comment text is not exported at all.
+ */
+function guestRatingLines(s: ReportSnapshot): string[] {
+  const f = s.feedback;
+  if (f.rated === 0) {
+    return [
+      `  Guests sent ${f.entries} feedback entr${f.entries === 1 ? 'y' : 'ies'} this year and no rating, so there is no average.`,
+      '  Feedback is optional and one per phone: it measures the guests who chose to answer, nobody else.',
+    ];
+  }
+  return [
+    `  Average guest rating ${f.average_rating?.toFixed(2)} of 5, from ${f.rated} rating${f.rated === 1 ? '' : 's'}`,
+    `  (${f.entries} feedback entr${f.entries === 1 ? 'y' : 'ies'} in total, ${f.with_comment} with a comment).`,
+    `  Ratings 5 to 1: ${f.distribution.map((d) => `${d.rating}★ ${d.count}`).join(', ')}.`,
+    '  Feedback is optional and one per phone: this is the guests who chose to answer, not every party served.',
+    '  Comment text is never exported.',
+  ];
+}
+
 function readmeText(s: ReportSnapshot, files: BundleResult['files']): string {
   const j = s.job;
   const lines = [
@@ -495,6 +517,9 @@ function readmeText(s: ReportSnapshot, files: BundleResult['files']): string {
     'ATTRIBUTION',
     '  Order rounds and lines count on the submission business date; visits/covers on the seated date;',
     '  checkouts on the closed date; payments on the confirmation date; bills on the finalization date.',
+    '',
+    'GUEST RATINGS',
+    ...guestRatingLines(s),
     '',
     'FILES',
     ...files.map((f) => `  ${f.name.padEnd(24)} ${String(f.rows).padStart(8)} rows  ${DESCRIPTIONS[f.name] ?? ''}`),

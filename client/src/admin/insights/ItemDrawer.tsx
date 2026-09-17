@@ -6,9 +6,8 @@ import type { ItemStatsDTO, RankingRowDTO } from '../../../../shared/dto.ts';
 import { addDays, weekStart } from '../../../../shared/time.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { num } from '../../lib/format.ts';
-import {
-  Drawer, DrawerSection, EmptyState, Icon, KeyValue, LinkButton, MiniBars, Skeleton, dishImageUrl, type KeyValueItem,
-} from '../../ui/index.ts';
+import { Drawer, EmptyState, Icon, LinkButton, Skeleton, dishImageUrl } from '../../ui/index.ts';
+import { DrawerSection, KeyValue, MiniBars, type KeyValueItem } from '../../ui/admin/index.ts';
 import { ErrorPanel, HBars, useLiveResource } from './parts.tsx';
 import { periodParams, queryString, today, type PeriodState } from './query.ts';
 import { dayMonth, durationText, rangeLabel, ratioText, share, weightText } from './labels.ts';

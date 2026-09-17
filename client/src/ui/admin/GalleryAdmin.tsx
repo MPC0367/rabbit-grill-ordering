@@ -847,7 +847,8 @@ function ChartStates() {
         footerText={tx('Least ordered includes published dishes with zero orders; drafts and dishes never available this week are left out.', 'รายการสั่งน้อยที่สุดรวมเมนูที่เปิดขายแต่ยังไม่มีคนสั่ง ไม่รวมฉบับร่างและเมนูที่ไม่ได้ขายสัปดาห์นี้')}
       >
         <RankingRow imageLoading="eager" rank={32} image={DISH('mushrooms')} name="เห็ดผัด" nameLang="th" english="Sauteed Mushrooms" category={tx('Sides', 'เครื่องเคียง')} servings={2} shareText="1%" bar={0.06} orders={2} visits={2} change={{ label: 'no_baseline' }} context={{ kind: 'partial', availableDays: 2, openDays: 3 }} />
-        <RankingRow rank={33} image={null} name="Hoegaarden White" nameLang="en" category={tx('Beer', 'เบียร์')} servings={1} shareText="0%" bar={0.03} orders={1} visits={1} change={{ label: 'new' }} context={{ kind: 'insufficient' }} variants={[{ name: '500 ml', lang: 'en', servings: 1 }]} />
+        {/* Bilingual category: the kit marks the language, so a Thai-only category on an English screen still reads as Thai. */}
+        <RankingRow rank={33} image={null} name="Hoegaarden White" nameLang="en" category={{ th: 'เบียร์', en: null }} categoryNote={tx('Thai name only', 'ชื่อไทยเท่านั้น')} servings={1} shareText="0%" bar={0.03} orders={1} visits={1} change={{ label: 'new' }} context={{ kind: 'insufficient' }} variants={[{ name: '500 ml', lang: 'en', servings: 1 }]} />
         <RankingRow imageLoading="eager" rank={34} image={DISH('pork-ribs')} name="ซี่โครงหมูย่าง" nameLang="th" english="Grilled Pork Ribs" category={tx('From the Grill', 'จากเตาย่าง')} servings={0} shareText="0%" bar={0} orders={0} visits={0} change={{ label: 'flat', delta: 0 }} context={{ kind: 'never_ordered' }} />
       </RankingTable>
     </div>
@@ -983,7 +984,8 @@ function PiecesSection() {
           </JobList>
           <AuditList aria-label={tx('Audit entries', 'บันทึกการแก้ไข')}>
             <AuditEntry time="19:45" date={tx('17 Sep', '17 ก.ย.')} at="2026-09-17T12:45:00Z" actor="Nok" action={tx('Line cancelled', 'ยกเลิกจาน')} target="Green Salad · RG-4K7P · table 07" reason={tx('Out of stock', 'ของหมด')} changes={[{ field: tx('Status', 'สถานะ'), before: tx('Preparing', 'กำลังทำ'), after: tx('Cancelled', 'ยกเลิกแล้ว') }, { field: tx('Charged', 'คิดเงิน'), before: '฿260', after: '฿0' }]} />
-            <AuditEntry time="19:40" date={tx('17 Sep', '17 ก.ย.')} actor="Nok" action={tx('Guest ordering paused', 'หยุดรับออร์เดอร์ชั่วคราว')} reason={tx('Kitchen backed up, 15 minutes', 'ครัวแน่น 15 นาที')} changes={[{ field: tx('Guest ordering', 'การสั่งของลูกค้า'), before: tx('Open', 'เปิดรับ'), after: tx('Paused until 19:55', 'หยุดถึง 19:55') }]} />
+            {/* A reason typed in Thai stays Thai on the English screen, with lang="th" on the words. */}
+            <AuditEntry time="19:40" date={tx('17 Sep', '17 ก.ย.')} actor="Nok" action={tx('Guest ordering paused', 'หยุดรับออร์เดอร์ชั่วคราว')} reason={{ th: 'ครัวแน่น 15 นาที', en: null }} changes={[{ field: tx('Guest ordering', 'การสั่งของลูกค้า'), before: tx('Open', 'เปิดรับ'), after: tx('Paused until 19:55', 'หยุดถึง 19:55') }]} />
             <AuditEntry time="16:58" date={tx('17 Sep', '17 ก.ย.')} actor={tx('System', 'ระบบ')} actorType="system" action={tx('Menu price published', 'เผยแพร่ราคาเมนู')} target="Prime Rib" changes={[{ field: tx('Rate per 100 g', 'ราคาต่อ 100 กรัม'), before: '', after: '฿490' }]} />
           </AuditList>
         </div>

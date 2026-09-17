@@ -9,7 +9,8 @@ import { api } from '../../../lib/api.ts';
 import { clock, grams as gramsLabel, money } from '../../../lib/format.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
 import { useNow } from '../../../lib/store.ts';
-import { Button, Dialog, GuestNote, Icon, Pill, TableBox, Tag, useAnnounce, useToast } from '../../../ui/index.ts';
+import { Button, Dialog, Icon, Pill, Tag, useAnnounce, useToast } from '../../../ui/index.ts';
+import { GuestNote, TableBox } from '../../../ui/admin/index.ts';
 import {
   clearPendingKey, errorText, minutesSince, pendingKey, staleCurrent, staffName, toApiError,
 } from '../support.ts';

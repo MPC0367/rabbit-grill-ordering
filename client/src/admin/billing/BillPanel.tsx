@@ -7,9 +7,8 @@ import { useState, type ReactNode } from 'react';
 import type { BillLineDTO, BillRevisionDTO, PaymentDTO, StaffBillDTO } from '../../../../shared/dto.ts';
 import { clock, dateTime, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import {
-  Button, DrawerSection, EmptyState, KeyValue, LineStatusPill, Pill, Price, Skeleton, type KeyValueItem,
-} from '../../ui/index.ts';
+import { Button, EmptyState, Pill, Price, Skeleton } from '../../ui/index.ts';
+import { DrawerSection, KeyValue, LineStatusPill, type KeyValueItem } from '../../ui/admin/index.ts';
 import { dishName, errorText, tn } from '../tables/shared.ts';
 import { billState, nextBillStep, paymentStatusKey, useBillController, type BillController } from './useBill.tsx';
 import './billing.css';

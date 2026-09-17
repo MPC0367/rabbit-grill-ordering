@@ -124,3 +124,14 @@
   .c5-summary .stat__v { font-size: var(--fs-26); }
   .c5-change b { font-size: var(--fs-26); }
 }
+
+/* payment as a step inside the table drawer (phones, round-1 finding 31):
+   one surface, the fields in the drawer body and its own foot. */
+.c5-paystep { display: block; min-width: 0; }
+.c5-paystep:focus { outline: none; }
+.c5-paystep .c5-due { padding: 16px; }
+.c5-paystep__foot { grid-template-columns: minmax(0, auto) minmax(0, 1fr); }
+.c5-paystep__foot > .btn { width: 100%; }
+@media (max-width: 359px) {
+  .c5-paystep__foot { grid-template-columns: minmax(0, 1fr); }
+}

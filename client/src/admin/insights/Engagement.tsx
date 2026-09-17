@@ -7,10 +7,8 @@ import type { EngagementDTO } from '../../../../shared/dto.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useRoute } from '../../lib/router.ts';
 import { num } from '../../lib/format.ts';
-import {
-  Banner, DataTable, EmptyState, KeyValue, LinkButton, MiniBars, StatCard, StaffSearch, normalizeSearch, cx,
-  type DataColumn, type SortState,
-} from '../../ui/index.ts';
+import { Banner, EmptyState, LinkButton, normalizeSearch, cx } from '../../ui/index.ts';
+import { DataTable, KeyValue, MiniBars, StatCard, StaffSearch, type DataColumn, type SortState } from '../../ui/admin/index.ts';
 import {
   Card, ErrorPanel, HBars, LoadingBlock, PageBar, PeriodBar, SplitMeter, useSticky,
 } from './parts.tsx';

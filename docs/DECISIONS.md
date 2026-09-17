@@ -2166,3 +2166,310 @@ guest menu). One copy fix was made here and nothing else: the Thai
 `settings.retention.d` said "ไม่ถูกลบ", the only warning the i18n checker
 still printed; it now reads "ระบบไม่เคยลบออร์เดอร์ บิล และการรับเงิน", so the
 checker is silent. Scripts and screenshots: `var/scratch/reverify2/`.
+
+## Final polish: server and fixtures
+
+**D-F-01 · The staff quote prices a weighed cut; the server owns the money.**
+`POST /api/staff/orders/quote` could not price a measured-weight line, so the
+one screen that has to show a price for a weighed cut - the paper-recovery
+picker - worked the arithmetic out on the device and hid the
+`measured_weight_needs_quote` issue the server sent back. A price the server
+never agreed to is not a price.
+- `StaffLineInput` (the shape recovery already used, `measured: { grams }`) is
+  now the staff quote's line shape too, and the quote passes those grams to
+  `priceCart()`. The answer carries the same `QuoteLineDTO` fields a recovered
+  order stores: `measured_grams`, quantity 1, `unit_price_minor` =
+  grams x rate / basis half-up, and no issue on the line.
+- Guest bodies still parse with `CartLineInput`, which has no `measured` field
+  at all, so a weight sent by a guest cart is dropped and the guest still gets
+  `measured_weight_needs_quote` (D-S8-21 unchanged).
+- Only a member who may actually record a paper ticket
+  (`orders.recover_manual`) gets a priced cut. A cashier with `orders.assist`
+  keeps the weighing issue, so a preview can never offer a price that member's
+  submission would refuse.
+- The quote validates weights exactly as recovery does (`not_measured_weight`,
+  `one_cut_per_line` on `lines.N.measured` / `lines.N.quantity`), from one
+  function used by both. Recording a weighed cut as an order is still manual
+  recovery's alone: `AssistOrderBody` has no weights.
+
+**D-F-02 · Staff pickers get the reason the guest menu cannot carry.**
+The public menu reports whether a dish is orderable and the FIRST reason it is
+not. That is enough for a guest and not enough for a picker: "category paused"
+hides "not verified", and D-S8-19 says a paused dish may be recovered from
+paper while an unverified one may not. `GET /api/staff/menu/orderability`
+(`orders.view`) answers one row per catalog item: `orderable`, `reason`,
+`recoverable`, `recovery_blocked_reason`, `status`, `review_status`,
+`sold_out`, `category_paused`, `measured_weight`, plus the catalog `version`.
+`recovery_blocked_reason` is computed by the same call the recovery endpoint
+makes (`unavailableReason` with the operational states ignored), so the screen
+that greys a dish out and the server that refuses it cannot disagree. The
+public DTO is untouched; archived and draft items are included so a picker
+holding a stale menu can say why a dish is gone.
+
+**D-F-03 · The live stream says how often it will ping, and then pings.**
+The stream sent only a `: keep-alive` comment, which a browser's EventSource
+never shows to JavaScript, so a client could not tell a quiet restaurant from a
+half-open socket through a proxy and its silence watchdog stayed disarmed. The
+stream now sends a NAMED `ping` event on the same interval, and `hello` carries
+`ping_ms` so the watchdog waits a multiple of the server's real interval rather
+than a guess. The comment keep-alive is still written alongside it, because
+that is what proxies read. A ping carries no `id`: the client's Last-Event-ID
+must keep pointing at the last real event. `STREAM_PING_MS` (default 15 s,
+clamped to 1-60 s) sets the interval; the integration test runs a server at 1 s
+so a heartbeat is observable in a second instead of half a minute.
+
+**D-F-04 · Fixture reasons are written in the language the staff member typed.**
+Cancel and reject reasons are free text, stored exactly as typed, and the
+fixtures wrote them in English - which is the one thing that made otherwise
+good Thai screens look wrong. `seed/visit-sim.ts` now writes what a Rabbit
+Grill staff member would have written:
+- a reason a GUEST reads on their phone (a rejected or cancelled dish, a
+  weighing note) is Thai with a short English gloss after " - ", the shape the
+  fixtures already used for the allergy note in `seed/live.ts`, because the
+  dining room is bilingual and the phone may be in either language;
+- a reason only staff and the owner ever read (a bill reopened for a comp, a
+  table closed unpaid, a restock, the supplier sell-out in `seed/menu-model.ts`)
+  is Thai alone, because that is all anyone would have typed.
+Text the PRODUCT writes is never translated: `Bill handled at checkout` stays
+byte-identical to `server/domain/service.ts`, and the seed now says so where it
+repeats it. Every fixture row is still `is_fixture = 1` and the seed is still
+deterministic: only the strings changed, not the number of draws from the PRNG.
+
+**D-F-05 · Three dishes carry reviewed search aliases, so alias search is real.**
+The seeded catalog published no aliases at all, so the alias search built in
+round 2 (D-S8-28) had nothing to find. `seed/catalog.ts` now publishes reviewed
+aliases for three dishes and nothing else: `basil-beef-rice`
+(`pad kra pao`, `kaprao`, `basil rice`, `ข้าวกะเพรา`), `thai-tea` (`ชาไทย`,
+`ชาเย็น` - the card prints no Thai name at all), and `grilled-river-prawns`
+(`goong pao`, `river prawn`). Every other dish keeps the column default: no
+aliases, unreviewed. Aliases are never printed and the printed names are
+untouched. The approval is the fixture's, not the owner's, and the seed writes
+a `menu.aliases_reviewed` audit row saying exactly that and naming the three
+dishes.
+
+**D-F-06 · The annual export carries guest ratings with the sample they came from.**
+The snapshot gained `feedback`: `entries`, `rated`, `average_rating` (two
+decimals, null when nobody rated), the five-row `distribution` and
+`with_comment`. Ratings are self-selected - one optional entry per phone - so
+`rated` travels with the average everywhere it is printed and the average is
+never printed alone: the export README prints "Average guest rating X.XX of 5,
+from N ratings" with the distribution, and the snapshot notes say the average
+comes from the ratings guests chose to send, not from every party served.
+Comment TEXT is never read by the export, only how many entries carried one -
+the same rule the order notes follow. The figures come from the same query the
+owner's feedback panel uses, so the two cannot drift. No new CSV file was added
+to the bundle; the ZIP's file list is unchanged.
+
+## Final polish: admin screens (billing on phones, dish counts, staff quote)
+
+**D-FP-ADM-01 · A phone records a payment inside the table drawer, not on top of it.**
+Round-1 finding 31: on a phone the payment opened as a second `<dialog>` over
+the table drawer, so a cashier was two overlays deep with two close buttons and
+one browser Back between them and the floor. The fix keeps ONE surface at every
+width and changes nothing on desktop:
+- `PaymentDialog.tsx` now exposes `usePaymentSurface()`, which owns the fields,
+  the change arithmetic and the idempotent submit and hands back `{title, body,
+  footer, busy}`. `PaymentDialog` is a thin `Sheet` around it and is still what
+  tablets and desktops see.
+- `useBillController` takes `payOwner`. With it, `dialogs` leaves the payment
+  out and the host gets `payOpen` plus `pay.close / pay.recorded / pay.stale`.
+- `TableDrawer` sets `payOwner` below 768px and renders the surface as a step:
+  the drawer head reads "Record payment" (the lead box already carries the
+  table), the body is the payment, and the foot is
+  `Back to the table · Record ฿840 · Cash`.
+Dismissing is the same action three ways - the head's X, Escape and browser Back
+all LEAVE THE STEP and return to the table, never closing the drawer and losing
+a half-typed amount. Back works because the step pushes its own history entry
+(`useHistoryDismiss`) on top of the drawer's, so the top entry pops first.
+Focus is moved deliberately: entering, it lands on the step (announced as
+"Record payment · Table 07"); leaving, it returns to the billing action in the
+foot, or to Complete checkout once the bill is settled and that action is gone
+(`data-pay-return`). Because the surface now stays mounted, it resets its fields
+whenever it opens - a dialog got that for free by unmounting.
+Driven end to end on a real 390-wide phone in both languages and at 1440
+(`var/scratch/polish-pay390.ts`): start checkout, finalise, record cash with
+change, complete checkout - 12 checks each on the phone, 6 on the desktop.
+
+**D-FP-ADM-02 · Dishes, not order lines, everywhere the board counts dishes.**
+Round-1 finding 41. The Orders board's ticket buttons count dishes
+(`Mark served · 3` sums quantities), while the table tiles and the checkout
+blockers counted order LINES, so one table could truthfully say "2 not served"
+and "Mark served · 3" at the same time. The server now sends `unresolved_dishes`
+and `ready_dishes` beside the older line counts, and the client reads them from
+one new pure module, `client/src/admin/tables/counts.ts`
+(`unresolvedDishes`, `readyDishes`, `checkoutWords`, moved out of
+`CheckoutDock.tsx` so it can be unit-tested). The tile facts, the tile's READY
+badge and the drawer's checkout blockers now all count dishes, and the words
+say so ("3 dishes not served", "2 dishes in round 2 are not served"). The
+Overview card already used `readyDishes` and is unchanged.
+Two figures deliberately stay line counts: an older server that sends no dish
+count falls back to its line count, which is the same number until a line has a
+quantity above one; and the blocker shown when the visit detail has not loaded
+reads off the bill, which counts lines, so it keeps the neutral "Items not
+served yet" wording rather than claiming dishes it did not count.
+`test/unit/table-counts.test.ts` covers both units and the fallbacks.
+
+**D-FP-ADM-03 · The staff quote decides the money; the local rate is a one-release fallback.**
+The assist and paper-recovery panel priced a weighed cut itself, because
+`POST /api/staff/orders/quote` ignored the grams. The arithmetic moved out of
+the component into `assist/draft.ts` (`draftLineMinor`, `draftSubtotal`,
+`cutNotPricedByServer`, `localLineMinor`) and now prefers the server: a quote
+line that comes back with `measured_grams` is what the panel prints, for the
+line and for the subtotal. `measured_grams` also joined the debounce key, so
+changing a cut's weight re-quotes - without that the server's price could never
+arrive. The fallback survives exactly one release, for a server that answers
+without `measured_grams`: that one line is priced here at the item's approved
+rate and added to the quote's subtotal, so the foot is never short. Delete
+`cutNotPricedByServer` and `localLineMinor` once every server prices the cut.
+The server landed its half in the same round, so the SERVER path is the live
+one: `POST /api/staff/orders/quote` takes `StaffLineInput` and passes
+`measuredGrams` to `priceCart`, for a member who may record a paper order.
+Checked against the running server: 333 g of prime rib at 490.00/100 g quotes
+`measured_grams: 333`, `line_total_minor: 163170`, no
+`measured_weight_needs_quote` issue, and the panel's review step prints
+฿1,631.70 for the line and the subtotal at 390 and 1440. The fallback is now
+dead code on this server and is kept for one release for an older one; only
+`test/unit/recover-draft.test.ts` exercises it.
+The one piece of local arithmetic left in `assist/` is deliberate: the amount
+under the grams field in `CatalogPicker`'s weight form previews a line that
+does not exist yet, so there is nothing to quote. It calls the same
+`measuredAmount` the server prices with, on the rate from the same menu
+payload, and every figure after the line is added comes from the quote.
+
+**D-FP-ADM-04 · Two ambiguities left over from round 1, and where the rest of them live.**
+Round-1 finding 14 (repeated button names) and 15 (`lang`), rechecked against
+the running app with the accessibility tree rather than by reading the source:
+- **Availability had 34 identical "Edit options" links**, one per dish with
+  variants, each going somewhere different. Each now carries its own dish in a
+  visually hidden tail, with the dish's own `lang`, the same shape the Audit
+  links already used.
+- **The Audit reason line lost its language.** A reason is free text somebody
+  typed, and `AuditPage` handed the kit a plain string, which means "the page's
+  language": a Thai reason on an English screen was marked `lang="en"`. It now
+  returns a `Bilingual` chosen by script (`langOf`), so the reason keeps its own
+  language. A reason that mixes product words with staff text
+  ("Dish cancelled: …") deliberately stays a plain string: half of it really is
+  in the reader's language, and one `lang` cannot be right for both halves.
+What is left is not in these files and is named here so it is not lost:
+- `SelectOption` (`ui/Field.tsx`) and `SelectButton` (`ui/admin/Controls.tsx`)
+  take `{value, label}` with no `lang`, so category names with no Thai
+  ("Coffee", "Hot Tea", "Whiskey", "Soft Drinks") are announced as Thai in the
+  Menu, Menu Stats and Audit filters, and so are staff display names in the
+  Audit actor filter. One optional field on each type fixes all of them.
+- `AuditEntryProps.actor` and `AuditChange.field` are typed `string`, so the
+  actor name and the humanised database field names in a diff ("amount due",
+  "close business date") cannot carry `lang="en"` on a Thai page.
+- The Menu review queue lists one row per open flag, so a dish with three flags
+  shows three "Edit <dish>" links and three "Verify <dish>" buttons. Left as is:
+  the names repeat because the action and its target repeat, which is what
+  WCAG 2.4.9 asks for; only names that repeat while doing DIFFERENT things were
+  treated as defects.
+
+## Final polish: UI kit, styles and the client barrel
+
+**D-FP-KIT-01 · Hit-area overlays were measured from the padding box, so a 1px
+border shaved 2px off every one of them.**
+The kit grows a control that looks smaller than `--tap` with an absolutely
+positioned `::after` rather than a bigger visible box (DESIGN §10.2). All of
+them were written as `inset: -Npx`, and insets resolve against the containing
+block's PADDING box. `.iconbtn` and `.seg > button` both carry
+`border: 1px solid transparent`, so `inset: -6px` on the 32px definition "i"
+gave 42px, not 44, and `inset: -3px -1px` on the 38px segment gave 42, not 44.
+The visual audit (`npm run shots`, DESIGN §14) samples 21px each side of a
+control's centre, so both landed exactly on the overlay's edge and were
+reported. The overlays are now centred on the control and sized with
+`min-width` / `min-height`, which is border-box arithmetic and cannot be shaved:
+44 for the definition button and the md segment, `--tap-staff` (48) for
+`.seg--staff`. Both land exactly on the track's own box, because `.seg` already
+pads its buttons by 3px - which is what `-3px` was reaching for.
+`.seg`'s `gap: 2px` became `column-gap: 2px; row-gap: 6px`. A single-row track
+is unchanged (`row-gap` never applies); the phone orders board, which wraps the
+five statuses onto two rows (`orders.css`), gains 4px between them so each row's
+48px overlay stops in the gap instead of reaching into the row above or below.
+`.seg--box` sets `gap: 0`, so the language switch is untouched.
+
+**D-FP-KIT-02 · The dish name's own box now reaches 44px, without moving the
+name by a pixel.**
+`button.dish__open` draws one 27px line, and its `::after` covers the whole row
+(DESIGN §10.6), so the real target has always been the row. Nothing measuring
+the BUTTON can see that: the audit read a 56x27 box and sampled 21px above and
+below it, which on the last rows above the dock landed on the order slip, the
+bottom nav or the welcome toast. The button now takes
+`padding-block: max(0px, calc((var(--tap) - 1lh) / 2))` and hands the same
+amount straight back as a negative `margin-block`, so its border box is 44px
+while its margin box is still one line: the line box, the leader dots, the price
+baseline and the row height are unchanged. Measured with and without the padding
+on twelve rows at 390: every row height, name top, price top and foot top
+identical. If `lh` is ever unsupported the whole declaration is dropped and the
+old geometry returns, so it fails safe.
+
+**D-FP-KIT-03 · Thai keeps its line-height floor at 320, and the wrap that
+needed it lives with the component.**
+`guest/shell/shell.css` let the order slip's "not sent yet" line wrap to two
+lines below 360px and set `line-height: 1.3` to fit, which put Thai under the
+1.5 floor the audit enforces (`--lh-thai-min` is 1.55). The wrap is a property
+of the slip, so `components.css` now owns it under the same media query at a
+specificity a page stylesheet does not reach
+(`.slip .slip__main .slip__sub`), with `--lh-thai-min` kept. At 320 the line
+still fits on one line and the slip is still 60px tall, so nothing moved; if it
+ever wraps, the two lines are 40px and the dock clearance already reserves 18px
+for them. The `line-height: 1.3` left in `shell.css` is now dead and can go.
+
+**D-FP-KIT-04 · The toast rides on the dock's measured height, not on
+`--dock-clearance`.**
+`--dock-clearance` is scroll padding: it always reserves the order slip, whether
+or not a slip is showing. The toast was pinned to it, so with an empty draft it
+floated ~110px clear of the dock - at 320x256 that put the welcome toast over
+the masthead and the first rows (the round-2 leftover). It now sits 8px above
+`--pinned-bottom`, the band the dock actually reports through `usePinnedEdge`
+(`ui/hooks.ts`), which is what "shown above the dock" (DESIGN §10.24) meant.
+Measured at 320x256, 320x400 and 390x844: 8px above the dock at each one.
+Admin and wide-guest keep their floors as `max(24px | 32px, pinned + 8px)`, so
+desktop is unchanged and a staff phone bar no longer covers a toast.
+
+**D-FP-KIT-05 · `RankingRow.category` and `AuditEntry.reason` take the record's
+`Bilingual`, so data in the other language can carry `lang`.**
+Both were typed `string`, which means "in the page's language". A Thai category
+or a reason somebody typed in Thai was therefore marked `lang="en"` on an
+English screen and read out by a screen reader in the wrong voice, and Thai lost
+its line-height rule. They now take `Bilingual | string` (`DataText` in
+`ui/admin/parts.tsx`): a `Bilingual` is resolved with `pick()` and printed
+inside a span with its own `lang`, a plain string still inherits the page's
+language, so every existing caller is unaffected. `useReasonText` in `AuditPage`
+already returns a `Bilingual` for free text, and that now type-checks.
+`RankingRow` also takes `categoryNote`, a page-language note printed after the
+category and OUTSIDE its `lang`: `MenuStats` appends "Thai name only" to the
+category string today, which is the one thing that would have forced the whole
+line back to a single language. Both shapes are in the `/ui-kit` gallery.
+
+**D-FP-KIT-06 · The guest barrel no longer re-exports the staff kit.**
+`client/src/ui/index.ts` ended with `export * from './admin/index.ts'`. In
+development that is one module graph with no tree shaking, so opening the guest
+menu downloaded the whole staff kit, and a guest screen could import a staff
+component and only find out from a production bundle. The ~70 admin imports
+were split (staff names now come from `client/src/ui/admin/index.ts`) and the
+re-export is gone. Verified both ways: a production build has no staff module in
+any chunk a guest page loads, and in development a guest device that visits
+Menu, Order, Track and Bill fetches 0 modules under `src/ui/admin/`, `src/admin/`
+or `admin-kit.css` (it used to fetch the whole kit). `/ui-kit` still renders all
+59 sections with no page or console errors. `test/unit/kit-barrel.test.ts` locks
+all three rules in from the source, so a build is not needed to catch a
+regression. `vite.config.ts` still carries the `moduleSideEffects` treeshake
+workaround written for the re-export; it is now belt and braces.
+
+**D-FP-KIT-07 · Two audit notes that geometry cannot close, and why.**
+- **Month and year chart bars (24 notes).** At 1440 a 30-day month gives each
+  `.wbc__hit` a 26px pitch; 44px per bar would need 1320px of plot where there
+  are ~790. Overlapping the hit areas is worse, not better: whichever neighbour
+  paints last would take the taps meant for the bar beside it, so a day would
+  select the wrong day. The bars keep the full slot they have, one tab stop with
+  arrow keys moves between them, and "Show as table" gives the same numbers in
+  48px rows - the equivalent-control route. Left as reported rather than dressed
+  up: changing the bars' role to silence the check would hide a real limit.
+- **The item editor's language toggle (3 notes).** The kit part is fixed: the
+  toggle's hit area is a true 44px and passes wherever the control is clear.
+  What is left is occlusion, not size - at the default scroll on
+  `/admin/menu/items/…` at 1440 the sticky save bar (`.ed-bar`, top 832) crosses
+  the preview card's header (bottom 839), so the bottom 4px of the visible
+  38px button and the last 8px of its hit area are under the bar. That is the
+  menu editor's layout, not the kit's.

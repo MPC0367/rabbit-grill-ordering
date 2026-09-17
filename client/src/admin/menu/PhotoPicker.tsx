@@ -3,7 +3,10 @@
 // photo never blocks publishing; guests then see a text-led row.
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useI18n } from '../../lib/i18n.tsx';
-import { Button, DishImage, EmptyState, Icon, StaffSearch, TextArea, dishImageUrl, normalizeSearch, type DishImageSource } from '../../ui/index.ts';
+import {
+  Button, DishImage, EmptyState, Icon, TextArea, dishImageUrl, normalizeSearch, type DishImageSource,
+} from '../../ui/index.ts';
+import { StaffSearch } from '../../ui/admin/index.ts';
 import { IMAGE_ALT_MAX } from '../../../../shared/schemas.ts';
 import { useMenuData } from './model.tsx';
 import { useNameText } from './parts.tsx';

@@ -434,6 +434,14 @@ test('the annual data export is a zip of complete CSV files whose totals match t
   const noted = csvOf(files, 'order_lines.csv').rows.find((r) => r.item_id === T.items.soup)!;
   assert.equal(noted.has_note, '1');
   assert.match(files.get('README.txt')!.toString('utf8'), /Payment references: not needed for reporting/);
+
+  // Guest ratings never appear without the sample they came from (D-F-06),
+  // and the comment TEXT is not in the export at all.
+  const readme = files.get('README.txt')!.toString('utf8');
+  const ratings = readme.split('GUEST RATINGS')[1]?.split('FILES')[0] ?? '';
+  assert.notEqual(ratings, '', 'the export states the guest ratings');
+  assert.match(ratings, /Average guest rating \d+\.\d\d of 5, from \d+ rating|and no rating, so there is no average/);
+  assert.match(ratings, /chose to answer/);
 });
 
 test('a manager requesting a report gets no payment figures, and neither PINs nor tokens appear in the current-year export', async () => {

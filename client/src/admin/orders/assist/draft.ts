@@ -2,7 +2,7 @@
 // panel or a reload keeps the lines and, above all, the attempt key of a
 // submission whose answer never arrived (brief 13, 22).
 import { useCallback, useEffect, useState } from 'react';
-import type { MenuItemDTO } from '../../../../../shared/dto.ts';
+import type { MenuItemDTO, QuoteDTO } from '../../../../../shared/dto.ts';
 import { allocateGroupPicks, measuredAmount } from '../../../../../shared/money.ts';
 import type { RecoverLineInput } from '../../../../../shared/schemas.ts';
 import { storage } from '../../../lib/store.ts';
@@ -114,6 +114,44 @@ export function unitPrice(item: MenuItemDTO | undefined, line: Pick<DraftLine, '
     mods += allocateGroupPicks(g.options, picked, g.included_count).reduce((s, p) => s + p.charged_minor, 0);
   }
   return base + mods;
+}
+
+// ------------------------------------------------------------------ money
+// Money on the assist and recovery panel comes from the server quote, which
+// prices weighed cuts from the grams the panel sends (D-S8-21). The local
+// arithmetic below is a one-release FALLBACK for a server that does not price
+// them yet: it returns no `measured_grams` on that quote line, and staff would
+// otherwise see a cut priced at zero. Delete `cutNotPricedByServer` and its
+// branches once every server prices the cut.
+
+/** A weighed cut this quote could not price. */
+export function cutNotPricedByServer(line: DraftLine, index: number, quote: QuoteDTO | null | undefined): boolean {
+  if (line.measured_grams == null) return false;
+  const q = quote?.lines.find((x) => x.line_index === index);
+  return !q || q.measured_grams == null;
+}
+
+/** This device's own figure for one line (fallback only). */
+export function localLineMinor(line: DraftLine, item: MenuItemDTO | undefined): number {
+  return (unitPrice(item, line) ?? 0) * (line.measured_grams != null ? 1 : line.quantity);
+}
+
+/** What one line costs: the server's figure whenever the quote priced that line. */
+export function draftLineMinor(line: DraftLine, index: number, item: MenuItemDTO | undefined, quote: QuoteDTO | null | undefined): number {
+  const q = quote?.lines.find((x) => x.line_index === index);
+  if (!q || cutNotPricedByServer(line, index, quote)) return localLineMinor(line, item);
+  return q.line_total_minor;
+}
+
+/**
+ * The foot's subtotal. The quote's own subtotal counts its priced lines only,
+ * so any cut it could not price is added from the fallback and the foot is
+ * never short.
+ */
+export function draftSubtotal(lines: DraftLine[], itemOf: (id: string) => MenuItemDTO | undefined, quote: QuoteDTO | null | undefined): number {
+  if (!quote) return lines.reduce((sum, l) => sum + localLineMinor(l, itemOf(l.item_id)), 0);
+  return quote.subtotal_minor
+    + lines.reduce((sum, l, i) => sum + (cutNotPricedByServer(l, i, quote) ? localLineMinor(l, itemOf(l.item_id)) : 0), 0);
 }
 
 export function toInput(line: DraftLine, item: MenuItemDTO | undefined): RecoverLineInput {

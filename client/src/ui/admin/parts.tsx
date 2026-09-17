@@ -1,5 +1,7 @@
 // Internal helpers for the staff & data kit. Not exported from the barrel.
 import type { FocusEvent, KeyboardEvent } from 'react';
+import type { Bilingual } from '../../../../shared/dto.ts';
+import { useI18n } from '../../lib/i18n.tsx';
 import { Icon, type IconName } from '../Icon.tsx';
 
 /** Class-name join that drops falsy parts. */
@@ -77,6 +79,27 @@ export function initials(name: string): string {
 /** useId() output made safe for SVG `url(#…)` references and CSS selectors. */
 export function safeId(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+/**
+ * Data a screen passes to the kit: either the record's own `Bilingual` value,
+ * or one string the caller has already resolved. Prefer the `Bilingual`: only
+ * then can the kit mark a Thai value shown on an English screen (or the other
+ * way round) with the right `lang`, so a screen reader changes voice and Thai
+ * keeps its own line-height.
+ */
+export type DataText = Bilingual | string;
+
+/** Resolve a `DataText` to the text to print and the `lang` to print it in. */
+export function useDataText(): (value: DataText | null | undefined) => { text: string; lang?: string } | null {
+  const { pick } = useI18n();
+  return (value) => {
+    if (value === null || value === undefined) return null;
+    // A plain string carries no language of its own: it inherits the page's.
+    if (typeof value === 'string') return value ? { text: value } : null;
+    const picked = pick(value);
+    return picked.text ? { text: picked.text, lang: picked.lang } : null;
+  };
 }
 
 /** Decorative icon (aria-hidden). Words beside it carry the meaning. */

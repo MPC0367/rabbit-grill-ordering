@@ -12,8 +12,9 @@ import { useI18n } from '../../lib/i18n.tsx';
 import { useRoute } from '../../lib/router.ts';
 import { storage } from '../../lib/store.ts';
 import {
-  Banner, Button, EmptyState, Icon, LinkButton, PageHeader, SegmentedControl, Skeleton, Wordmark,
+  Banner, Button, EmptyState, Icon, LinkButton, SegmentedControl, Skeleton, Wordmark,
 } from '../../ui/index.ts';
+import { PageHeader } from '../../ui/admin/index.ts';
 import { errorText, isApiError, qrDownloadHref, useStaff } from './shared.ts';
 import './tables.css';
 

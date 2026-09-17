@@ -337,6 +337,24 @@ export interface SnapshotSummary {
   paid_minor?: number;
 }
 
+/**
+ * Guest ratings for the year (D-F-06). These are what guests chose to send
+ * after their meal, not a survey of everyone who ate: `rated` is the sample
+ * behind `average_rating` and travels with it everywhere it is printed.
+ * Comments are never exported - only how many carried one.
+ */
+export interface FeedbackSnap {
+  /** Feedback entries in the year. A guest may send a comment with no rating. */
+  entries: number;
+  /** Entries that carried a 1-5 rating: the sample size of `average_rating`. */
+  rated: number;
+  /** Mean of the ratings, to two decimals; null when nobody rated. */
+  average_rating: number | null;
+  /** 5 to 1, always all five rows. */
+  distribution: Array<{ rating: number; count: number }>;
+  with_comment: number;
+}
+
 export interface ReportSnapshot {
   job: JobInfo;
   restaurant: { name_th: string; name_en: string; short_en: string };
@@ -355,6 +373,7 @@ export interface ReportSnapshot {
   weekly: PeriodRow[];
   ranking: RankingSnap;
   engagement: EngagementSnap;
+  feedback: FeedbackSnap;
   timings: TimingSnap;
   exceptions: ExceptionSnap;
   payments: PaymentsSnap | null;

@@ -8,8 +8,9 @@ import { api, ApiError } from '../../lib/api.ts';
 import { num } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import {
-  Banner, Button, DataTable, FilterChips, Icon, LinkButton, Pill, TextArea, useAnnounce, type ChipOption, type DataColumn, type PillTone,
+  Banner, Button, Icon, LinkButton, Pill, TextArea, useAnnounce, type PillTone,
 } from '../../ui/index.ts';
+import { DataTable, FilterChips, type ChipOption, type DataColumn } from '../../ui/admin/index.ts';
 import { TAB_HREF, useErrorText, useMenuData } from './model.tsx';
 
 const MAX_CHARS = 2_000_000;

@@ -2,7 +2,12 @@
 // revision, amount locked to the total, cash tendered -> change, optional
 // reference, idempotent. Staff record money they have checked; nothing here
 // moves money or completes checkout.
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+//
+// The fields and the submit live in `usePaymentSurface` so the same payment can
+// be a centred dialog (desktop and tablet) or a step inside the table drawer
+// (phones, round-1 finding 31): on a phone a payment is never a second dialog
+// stacked over the drawer.
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { StaffBillDTO } from '../../../../shared/dto.ts';
 import { api } from '../../lib/api.ts';
 import { clock, money } from '../../lib/format.ts';
@@ -18,6 +23,25 @@ interface Props {
   onStale: () => void | Promise<void>;
 }
 
+export interface PaymentSurfaceProps extends Omit<Props, 'bill'> {
+  /** Undefined while the bill is still loading. */
+  bill: StaffBillDTO | undefined;
+  /** False: the surface is not showing, so nothing is submitted and no state is kept. */
+  active: boolean;
+  /** 'cancel' (dialog) or 'none' (a drawer step whose host shows its own back action). */
+  dismissAs?: 'cancel' | 'none';
+}
+
+export interface PaymentSurface {
+  title: string;
+  /** The fields; render inside the dialog body or the drawer body. */
+  body: ReactNode;
+  /** Dismiss + confirm; render in the dialog or drawer foot. */
+  footer: ReactNode;
+  /** A request is in flight: do not let the surface be dismissed. */
+  busy: boolean;
+}
+
 /** Friendly cash amounts at or above the total: exact, next 100, next 500, next 1000. */
 function quickAmounts(total: number): number[] {
   const up = (step: number) => Math.ceil(total / step) * step;
@@ -25,12 +49,18 @@ function quickAmounts(total: number): number[] {
   return [...set].filter((v) => v >= total).sort((a, b) => a - b).slice(0, 4);
 }
 
-export default function PaymentDialog({ bill, onClose, onRecorded, onStale }: Props) {
+/**
+ * One payment surface: the fields, the change arithmetic and the idempotent
+ * submit. Returns null when there is nothing to pay (no payable revision, or
+ * the surface is not showing).
+ */
+export function usePaymentSurface({ bill, active, onClose, onRecorded, onStale, dismissAs = 'cancel' }: PaymentSurfaceProps): PaymentSurface | null {
   const { t, pick } = useI18n();
   const toast = useToast();
-  const rev = bill.current_revision;
-  const methods = bill.payment_methods;
-  const [method, setMethod] = useState(methods[0]?.id ?? '');
+  const rev = bill?.current_revision;
+  const methods = useMemo(() => bill?.payment_methods ?? [], [bill]);
+  const firstMethod = methods[0]?.id ?? '';
+  const [method, setMethod] = useState(firstMethod);
   const [tendered, setTendered] = useState('');
   const [reference, setReference] = useState('');
   const [busy, setBusy] = useState(false);
@@ -44,13 +74,27 @@ export default function PaymentDialog({ bill, onClose, onRecorded, onStale }: Pr
   const change = chosen?.tendered && tenderedMinor !== null ? tenderedMinor - total : null;
   const quick = useMemo(() => quickAmounts(total), [total]);
 
-  // The revision was settled or replaced elsewhere: this dialog no longer applies.
-  const payable = rev?.status === 'payable' && !bill.revision_stale;
+  // Each OPENING starts clean: unlike a dialog, this surface stays mounted, so
+  // it clears itself instead of being unmounted. Only the edge into `active`
+  // resets it, never a bill refresh while the cashier is typing.
+  const firstRef = useRef(firstMethod);
+  firstRef.current = firstMethod;
   useEffect(() => {
-    if (!payable && !busy) onClose();
-  }, [payable, busy, onClose]);
+    if (!active) return;
+    setMethod(firstRef.current);
+    setTendered('');
+    setReference('');
+    setError(null);
+    setTenderError(null);
+  }, [active]);
 
-  if (!rev) return null;
+  // The revision was settled or replaced elsewhere: this surface no longer applies.
+  const payable = rev?.status === 'payable' && !bill?.revision_stale;
+  useEffect(() => {
+    if (active && !payable && !busy) onClose();
+  }, [active, payable, busy, onClose]);
+
+  if (!active || !bill || !rev) return null;
   const methodName = chosen ? pick({ th: chosen.label_th, en: chosen.label_en }).text : '';
 
   const submit = async () => {
@@ -110,24 +154,8 @@ export default function PaymentDialog({ bill, onClose, onRecorded, onStale }: Pr
     }
   };
 
-  return (
-    <Sheet
-      open
-      onClose={onClose}
-      variant="dialog"
-      title={t('billing.pay.title', { table: bill.table_label })}
-      dismissible={!busy}
-      footerAlign="end"
-      bodyClassName="c5-pay"
-      footer={(
-        <>
-          <Button variant="outline" size="staff" onClick={onClose} disabled={busy}>{t('common.cancel')}</Button>
-          <Button variant="primary" size="staff" loading={busy} onClick={() => void submit()} aria-describedby={change !== null ? changeId : undefined}>
-            {t('billing.pay.confirm', { amount: money(total), method: methodName })}
-          </Button>
-        </>
-      )}
-    >
+  const body = (
+    <>
       <div className="c5-due">
         <p className="c5-due__k">{t('billing.pay.due')}</p>
         <Price minor={total} size="xl" className="c5-due__v" />
@@ -197,6 +225,38 @@ export default function PaymentDialog({ bill, onClose, onRecorded, onStale }: Pr
 
       <p className="c5-note c5-block">{t('billing.pay.honest')}</p>
       {error ? <p className="field__error c5-block" role="alert">{error}</p> : null}
+    </>
+  );
+
+  const footer = (
+    <>
+      {dismissAs === 'cancel' ? (
+        <Button variant="outline" size="staff" onClick={onClose} disabled={busy}>{t('common.cancel')}</Button>
+      ) : null}
+      <Button variant="primary" size="staff" loading={busy} onClick={() => void submit()} aria-describedby={change !== null ? changeId : undefined}>
+        {t('billing.pay.confirm', { amount: money(total), method: methodName })}
+      </Button>
+    </>
+  );
+
+  return { title: t('billing.pay.title', { table: bill.table_label }), body, footer, busy };
+}
+
+export default function PaymentDialog({ bill, onClose, onRecorded, onStale }: Props) {
+  const surface = usePaymentSurface({ bill, active: true, onClose, onRecorded, onStale });
+  if (!surface) return null;
+  return (
+    <Sheet
+      open
+      onClose={onClose}
+      variant="dialog"
+      title={surface.title}
+      dismissible={!surface.busy}
+      footerAlign="end"
+      bodyClassName="c5-pay"
+      footer={surface.footer}
+    >
+      {surface.body}
     </Sheet>
   );
 }

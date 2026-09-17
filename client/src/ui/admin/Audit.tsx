@@ -2,7 +2,7 @@
 // The original values stay visible (struck), never overwritten.
 import type { HTMLAttributes, ReactNode } from 'react';
 import { useI18n } from '../../lib/i18n.tsx';
-import { cx, Ico } from './parts.tsx';
+import { cx, Ico, useDataText, type DataText } from './parts.tsx';
 
 export interface AuditChange {
   field: string;
@@ -23,7 +23,8 @@ export interface AuditEntryProps extends Omit<HTMLAttributes<HTMLElement>, 'titl
   action: string;
   /** "Green Salad · RG-4K7P · table 07" */
   target?: ReactNode;
-  reason?: string | null;
+  /** Why it happened, usually typed by staff. Pass the record's `Bilingual` so a Thai reason on an English screen carries `lang`. */
+  reason?: DataText | null;
   changes?: AuditChange[];
   as?: 'div' | 'li';
 }
@@ -31,6 +32,7 @@ export interface AuditEntryProps extends Omit<HTMLAttributes<HTMLElement>, 'titl
 export function AuditEntry({ time, date, at, actor, actorType = 'staff', action, target, reason, changes, as = 'li', className, ...rest }: AuditEntryProps) {
   const { t } = useI18n();
   const Tag = as;
+  const why = useDataText()(reason);
   return (
     <Tag {...rest} className={cx('audit', className)}>
       <time className="audit__time" dateTime={at}>
@@ -47,10 +49,10 @@ export function AuditEntry({ time, date, at, actor, actorType = 'staff', action,
           {actor}
           <span className="audit__type"> · {t(`common.audit.${actorType}`)}</span>
         </p>
-        {reason ? (
+        {why ? (
           <p className="audit__reason">
             <span className="audit__k">{t('common.audit.reason')}</span>
-            <span>{reason}</span>
+            <span lang={why.lang}>{why.text}</span>
           </p>
         ) : null}
         {changes && changes.length > 0 ? (

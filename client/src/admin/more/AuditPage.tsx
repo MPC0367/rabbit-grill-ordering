@@ -3,7 +3,7 @@
 // "load older" pagination, before/after diffs (sensitive fields arrive
 // already masked) and links to the related table, item, report or settings.
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import type { AuditEntryDTO, StaffUserDTO } from '../../../../shared/dto.ts';
+import type { AuditEntryDTO, Bilingual, StaffUserDTO } from '../../../../shared/dto.ts';
 import { businessDate } from '../../../../shared/time.ts';
 import { businessDateOf, useBusinessToday } from '../insights/query.ts';
 import { api, qs } from '../../lib/api.ts';
@@ -11,7 +11,8 @@ import { clock, dateLabel, money, num } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useResource } from '../../lib/live.tsx';
 import { navigate, setQuery, useRoute } from '../../lib/router.ts';
-import { AuditEntry, AuditList, Badge, Button, EmptyState, Icon, Select, Tag, TextField, TextLink, useAnnounce, type AuditChange } from '../../ui/index.ts';
+import { Badge, Button, EmptyState, Icon, Select, Tag, TextField, TextLink, useAnnounce } from '../../ui/index.ts';
+import { AuditEntry, AuditList, type AuditChange } from '../../ui/admin/index.ts';
 import { useMedia } from '../../lib/store.ts';
 import { useStaff } from '../shell/session.tsx';
 import { Denied, langOf, MorePageFrame, ResourceGate, StaleBanner, useErrorWords, usePlural } from './shared.tsx';
@@ -50,16 +51,21 @@ const SERVER_REASONS: Array<{ re: RegExp; key: string }> = [
 
 function useReasonText() {
   const { t } = useI18n();
-  return (reason: string | null): string | null => {
+  return (reason: string | null): Bilingual | string | null => {
     if (!reason) return null;
     for (const r of SERVER_REASONS) {
       const m = r.re.exec(reason);
       if (!m) continue;
       const rest = (m[1] ?? '').trim();
+      // Product words, in the reader's language. When staff text follows them
+      // the line is mixed, so it stays in the page language rather than
+      // claiming one script for both halves.
       if (!rest) return t(r.key);
       return /^\d{4}$/.test(rest) ? t(r.key, { year: rest }) : `${t(r.key)}: ${rest}`;
     }
-    return reason;
+    // Free text somebody typed: it keeps its own script whatever the page is,
+    // so a Thai reason on an English screen is not read out in English.
+    return langOf(reason) === 'th' ? { th: reason, en: null } : { th: null, en: reason };
   };
 }
 

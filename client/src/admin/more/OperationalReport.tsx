@@ -10,9 +10,10 @@ import { qs } from '../../lib/api.ts';
 import { dateLabel, dateTime, money, num, pct } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { setQuery, useRoute } from '../../lib/router.ts';
+import { Button, EmptyState, TextField, useToast } from '../../ui/index.ts';
 import {
-  Button, DataTable, EmptyState, FilterChips, KeyValue, MiniBars, SectionHeader, SelectButton, StatCard, StatGrid, TextField, useToast,
-} from '../../ui/index.ts';
+  DataTable, FilterChips, KeyValue, MiniBars, SectionHeader, SelectButton, StatCard, StatGrid,
+} from '../../ui/admin/index.ts';
 import { useLiveResource } from '../insights/parts.tsx';
 import { MAX_CUSTOM_DAYS, useBusinessToday } from '../insights/query.ts';
 import { downloadFile, kpiCsv, saveBlob } from './csv.ts';

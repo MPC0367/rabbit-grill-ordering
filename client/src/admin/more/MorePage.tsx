@@ -5,7 +5,8 @@ import { useState } from 'react';
 import type { Permission } from '../../../../shared/permissions.ts';
 import { linkHandler } from '../../lib/router.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { Button, EmptyState, Icon, StaffChip, type IconName } from '../../ui/index.ts';
+import { Button, EmptyState, Icon, type IconName } from '../../ui/index.ts';
+import { StaffChip } from '../../ui/admin/index.ts';
 import { useStaff } from '../shell/session.tsx';
 import { MorePageFrame, useErrorWords } from './shared.tsx';
 

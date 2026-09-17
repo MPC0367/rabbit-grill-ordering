@@ -9,9 +9,9 @@ import { isActive, type LineStatus } from '../../../../../shared/status.ts';
 import { clock } from '../../../lib/format.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
 import {
-  AllergyBand, Button, Checkbox, Chip, Drawer, DrawerSection, HistoryList, Icon, LineStatusPill, SegmentedControl,
-  StatusPill, TableBox, TextArea, type HistoryItem,
+  Button, Checkbox, Chip, Drawer, Icon, SegmentedControl, StatusPill, TextArea,
 } from '../../../ui/index.ts';
+import { AllergyBand, DrawerSection, HistoryList, LineStatusPill, TableBox, type HistoryItem } from '../../../ui/admin/index.ts';
 import { staffName, sumQty, tn } from '../support.ts';
 import type { ActionOutcome, BusyKind, Resolution } from './actions.ts';
 import { cancelPermission, lastStep, planSelection, tableOf, unresolvedLines } from './model.ts';

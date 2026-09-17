@@ -751,6 +751,31 @@ export async function buildSnapshot(r: SnapshotReader, job: JobInfo): Promise<Re
     categoryName,
   });
 
+  // ---------------------------------------------------------------- guest ratings
+  // What guests chose to send, not a survey: the sample size travels with the
+  // average wherever it is printed (D-F-06). Comment TEXT is never read here -
+  // only how many entries carried one, the same rule the order notes follow.
+  await r.tick();
+  const fbRange = { from, to, fx };
+  const fbTotals = r.get<{ entries: number; rated: number; sum: number | null; with_comment: number }>(
+    `SELECT COUNT(*) AS entries,
+            COALESCE(SUM(f.rating IS NOT NULL), 0) AS rated,
+            SUM(f.rating) AS sum,
+            COALESCE(SUM(f.comment IS NOT NULL), 0) AS with_comment
+       FROM feedback f WHERE f.business_date BETWEEN :from AND :to AND (:fx = 1 OR f.is_fixture = 0)`, fbRange)
+    ?? { entries: 0, rated: 0, sum: null, with_comment: 0 };
+  const fbByRating = new Map(r.all<{ rating: number; n: number }>(
+    `SELECT f.rating, COUNT(*) AS n FROM feedback f
+      WHERE f.business_date BETWEEN :from AND :to AND (:fx = 1 OR f.is_fixture = 0) AND f.rating IS NOT NULL
+      GROUP BY f.rating`, fbRange).map((x) => [x.rating, x.n]));
+  const feedback: ReportSnapshot['feedback'] = {
+    entries: fbTotals.entries,
+    rated: fbTotals.rated,
+    average_rating: fbTotals.rated > 0 ? Math.round(((fbTotals.sum ?? 0) / fbTotals.rated) * 100) / 100 : null,
+    distribution: [5, 4, 3, 2, 1].map((rating) => ({ rating, count: fbByRating.get(rating) ?? 0 })),
+    with_comment: fbTotals.with_comment,
+  };
+
   // ---------------------------------------------------------------- periods
   const daily: DailyRow[] = dates.map((d) => ({
     ...bucketCounters(dayBuckets.get(d)!),
@@ -822,6 +847,9 @@ export async function buildSnapshot(r: SnapshotReader, job: JobInfo): Promise<Re
   if (engagement.raw_events === 0 && engagement.agg_fallback_days === 0) notes.push('No engagement telemetry was recorded in this year. Order figures are unaffected: they come from the order records.');
   if (engagement.raw_first_date && engagement.raw_first_date > from) notes.push(`Raw engagement events for this year start on ${longDate(engagement.raw_first_date)}${engagement.agg_fallback_days ? `; ${engagement.agg_fallback_days} earlier day(s) use daily item aggregates (impressions, detail opens and adds only)` : ''}.`);
   if (!settings.analytics.enabled) notes.push('Engagement analytics is currently switched off in settings.');
+  // Ratings are self-selected: never let an average be read as the year's verdict.
+  if (feedback.rated === 0) notes.push('No guest sent a rating in this year, so there is no average guest rating.');
+  else notes.push(`The average guest rating is from ${feedback.rated} rating${feedback.rated === 1 ? '' : 's'} guests chose to send, not from every party served.`);
   if (engagement.opted_out_sessions) notes.push(`${engagement.opted_out_sessions} browsing session(s) opted out of engagement measurement and are excluded from engagement rates.`);
   if (job.financial && !settings.charges_confirmed) notes.push('Charge settings have not been confirmed by the owner; bill totals use the charges configured at each seating.');
   if (!job.financial) notes.push('Payment and bill values are excluded: the requesting role does not hold the reports.financial permission.');
@@ -868,6 +896,7 @@ export async function buildSnapshot(r: SnapshotReader, job: JobInfo): Promise<Re
     weekly,
     ranking,
     engagement,
+    feedback,
     timings: {
       accept_s: statOf(acceptS),
       accept_to_prepare_s: statOf(acceptToPrepS),

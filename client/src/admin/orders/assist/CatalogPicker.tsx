@@ -7,9 +7,10 @@ import { allocateGroupPicks, measuredAmount } from '../../../../../shared/money.
 import { money } from '../../../lib/format.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
 import {
-  Button, Checkbox, ChoiceGroup, FilterChips, Icon, normalizeSearch, RadioCard, SegmentedControl, StaffSearch,
-  Stepper, Tag, TextArea, TextField,
+  Button, Checkbox, ChoiceGroup, Icon, normalizeSearch, RadioCard, SegmentedControl, Stepper, Tag, TextArea,
+  TextField,
 } from '../../../ui/index.ts';
+import { FilterChips, StaffSearch } from '../../../ui/admin/index.ts';
 import { staffName } from '../support.ts';
 import { newUid, unitPrice, type DraftLine } from './draft.ts';
 
@@ -344,6 +345,12 @@ function Chooser({ item, onAdd, onCancel }: { item: MenuItemDTO; onAdd: (line: D
  * Paper recovery (D-S8-21): the cut was weighed during the outage, so staff
  * enter the grams from the ticket and the line is priced at the approved rate.
  * One cut is one line; a second cut is entered again.
+ *
+ * The amount under the grams is a PREVIEW of a line that does not exist yet,
+ * so there is nothing for the server to quote. It uses `measuredAmount` from
+ * `shared/money.ts`, the very function the server prices the cut with, on the
+ * rate from the same menu payload, so the two cannot disagree. Once the line is
+ * added, every figure on the panel comes from the server quote.
  */
 function RecoverWeightForm({ item, onAdd, onCancel }: { item: MenuItemDTO; onAdd: (grams: number) => void; onCancel: () => void }) {
   const { t } = useI18n();

@@ -9,9 +9,8 @@ import { useI18n } from '../../lib/i18n.tsx';
 import { bangkokParts } from '../../../../shared/time.ts';
 import { clock, num } from '../../lib/format.ts';
 import { useMedia } from '../../lib/store.ts';
-import {
-  DataTable, EmptyState, LinkButton, MiniBars, Pill, SectionHeader, SelectButton, StatusPill, type DataColumn, type SortState,
-} from '../../ui/index.ts';
+import { EmptyState, LinkButton, Pill, StatusPill } from '../../ui/index.ts';
+import { DataTable, MiniBars, SectionHeader, SelectButton, type DataColumn, type SortState } from '../../ui/admin/index.ts';
 import { ErrorPanel, LoadingBlock, useLiveResource } from './parts.tsx';
 import { dayMonth, spokenDate } from './labels.ts';
 import { nowMs, queryString } from './query.ts';

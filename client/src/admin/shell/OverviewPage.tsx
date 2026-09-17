@@ -9,9 +9,8 @@ import { elapsed, num } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { linkHandler } from '../../lib/router.ts';
 import { useNow } from '../../lib/store.ts';
-import {
-  Button, EmptyState, Icon, KeyValue, LinkButton, Skeleton, STATE_SWATCH, type IconName,
-} from '../../ui/index.ts';
+import { Button, EmptyState, Icon, LinkButton, Skeleton, type IconName } from '../../ui/index.ts';
+import { KeyValue, STATE_SWATCH } from '../../ui/admin/index.ts';
 import { portionsToWeigh, readyDishes, useAttention, weighCountIsExact } from './attention.tsx';
 import { useLayoutMode } from './layout-mode.ts';
 import { useOrderingActions, useStaffOrdering } from './ordering.tsx';

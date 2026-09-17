@@ -9,14 +9,17 @@ import { api } from '../../lib/api.ts';
 import { clock, dateTime, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { Link } from '../../lib/router.ts';
-import { useNow } from '../../lib/store.ts';
+import { useMedia, useNow } from '../../lib/store.ts';
 import {
-  Button, Dialog, Drawer, DrawerSection, EmptyState, GuestAccessPanel, HistoryList, LinkButton, QuoteWell, RoundList,
-  Select, Sheet, Skeleton, StatusPill, Switch, TableBox, TableStatePill, TextArea, useAnnounce, useToast,
-  type RoundData,
+  Button, Dialog, Drawer, EmptyState, LinkButton, Select, Sheet,
+  Skeleton, StatusPill, Switch, TextArea, useAnnounce, useHistoryDismiss, useToast,
 } from '../../ui/index.ts';
+import {
+  DrawerSection, GuestAccessPanel, HistoryList, QuoteWell, RoundList, TableBox, TableStatePill, type RoundData,
+} from '../../ui/admin/index.ts';
 import AssistOrderPanel from '../orders/AssistOrderPanel.tsx';
 import BillPanel from '../billing/BillPanel.tsx';
+import { usePaymentSurface } from '../billing/PaymentDialog.tsx';
 import { useBillController } from '../billing/useBill.tsx';
 import CheckoutDock from './CheckoutDock.tsx';
 import { CoversPicker } from './SeatDialog.tsx';
@@ -146,7 +149,27 @@ export default function TableDrawer({
   const detailRes = useLiveResource<VisitDetailDTO>(visitId ? `/api/staff/visits/${encodeURIComponent(visitId)}` : null, VISIT_TOPICS, visitId);
   const detail = detailRes.data && detailRes.data.id === visitId ? detailRes.data : undefined;
   const refreshDetail = detailRes.refresh;
-  const billCtl = useBillController(visitId ?? 'none', { enabled: Boolean(visitId), onChange: () => { void refreshDetail(); refreshTables(); } });
+  // Phones: recording a payment is a step inside this drawer, never a second
+  // dialog over it (round-1 finding 31). Wider screens keep the centred dialog.
+  const phone = useMedia('(max-width: 767px)');
+  const billCtl = useBillController(visitId ?? 'none', {
+    enabled: Boolean(visitId),
+    payOwner: phone,
+    onChange: () => { void refreshDetail(); refreshTables(); },
+  });
+  const paySurface = usePaymentSurface({
+    bill: billCtl.bill,
+    active: phone && billCtl.payOpen,
+    dismissAs: 'none',
+    onClose: billCtl.pay.close,
+    onRecorded: billCtl.pay.recorded,
+    onStale: billCtl.pay.stale,
+  });
+  const payStep = Boolean(paySurface);
+  const leavePay = billCtl.pay.close;
+  // Browser Back leaves the payment step and returns to the table, instead of
+  // closing the whole drawer (the drawer's own entry sits under this one).
+  useHistoryDismiss(payStep, leavePay);
 
   const [revealed, setRevealed] = useState(false);
   const [rotating, setRotating] = useState(false);
@@ -168,6 +191,26 @@ export default function TableDrawer({
   // A checkout whose answer was lost is settled once the visit is known to be closed.
   const closedId = detailRes.data?.status === 'closed' ? detailRes.data.id : null;
   useEffect(() => { if (closedId) pendingKey(`checkout.${closedId}`).clear(); }, [closedId]);
+
+  // Entering the payment step: it is spoken and focus moves into it. Leaving it:
+  // focus returns to the billing action in the foot that opened it.
+  const payTitle = billCtl.bill ? t('billing.pay.title', { table: billCtl.bill.table_label }) : '';
+  const wasPayStep = useRef(false);
+  useEffect(() => {
+    if (payStep === wasPayStep.current) return;
+    wasPayStep.current = payStep;
+    if (payStep && payTitle) announce(payTitle);
+    const frame = requestAnimationFrame(() => {
+      const drawer = document.querySelector<HTMLElement>('.c5-drawer');
+      if (!drawer) return;
+      const target = payStep
+        ? drawer.querySelector<HTMLElement>('[data-pay-focus]')
+        // The billing action if it is still there, else Complete checkout, else the head.
+        : drawer.querySelector<HTMLElement>('[data-pay-return]') ?? drawer.querySelector<HTMLElement>('[data-overlay-close]');
+      target?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [payStep, payTitle, announce]);
 
   const label = tile?.label ?? detail?.table.label ?? '';
   const state = tile?.state ?? detail?.table.state ?? 'available';
@@ -457,17 +500,36 @@ export default function TableDrawer({
     ) : null;
   }
 
+  // The payment step takes over the whole drawer: one surface, its own head and
+  // foot, and a back action that returns to the table (round-1 finding 31).
+  // The head reads "Record payment" alone; the lead box already names the table.
+  if (paySurface) {
+    body = (
+      <div className="c5-paystep" data-pay-focus tabIndex={-1} role="group" aria-label={paySurface.title}>
+        {paySurface.body}
+      </div>
+    );
+    footer = (
+      <div className="drawer__actions c5-paystep__foot">
+        <Button variant="outline" size="staff" icon="chev-l" disabled={paySurface.busy} onClick={leavePay}>
+          {t('billing.pay.back')}
+        </Button>
+        {paySurface.footer}
+      </div>
+    );
+  }
+
   return (
     <>
       <Drawer
         open
-        onClose={onClose}
+        onClose={paySurface ? leavePay : onClose}
         className="c5-drawer"
-        title={label ? t('common.table', { label }) : t('tables.drawer.title')}
-        status={label ? <TableStatePill state={state} /> : undefined}
+        title={paySurface ? t('billing.pay.stepTitle') : label ? t('common.table', { label }) : t('tables.drawer.title')}
+        status={paySurface || !label ? undefined : <TableStatePill state={state} />}
         lead={label ? <TableBox label={label} className="c5-tbox" /> : undefined}
-        subtitle={subtitle}
-        closeLabel={t('tables.drawer.close', { table: label })}
+        subtitle={paySurface ? null : subtitle}
+        closeLabel={paySurface ? t('billing.pay.stepBack', { table: label }) : t('tables.drawer.close', { table: label })}
         footer={footer ?? undefined}
       >
         {body}

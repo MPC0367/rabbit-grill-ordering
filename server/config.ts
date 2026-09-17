@@ -58,6 +58,14 @@ export const config = {
   guestSessionHours: int(env.GUEST_SESSION_HOURS, 12),
   logRequests: flag(env.LOG_REQUESTS, false),
   /**
+   * How often an open live stream sends its `ping` (and the comment keep-alive
+   * proxies need). The `hello` payload publishes it as `ping_ms`, so the
+   * client's silence watchdog waits for a multiple of the server's own
+   * interval instead of guessing (D-F-03). Clamped to 1-60 s; tests set it low
+   * so a heartbeat can be observed in a second rather than half a minute.
+   */
+  streamPingMs: Math.min(60_000, Math.max(1_000, int(env.STREAM_PING_MS, 15_000))),
+  /**
    * The daily data-retention task (D-S8-02). Off by default under NODE_ENV=test,
    * where tests plant old records on purpose and run the task themselves
    * (npm run jobs -- retention).

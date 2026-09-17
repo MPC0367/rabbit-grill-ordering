@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { computeBill, formatMoney, type ChargeRule } from '../../../../shared/money.ts';
 import type { PaymentMethod, Settings } from '../../../../shared/settings.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { Button, Checkbox, EmptyState, IconButton, KeyValue, SegmentedControl, Switch, Tag, TextField } from '../../ui/index.ts';
+import { Button, Checkbox, EmptyState, IconButton, SegmentedControl, Switch, Tag, TextField } from '../../ui/index.ts';
+import { KeyValue } from '../../ui/admin/index.ts';
 import { NumberField, numberProblem, usePlural } from './shared.tsx';
 import { FieldRow, SettingsSection, SwitchRow } from './settingsParts.tsx';
 

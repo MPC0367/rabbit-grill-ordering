@@ -156,14 +156,29 @@
 .iconbtn--staff { width: var(--tap-staff); height: var(--tap-staff); }
 .iconbtn--round { border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-card); }
 .iconbtn--sm { width: 32px; height: 32px; }
-.iconbtn--sm::after { content: ""; position: absolute; inset: -6px; } /* 44px hit */
 .iconbtn .badge { position: absolute; top: 2px; right: 2px; }
+
+/* --- hit areas -------------------------------------------------------------
+   A control that looks smaller than --tap keeps its visible box and grows an
+   absolutely positioned ::after instead (DESIGN §10.2, §14). Size the overlay
+   with min-width/min-height from the control's centre, never with `inset:
+   -Npx`: insets resolve against the PADDING box, so the 1px transparent border
+   on .iconbtn and .seg > button silently shaved 2px off and left 42px hits on
+   the 32px "i" and the 38px segment. */
+.iconbtn--sm::after,
+.stat__k .iconbtn::after {
+  content: ""; position: absolute; top: 50%; left: 50%; translate: -50% -50%;
+  width: 100%; height: 100%; min-width: var(--tap); min-height: var(--tap);
+}
 
 
 /* =====================================================================
    10.3 SEGMENTEDCONTROL (paper tone and the framed box tone)
    ===================================================================== */
-.seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; gap: 2px; border-radius: var(--radius-ctl); background: var(--sunken); }
+/* row-gap only shows when a page wraps the track onto two rows (the phone
+   board): 6px so each row's hit overlay still reaches --tap-staff without
+   reaching into the row above or below. */
+.seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; column-gap: 2px; row-gap: 6px; border-radius: var(--radius-ctl); background: var(--sunken); }
 .seg--block { display: grid; width: 100%; }
 .seg > button {
   min-height: calc(var(--control-h) - 6px); padding: 0 14px; border-radius: calc(var(--radius-ctl) - 2px);
@@ -171,10 +186,16 @@
   transition: background-color var(--dur-base) var(--ease-in-out), color var(--dur-fast), border-color var(--dur-base) var(--ease-in-out);
   position: relative; white-space: nowrap;
 }
-.seg > button::after { content: ""; position: absolute; inset: -3px -1px; } /* 44px hit */
+/* 44px hit (staff 48), centred on the button: exactly the track's own box,
+   because .seg pads it by 3px. See the hit-area note in §10.2. */
+.seg > button::after {
+  content: ""; position: absolute; top: 50%; left: 50%; translate: -50% -50%;
+  width: calc(100% + 2px); height: 100%; min-height: var(--tap);
+}
 .seg > button[aria-pressed="true"], .seg > button[aria-selected="true"], .seg > button[aria-checked="true"] { background: var(--surface); color: var(--text); font-weight: var(--fw-semibold); border-color: var(--edge); box-shadow: var(--shadow-lift); }
 .seg > button[disabled] { opacity: 0.55; cursor: not-allowed; }
 .seg--staff > button { min-height: calc(var(--control-h-staff) - 6px); }
+.seg--staff > button::after { min-height: var(--tap-staff); }
 .seg .count { font-family: var(--font-display); font-feature-settings: var(--num-features); color: var(--text-2); margin-left: 4px; }
 /* Work waiting in a segment (board "New · 3"): the count carries the same ink
    weight as the New column head, pressed or not. */
@@ -267,7 +288,15 @@
 .msec__list > .dish:first-child { border-top-color: var(--rule-ink); }
 .dish__plate { align-self: start; margin: 0; padding: 0; display: block; }
 .dish__plate .plate { margin: 4px; }
-.dish__open { font: inherit; color: inherit; text-align: left; display: inline-flex; } /* inline-flex keeps the FIRST line as the baseline the leader and price align to */
+.dish__open {
+  font: inherit; color: inherit; text-align: left;
+  display: inline-flex; /* inline-flex keeps the FIRST line as the baseline the leader and price align to */
+  /* The name is the row's target, so its own box reaches --tap even on one
+     short line (DESIGN §14). The padding is handed straight back as a negative
+     margin: the line box, the leader dots and the price do not move. */
+  padding-block: max(0px, calc((var(--tap) - 1lh) / 2));
+  margin-block: min(0px, calc((1lh - var(--tap)) / 2));
+}
 .dish__open::after { content: ""; position: absolute; inset: 0; } /* the whole row opens the details; controls sit above */
 .dish__open:focus-visible { outline: none; }
 .dish__open:focus-visible::after { outline: var(--focus-width) solid var(--focus); outline-offset: -2px; border-radius: var(--radius-ctl); }
@@ -567,6 +596,17 @@ button.slip { width: calc(100% - 2 * max(var(--gutter) - 4px, 8px)); }
 .slip__count .price { font-size: var(--fs-20); margin-left: 2px; }
 .slip__sub { display: flex; align-items: center; gap: 5px; font: var(--fw-regular) var(--fs-13)/var(--lh-thai-min) var(--font-ui); color: var(--on-action-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .slip__sub .i { width: 15px; height: 15px; flex: none; }
+/* Very narrow phones: the unsent line wraps to two lines instead of being cut
+   off (it is the honest warning). Thai keeps the --lh-thai-min floor at every
+   width (DESIGN §14), so the wrap lives with the component and outranks a page
+   stylesheet that only wanted the wrap. */
+@media (max-width: 359px) {
+  .slip .slip__main .slip__sub {
+    white-space: normal; overflow: visible;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    line-height: var(--lh-thai-min);
+  }
+}
 .slip__perf { width: 0; border-left: 1px dashed color-mix(in srgb, var(--on-action) 45%, transparent); margin: 10px 0; position: relative; }
 .slip__perf::before, .slip__perf::after { content: ""; position: absolute; left: -6px; width: 11px; height: 11px; border-radius: 50%; background: var(--canvas); }
 .slip__perf::before { top: -16px; }
@@ -966,8 +1006,7 @@ dialog.sheet--drawer .sheet__body { padding-top: 4px; }
 .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .stat { padding: 14px 16px 16px; border-radius: var(--radius-card); background: var(--surface); border: 1px solid var(--rule); display: grid; align-content: start; gap: 6px; }
 .stat__k { display: flex; align-items: center; justify-content: space-between; gap: 6px; font: var(--fw-semibold) var(--fs-14)/1.35 var(--font-ui); }
-.stat__k .iconbtn { width: 32px; height: 32px; margin: -6px -8px -6px 0; color: var(--text-2); position: relative; }
-.stat__k .iconbtn::after { content: ""; position: absolute; inset: -6px; }
+.stat__k .iconbtn { width: 32px; height: 32px; margin: -6px -8px -6px 0; color: var(--text-2); position: relative; } /* 44px hit: see §10.2 */
 .stat__v { font: var(--type-num-lg); font-size: var(--fs-40); font-feature-settings: var(--num-features); display: flex; align-items: baseline; gap: 6px; }
 .stat__v small { font: var(--fw-regular) var(--fs-14)/1 var(--font-ui); color: var(--text-2); }
 .stat__c { font: var(--type-ui-sm); color: var(--text-2); }
@@ -1077,7 +1116,7 @@ dialog.sheet--drawer .sheet__body { padding-top: 4px; }
 /* =====================================================================
    10.24 TOAST and LIVEREGION
    ===================================================================== */
-.toast { position: fixed; left: 50%; bottom: calc(var(--dock-clearance) - 4px); transform: translateX(-50%); z-index: var(--z-toast); display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 8px 0 16px; border-radius: var(--radius-ctl); background: var(--ink); color: var(--bone); box-shadow: var(--shadow-toast); font: var(--type-control-th); white-space: nowrap; animation: fade var(--dur-toast) var(--ease-out); }
+.toast { position: fixed; left: 50%; bottom: calc(var(--pinned-bottom, 0px) + 8px); transform: translateX(-50%); z-index: var(--z-toast); display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 8px 0 16px; border-radius: var(--radius-ctl); background: var(--ink); color: var(--bone); box-shadow: var(--shadow-toast); font: var(--type-control-th); white-space: nowrap; animation: fade var(--dur-toast) var(--ease-out); }
 .toast .i { color: var(--sage-light); flex: none; }
 .toast .btn--ghost { --_fg: var(--bone); }
 .toast .btn--ghost:hover { --_bg: var(--smoke); }
@@ -1086,15 +1125,19 @@ dialog.sheet--drawer .sheet__body { padding-top: 4px; }
 .toast--inline { position: relative; left: auto; bottom: auto; transform: none; z-index: auto; display: inline-flex; animation: none; }
 .toast__msg { min-width: 0; white-space: normal; text-wrap: balance; padding-block: 10px; }
 .toast-region {
-  position: fixed; inset: auto 0 calc(var(--dock-clearance) - 4px) 0; z-index: var(--z-toast);
+  position: fixed; inset: auto 0 calc(var(--pinned-bottom, 0px) + 8px) 0; z-index: var(--z-toast);
   margin: 0 auto; padding: 0 var(--gutter); border: 0; background: transparent; color: inherit;
   width: 100%; height: auto; overflow: visible;
   display: flex; justify-content: center; pointer-events: none;
 }
+/* The toast rides on the dock's MEASURED band (--pinned-bottom, hooks.ts), not
+   on --dock-clearance: the clearance token always reserves the order slip, so
+   with no slip showing the toast floated ~110px clear of the dock and covered
+   the masthead and the first rows on a short screen (320x256). */
 .toast-region:popover-open { display: flex; }
 .toast-region .toast { position: relative; left: auto; bottom: auto; transform: none; pointer-events: auto; max-width: min(100%, 520px); }
-html[data-scope="admin"] .toast-region { bottom: 24px; }
-@media (min-width: 1080px) { html[data-scope="guest"] .toast-region { bottom: 32px; } }
+html[data-scope="admin"] .toast-region { bottom: max(24px, calc(var(--pinned-bottom, 0px) + 8px)); }
+@media (min-width: 1080px) { html[data-scope="guest"] .toast-region { bottom: max(32px, calc(var(--pinned-bottom, 0px) + 8px)); } }
 /* The toast steps out of the way of whatever has keyboard focus (WCAG 2.4.11).
    On a short screen (a phone at 400% zoom) the 4-second toast otherwise sits
    over the rows being tabbed through. It clears any pinned top bar. */

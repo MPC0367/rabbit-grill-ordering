@@ -5,7 +5,8 @@ import type { AdminItemDTO } from '../../../../shared/dto.ts';
 import { api } from '../../lib/api.ts';
 import { dateLabel, dateTime, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { Button, DataTable, Icon, KeyValue, Pill, TextLink, useToast, type DataColumn } from '../../ui/index.ts';
+import { Button, Icon, Pill, TextLink, useToast } from '../../ui/index.ts';
+import { DataTable, KeyValue, type DataColumn } from '../../ui/admin/index.ts';
 import { useErrorText, useMenuData } from './model.tsx';
 import { ResolveFlagDialog, SourceQuote, useFlagLabel, useNameText } from './parts.tsx';
 

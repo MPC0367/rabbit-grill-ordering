@@ -75,7 +75,7 @@
    lines instead of being cut off (it is the honest unsent warning). */
 @media (max-width: 359px) {
   .g-app .slip { height: auto; min-height: var(--slip-h); }
-  .g-app .slip__sub { white-space: normal; overflow: visible; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.3; }
+  .g-app .slip__sub { white-space: normal; overflow: visible; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .g-app .slip__main { padding-top: 6px; padding-bottom: 6px; }
 }
 @media (max-width: 359px) {

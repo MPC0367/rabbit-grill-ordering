@@ -9,7 +9,7 @@ import type { AppEnv } from '../app.ts';
 import type { AttemptLookupDTO, OrderDTO, QuoteDTO, StaffOrderDTO, SubmitResultDTO } from '../../shared/dto.ts';
 import {
   AssistOrderBody, FinishOrderBody, IdSchema, IsoDateSchema, QuoteBody, RecoverOrderBody, StaffQuoteBody,
-  SubmitOrderBody, TransitionBody, idempotencyKey, type CartLineInput, type RecoverLineInput,
+  SubmitOrderBody, TransitionBody, idempotencyKey, type CartLineInput, type StaffLineInput,
 } from '../../shared/schemas.ts';
 import { LINE_STATUSES, STATIONS, type LineStatus } from '../../shared/status.ts';
 import { nowIso } from '../../shared/time.ts';
@@ -96,11 +96,13 @@ function submitCart(a: SubmitArgs): { orderId: string; replayed: boolean } {
  * "not verified" or "price pending" (D-S8-19).
  */
 /**
- * Weighed cuts on a paper ticket (D-S8-21): staff enter the grams they wrote
- * down, and the line is priced at the dish's approved rate. Grams belong only
- * to a measured-weight dish, and one line is one cut.
+ * Weighed cuts staff entered by hand (D-S8-21): the grams they wrote down, so
+ * the line is priced at the dish's approved rate. Grams belong only to a
+ * measured-weight dish, and one line is one cut. The quote and the recovery
+ * endpoint check them the same way, so a preview never shows a price the
+ * submission would refuse.
  */
-function assertRecoveryWeights(lines: RecoverLineInput[]): void {
+function assertWeighedLines(lines: StaffLineInput[]): void {
   const issues: Array<{ path: string; message: string; code: string }> = [];
   lines.forEach((line, i) => {
     const grams = line.measured?.grams ?? null;
@@ -225,10 +227,20 @@ export const ordersStaff = new Hono<AppEnv>()
     const orders: StaffOrderDTO[] = orderDTOs(ids, staffView(staff));
     return c.json({ orders });
   })
+  // Staff quote. Weighed cuts are priced here, on the server, at the dish's
+  // approved rate (D-F-01) - but only for a member who may actually record
+  // one, so the preview never offers a price its submission would refuse.
+  // Without that permission the line keeps answering measured_weight_needs_quote.
   .post('/orders/quote', requireStaff('orders.assist'), async (c) => {
+    const staff = staffOf(c);
     const input = await body(c, StaffQuoteBody);
     const visit = visitOr404(input.visit_id);
-    return c.json<QuoteDTO>(priceCart(input.lines, { charges: visitCharges(visit) }).quote);
+    assertWeighedLines(input.lines);
+    const mayWeigh = staff.can('orders.recover_manual');
+    const weights = input.lines.map((l) => (mayWeigh ? l.measured?.grams ?? null : null));
+    return c.json<QuoteDTO>(
+      priceCart(input.lines, { charges: visitCharges(visit), measuredGrams: (i) => weights[i] }).quote,
+    );
   })
   // Staff-assisted ordering: same pricing and persistence path as guests,
   // attributed to the signed-in staff member (source `staff`).
@@ -260,7 +272,7 @@ export const ordersStaff = new Hono<AppEnv>()
     }
     // The paper reference is the attempt identity: re-sending the same entry
     // replays it; the same reference with different content is a conflict.
-    assertRecoveryWeights(input.lines);
+    assertWeighedLines(input.lines);
     const key = `rec_${sha256(input.manual_reference).slice(0, 40)}`;
     const weights = input.lines.map((l) => l.measured?.grams ?? null);
     const hash = payloadHash({

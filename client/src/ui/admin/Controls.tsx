@@ -53,7 +53,8 @@ export function FilterChips<V extends string>({ options, value, onChange, label,
 export interface SelectButtonProps<V extends string> {
   label: string;
   value: V;
-  options: ReadonlyArray<{ value: V; label: string }>;
+  /** `lang` marks a label that is not in the interface language (see SelectOption). */
+  options: ReadonlyArray<{ value: V; label: string; lang?: 'th' | 'en' }>;
   onChange: (value: V) => void;
   icon?: AdminIconName;
   disabled?: boolean;
@@ -62,12 +63,13 @@ export interface SelectButtonProps<V extends string> {
 
 /** "Table  All ⌄": a native select (keyboard, screen reader and touch friendly) dressed as a toolbar button. */
 export function SelectButton<V extends string>({ label, value, options, onChange, icon, disabled, className }: SelectButtonProps<V>) {
-  const current = options.find((o) => o.value === value)?.label ?? '';
+  const chosen = options.find((o) => o.value === value);
+  const current = chosen?.label ?? '';
   return (
     <label className={cx('selectbtn selectfield', disabled && 'is-disabled', className)}>
       {icon ? <Ico name={icon} className="selectfield__icon" /> : null}
       <span className="selectfield__k">{label}</span>
-      <b aria-hidden="true">{current}</b>
+      <b aria-hidden="true" lang={chosen?.lang}>{current}</b>
       <Ico name="chev-d" />
       <select
         value={value}
@@ -76,7 +78,7 @@ export function SelectButton<V extends string>({ label, value, options, onChange
         onChange={(e: ChangeEvent<HTMLSelectElement>) => onChange(e.target.value as V)}
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+          <option key={o.value} value={o.value} lang={o.lang}>{o.label}</option>
         ))}
       </select>
     </label>

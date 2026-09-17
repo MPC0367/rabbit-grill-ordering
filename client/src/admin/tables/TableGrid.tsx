@@ -4,8 +4,9 @@ import { forwardRef, type ReactNode } from 'react';
 import type { StaffBillDTO, TableTileDTO } from '../../../../shared/dto.ts';
 import { clock, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { attentionKinds, TableTile, type AttnKind, type TileAction } from '../../ui/index.ts';
+import { attentionKinds, TableTile, type AttnKind, type TileAction } from '../../ui/admin/index.ts';
 import { paidAt } from '../billing/useBill.tsx';
+import { readyDishes, unresolvedDishes } from './counts.ts';
 import { seatedFor } from './shared.ts';
 
 export interface TileHandlers {
@@ -31,14 +32,15 @@ interface Props extends TileHandlers {
 }
 
 /**
- * Rounds and unresolved items (brief 36). Ready food and rounds to accept are
+ * Rounds and unserved dishes (brief 36). Ready food and rounds to accept are
  * already counted on the tile's attention badges (READY 2, NEW 2), so the
  * fact line always states what is still not served.
  */
 function roundsFact(t: (k: string, v?: Record<string, string | number>) => string, v: NonNullable<TableTileDTO['visit']>): string {
   if (v.rounds === 0) return t('tables.tile.noRounds');
   const rounds = t(v.rounds === 1 ? 'tables.tile.round' : 'tables.tile.rounds', { n: v.rounds });
-  const tail = v.unresolved_lines > 0 ? t('tables.tile.unservedAll', { n: v.unresolved_lines }) : t('tables.tile.allServed');
+  const left = unresolvedDishes(v);
+  const tail = left > 0 ? t(left === 1 ? 'tables.tile.unservedAllOne' : 'tables.tile.unservedAll', { n: left }) : t('tables.tile.allServed');
   return `${rounds} · ${tail}`;
 }
 
@@ -74,7 +76,8 @@ export const TableGridTile = forwardRef<HTMLButtonElement, Props>(function Table
     } else {
       facts.push(t('tables.tile.billChecking'));
     }
-    facts.push(v.unresolved_lines > 0 ? t('tables.tile.unserved', { n: v.unresolved_lines }) : t('tables.tile.allFoodServed'));
+    const left = unresolvedDishes(v);
+    facts.push(left > 0 ? t(left === 1 ? 'tables.tile.unservedOne' : 'tables.tile.unserved', { n: left }) : t('tables.tile.allFoodServed'));
     if (bill?.can_checkout && perms.checkout) {
       action = { onClick: () => onCheckout(tile, bill) };
       spokenExtra.push(t('tables.tile.readyToClose'));
@@ -113,7 +116,7 @@ export const TableGridTile = forwardRef<HTMLButtonElement, Props>(function Table
   const kinds = attentionKinds(tile.attention);
   const attention = kinds.map((kind: AttnKind) => ({
     kind,
-    detail: kind === 'ready' && v ? (v.ready_dishes ?? v.ready_lines) : kind === 'new' && v && v.unaccepted_rounds > 1 ? v.unaccepted_rounds : undefined,
+    detail: kind === 'ready' && v ? readyDishes(v) : kind === 'new' && v && v.unaccepted_rounds > 1 ? v.unaccepted_rounds : undefined,
   }));
 
   const stateWord = t(`table.${tile.state}`);

@@ -631,6 +631,40 @@ export interface AdminCatalogDTO {
   };
 }
 
+/**
+ * GET /api/staff/menu/orderability - one row per catalog item, for the staff
+ * pickers (staff-assisted rounds, paper recovery). The guest menu says only
+ * whether a dish is orderable and the FIRST reason it is not, which is not
+ * enough to mirror D-S8-19: "category paused" hides "not verified", and a
+ * paused dish may be recovered while an unverified one may not. The public
+ * DTO is unchanged; this is staff-scoped (D-F-02).
+ */
+export interface StaffItemStateDTO {
+  item_id: string;
+  /** A guest could order it right now (same answer as the public menu). */
+  orderable: boolean;
+  /** First reason it cannot be ordered right now; null when it can. */
+  reason: string | null;
+  /** An order taken on paper may still be entered for this dish (D-S8-19). */
+  recoverable: boolean;
+  /** Why not: the reason left after ignoring "sold out" and "category paused". Null when recoverable. */
+  recovery_blocked_reason: string | null;
+  status: ItemStatus;
+  review_status: ReviewStatus;
+  sold_out: boolean;
+  /** Its category is paused for ordering (operational: recovery ignores it). */
+  category_paused: boolean;
+  /** Sold by weight: a picker takes grams (paper) or sends a weighing request. */
+  measured_weight: boolean;
+}
+
+export interface StaffCatalogStateDTO {
+  /** The same catalog version the guest menu carries. */
+  version: string;
+  items: StaffItemStateDTO[];
+  generated_at: string;
+}
+
 // ------------------------------------------------------------------ insights
 export type StatsPeriod = 'week' | 'month' | 'year' | 'custom';
 export type OrderMetric = 'rounds' | 'accepted_rounds' | 'visits' | 'devices' | 'diners' | 'items';

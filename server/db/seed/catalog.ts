@@ -10,6 +10,7 @@
 //    The single sourced modifier is the coffee page's "SPECIAL BLEND (+30 THB)",
 //    attached for the demo to espresso drinks and flagged for owner review.
 import { readFileSync } from 'node:fs';
+import { ALIASES } from '../../../shared/limits.ts';
 import { bahtToMinor } from '../../../shared/money.ts';
 import type { PricingType, Station } from '../../../shared/status.ts';
 import type { Rng, Writer } from './util.ts';
@@ -96,6 +97,33 @@ const ESPRESSO_COFFEES = [
   'short-black', 'long-black', 'long-black-coconut', 'long-black-longan', 'piccolo-latte',
   'latte', 'cappuccino', 'mocha', 'dirty-coffee', 'caramel-latte', 'biscoff-latte', 'black-orange',
 ];
+
+/**
+ * Search aliases a reviewer approved (D-S8-28, D-F-05). Aliases are never
+ * printed: they only widen search, and only reviewed ones reach the guest
+ * menu. Three dishes carry them so alias search is demonstrable in the demo -
+ * a guest who types what the table actually says finds the printed dish.
+ * Everything else keeps the column default: no aliases, unreviewed. The seed
+ * writes an audit row naming exactly these, so nobody mistakes a fixture
+ * approval for the owner's.
+ */
+const REVIEWED_ALIASES: Record<string, { th?: readonly string[]; en?: readonly string[] }> = {
+  // The street name of the dish, which is not what the menu prints.
+  'basil-beef-rice': { th: ['ข้าวกะเพรา'], en: ['pad kra pao', 'kaprao', 'basil rice'] },
+  // The menu prints no Thai name for this drink at all; Thai guests search in Thai.
+  'thai-tea': { th: ['ชาไทย', 'ชาเย็น'] },
+  // "Goong pao" is what a table asks for; the card says Grilled River Prawns.
+  'grilled-river-prawns': { en: ['goong pao', 'river prawn'] },
+};
+
+/** Aliases as the column stores them: a JSON array of plain strings. */
+function aliasJson(key: string, lang: 'th' | 'en', list: readonly string[] | undefined): string {
+  const values = (list ?? []).map((a) => a.trim()).filter(Boolean);
+  if (values.length > ALIASES.perItem) throw new Error(`catalog seed: ${key} has more than ${ALIASES.perItem} ${lang} aliases`);
+  const tooLong = values.find((a) => [...a].length > ALIASES.maxLength);
+  if (tooLong) throw new Error(`catalog seed: ${key} ${lang} alias "${tooLong}" is longer than ${ALIASES.maxLength} characters`);
+  return JSON.stringify(values);
+}
 
 /** Raw salads are assembled, not cooked: the guest tracker says "Currently preparing" (brief 35). */
 const PREPARED_NOT_COOKED = new Set(['green-beans-peas-salad', 'green-salad-balsamic', 'tomato-salad', 'burrata-tomato-salad']);
@@ -190,6 +218,8 @@ export function seedCatalog(w: Writer, r: Rng, opts: { now: string; availableSin
   });
 
   // ---- items
+  /** Item keys that got fixture-reviewed search aliases (named in the audit row below). */
+  const aliasKeys: string[] = [];
   const addFlag = (itemId: string, code: string, detail: string) => {
     w.put('item_flags', { id: r.id('flg'), item_id: itemId, category_id: null, code, detail, created_at: now });
     result.flags++;
@@ -206,6 +236,8 @@ export function seedCatalog(w: Writer, r: Rng, opts: { now: string; availableSin
     const image = media ? it.image : null;
     const hasDesc = Boolean(it.desc_th || it.desc_en);
     const demoOrderable = it.orderable_in_demo === true;
+    const aliases = REVIEWED_ALIASES[it.key];
+    if (aliases) aliasKeys.push(it.key);
 
     w.put('menu_items', {
       id, key: it.key, category_id: cat.id, sort: it.sort,
@@ -229,6 +261,9 @@ export function seedCatalog(w: Writer, r: Rng, opts: { now: string; availableSin
       retrieved_at: src.source.retrieved_at, translation_status: it.name_th_source,
       reviewer: null, approved_at: null, review_notes: null,
       published_version: published ? 1 : null,
+      aliases_th: aliasJson(it.key, 'th', aliases?.th),
+      aliases_en: aliasJson(it.key, 'en', aliases?.en),
+      aliases_verified: aliases ? 1 : 0,
       created_at: now, updated_at: now, updated_by: null, version: 1,
     });
     result.items++;
@@ -296,5 +331,16 @@ export function seedCatalog(w: Writer, r: Rng, opts: { now: string; availableSin
     after_json: JSON.stringify({ items: result.items, categories: result.categories, retrieved_at: src.source.retrieved_at }),
     created_at: now,
   });
+  if (aliasKeys.length > 0) {
+    // The alias review is the fixture's, not the owner's: say so in the trail.
+    w.put('audit_events', {
+      actor_type: 'system', actor_id: null, actor_label: 'seed', action: 'menu.aliases_reviewed',
+      entity_type: 'catalog', entity_id: null, visit_id: null,
+      reason: 'Development fixtures: search aliases published as reviewed so alias search is demonstrable. The owner has approved no aliases.',
+      before_json: null,
+      after_json: JSON.stringify({ items: aliasKeys, aliases: REVIEWED_ALIASES }),
+      created_at: now,
+    });
+  }
   return result;
 }

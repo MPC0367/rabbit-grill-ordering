@@ -3,7 +3,7 @@
 // Orders, Tables, Menu, Insights and More, each filtered by permission.
 import { lazy, type ReactNode } from 'react';
 import type { Permission } from '../../../../shared/permissions.ts';
-import type { AdminIconName } from '../../ui/index.ts';
+import type { AdminIconName } from '../../ui/admin/index.ts';
 import { matchPath } from '../../lib/router.ts';
 import { storage } from '../../lib/store.ts';
 

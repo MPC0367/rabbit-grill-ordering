@@ -28,4 +28,6 @@ process.stdout.write(JSON.stringify({
   exception_count: p.exception_count,
   exceptions: p.exceptions.map((e) => ({ kind: e.kind, visit_id: e.visit_id, amount_minor: e.amount_minor })),
   lines_with_note: snap.overview.lines_with_note,
+  feedback: snap.feedback,
+  notes: snap.notes,
 }));

@@ -8,7 +8,8 @@ import { businessDate } from '../../../../shared/time.ts';
 import { ApiError } from '../../lib/api.ts';
 import { clock, dateLabel } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { Banner, Button, EmptyState, LinkButton, PageHeader, Skeleton, TextField } from '../../ui/index.ts';
+import { Banner, Button, EmptyState, LinkButton, Skeleton, TextField } from '../../ui/index.ts';
+import { PageHeader } from '../../ui/admin/index.ts';
 import './more.css';
 
 // ------------------------------------------------------------------ errors

@@ -303,7 +303,15 @@ test('complete checkout closes the visit, revokes every guest, clears the PIN, r
   await guestStream.waitFor((s) => /event: access\s*\ndata: \{"state":"ended"\}/.test(s));
   await guestStream.waitFor(() => guestStream.ended());
   await staffStream.waitFor((s) => s.includes('"topic":"visit.closed"') && s.includes(visit.id));
-  for (const s of [guestStream.text(), staffStream.text()]) assert.ok(!/pin|token/i.test(s), 'streams never carry PINs or tokens');
+  // No PIN and no token, by value and by field name. `pin(?!g)` keeps the
+  // field-name check while letting the heartbeat's `ping` / `ping_ms` through
+  // (D-F-03): a ping is a timestamp, not a secret.
+  for (const s of [guestStream.text(), staffStream.text()]) {
+    assert.ok(!s.includes(visit.join_pin), 'streams never carry the visit PIN itself');
+    assert.ok(!s.includes(table.token), 'streams never carry a QR token itself');
+    assert.ok(!/pin(?!g)/i.test(s), 'streams never carry a PIN field');
+    assert.ok(!/token/i.test(s), 'streams never carry a token field');
+  }
   await Promise.all([guestStream.close(), staffStream.close()]);
   assert.equal(co.status, 'closed');
   assert.equal(co.visit_id, visit.id);

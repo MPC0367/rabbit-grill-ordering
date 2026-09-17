@@ -10,9 +10,9 @@ import { useLive, useLiveEvent, useResource, type Resource } from '../../lib/liv
 import { useNow } from '../../lib/store.ts';
 import { clock, num } from '../../lib/format.ts';
 import {
-  Banner, Button, DateRangeNav, EmptyState, Icon, LinkButton, Skeleton, Switch, TextField, cx,
-  type IconName,
+  Banner, Button, EmptyState, Icon, LinkButton, Skeleton, Switch, TextField, cx, type IconName,
 } from '../../ui/index.ts';
+import { DateRangeNav } from '../../ui/admin/index.ts';
 import {
   MAX_CUSTOM_DAYS, changePeriodKind, contains, isDate, nowMs, periodsAgo, pushQuery, periodPatch, rangeDays,
   resolveRange, shiftPeriod, today, type PeriodState, type Range,

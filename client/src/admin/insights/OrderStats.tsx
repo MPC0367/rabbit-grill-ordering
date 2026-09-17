@@ -10,10 +10,11 @@ import { useLive } from '../../lib/live.tsx';
 import { useRoute } from '../../lib/router.ts';
 import { useMedia, useNow } from '../../lib/store.ts';
 import { clock, num, weekdayShort } from '../../lib/format.ts';
+import { Button, Sheet, announce, cx } from '../../ui/index.ts';
 import {
-  Button, ChartPanel, HeroMetric, MetricSwitch, Sheet, StatCard, StatGrid, WeekBarChart, announce, cx,
-  type ChartBucket, type HeroMetricProps, type KeyValueItem,
-} from '../../ui/index.ts';
+  ChartPanel, HeroMetric, MetricSwitch, StatCard, StatGrid, WeekBarChart, type ChartBucket, type HeroMetricProps,
+  type KeyValueItem,
+} from '../../ui/admin/index.ts';
 import {
   ErrorPanel, Legend, PageBar, PeriodBar, exactRange, periodPhrase, useLiveResource, useSticky, type Sticky,
 } from './parts.tsx';

@@ -8,7 +8,7 @@ import { clock, grams, money } from '../../../lib/format.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
 import {
   Ticket, type BoardStage, type TicketAction, type TicketChip, type TicketFlagSpec, type TicketLineData,
-} from '../../../ui/index.ts';
+} from '../../../ui/admin/index.ts';
 import { LATE_AFTER_MINUTES, minutesSince, staffName, sumQty, textLang, tn } from '../support.ts';
 import { lastStep, readyPartOf, readySince, staffConfirmOf, stageLines, STAGE_ACTION, tableOf, type Placement } from './model.ts';
 
