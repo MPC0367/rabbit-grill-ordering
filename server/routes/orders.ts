@@ -15,13 +15,13 @@ import { LINE_STATUSES, STATIONS, type LineStatus } from '../../shared/status.ts
 import { nowIso } from '../../shared/time.ts';
 import { tx } from '../db/index.ts';
 import type { Actor } from '../lib/audit.ts';
-import { guestOf, requireGuest, requireStaff, staffOf, type StaffContext } from '../lib/auth.ts';
+import { guestOf, guestTx, requireGuest, requireStaff, staffOf, type StaffContext } from '../lib/auth.ts';
 import { AppError } from '../lib/errors.ts';
 import { body, payloadHash, sha256 } from '../lib/http.ts';
 import { hit, LIMITS } from '../lib/ratelimit.ts';
 import { assertCanOrder, getVisit, type VisitRow } from '../domain/guards.ts';
 import {
-  getCategory, getItem, itemVariants, priceCart, unavailableReason, type PriceCartResult,
+  getCategory, getItem, itemVariants, OPERATIONAL_REASONS, priceCart, unavailableReason, type PriceCartResult,
 } from '../domain/pricing.ts';
 import {
   cartPayloadHash, createOrder, findAttempt, listVisitOrders, orderDTO, orderDTOs, replayOf, visitCharges,
@@ -61,7 +61,8 @@ interface SubmitArgs {
 /** Guest and staff-assisted submission: one transaction, replay first. */
 function submitCart(a: SubmitArgs): { orderId: string; replayed: boolean } {
   const hash = cartPayloadHash(a.lines);
-  return tx(() => {
+  const inTx = <T>(fn: () => T): T => (a.guestSessionId ? guestTx(a.guestSessionId, fn) : tx(fn));
+  return inTx(() => {
     const visit = visitOr404(a.visitId);
     // A replay of an order that exists must succeed even if ordering has
     // since paused or the table moved to checkout.
@@ -88,19 +89,18 @@ function submitCart(a: SubmitArgs): { orderId: string; replayed: boolean } {
 /**
  * Paper orders already happened: an item that is sold out or whose category
  * is paused *now* can still be recorded. Everything else (unknown items,
- * invalid choices, price differences, measured-weight cuts) needs review.
+ * invalid choices, price differences, measured-weight cuts, and any dish that
+ * is not verified or has no approved price) needs review. Because
+ * unavailableReason() reports only the first reason, a sold-out or paused
+ * dish is re-checked with those two states ignored: "paused" must never hide
+ * "not verified" or "price pending" (D-S8-19).
  */
 function recoveryBlocked(result: PriceCartResult, lines: CartLineInput[]): boolean {
-  // A dish whose price was withdrawn reports only its first unavailability
-  // reason (e.g. `paused`), which is excused below; without this check it was
-  // recorded at 0 THB. No current price always needs review (T2 tests).
-  if (result.priced.some((p) => p.item.pricing_type === 'fixed' && p.item.price_minor === null)) return true;
   return result.quote.issues.some((issue) => {
-    if (issue.code === 'sold_out') return false;
-    if (issue.code !== 'not_orderable') return true;
+    if (issue.code !== 'sold_out' && issue.code !== 'not_orderable') return true;
     const item = getItem(lines[issue.line_index].item_id);
     const cat = item ? getCategory(item.category_id) : undefined;
-    return !item || !cat || unavailableReason(item, cat, itemVariants(item.id)) !== 'paused';
+    return !item || !cat || unavailableReason(item, cat, itemVariants(item.id), { ignore: OPERATIONAL_REASONS }) !== null;
   });
 }
 

@@ -27,6 +27,9 @@ export interface PublicConfigDTO {
   notes_max_length: number;
   sold_out_display: 'show_disabled' | 'hide';
   server_time: string;
+  /** The hour (Bangkok) a business day starts, and today's business date by that rule, so staff screens date things like the server. */
+  business_day_cutoff_hour?: number;
+  business_date?: string;
 }
 
 // ------------------------------------------------------------------ catalog
@@ -233,6 +236,8 @@ export interface StaffOrderDTO extends OrderDTO {
   /** Where the party sits now (differs from `table_label` after a visit transfer; S3). */
   current_table_label?: string;
   current_table_id?: string;
+  /** The viewer lacks orders.view_bill_values: every amount in this order is sent as 0 (not a real price). */
+  money_hidden?: boolean;
 }
 
 export interface SubmitResultDTO {
@@ -392,6 +397,22 @@ export interface StaffBillDTO extends GuestBillDTO {
   running_total_minor?: Minor;
   /** S5: the payable revision no longer matches the lines (an item was cancelled after finalizing): finalize again. */
   revision_stale?: boolean;
+  /**
+   * What happened to the money of the current revision (D-S8-04):
+   * none = nothing settled; paid = a confirmed settlement is in force (or the bill owed 0);
+   * reversed = the settlement was reversed on an open visit;
+   * refunded = the settlement was refunded after checkout (bill_status stays "settled" as history, paid is false).
+   */
+  payment_state?: 'none' | 'paid' | 'reversed' | 'refunded';
+  /** The refund recorded after checkout, when payment_state is "refunded". */
+  refund?: { amount_minor: Minor; reason: string | null; by: string | null; at: string } | null;
+  /** Adjustments counting on the running bill (a dish-linked one only while that dish is on the bill). */
+  adjustments?: Array<{
+    id: string; kind: 'discount' | 'comp' | 'correction'; amount_minor: Minor; reason: string; order_line_id: string | null;
+    created_at: string; created_by: string | null; voided_at: string | null; voided_by: string | null; void_reason: string | null;
+  }>;
+  /** Voided adjustments, newest first (voided by a manager, or because their dish was cancelled or rejected). */
+  voided_adjustments?: StaffBillDTO['adjustments'];
 }
 
 // ------------------------------------------------------------------ tables & visits
@@ -417,6 +438,8 @@ export interface TableTileDTO {
     bill_requested: boolean;
     guests: number;
     version: number;
+    /** Joining is locked after too many wrong PINs (rotate the PIN to unlock). */
+    pin_locked?: boolean;
   };
   attention: Array<'new_order' | 'ready_food' | 'service_request' | 'bill_requested' | 'portion_request'>;
   /**
@@ -453,6 +476,8 @@ export interface VisitDetailDTO {
   version: number;
   /** Too many wrong PINs: joining is locked until this time (rotating the PIN unlocks). */
   pin_locked_until?: string | null;
+  /** Repeated lockouts: joining stays locked until staff rotate the PIN (D-S8-07). */
+  pin_lock_requires_rotation?: boolean;
 }
 
 export interface CheckoutResultDTO {
@@ -529,6 +554,10 @@ export interface AdminItemDTO extends MenuItemDTO {
   publish_blockers: string[];
   unpublished_changes: boolean;
   requires_staff_confirm: boolean;
+  /** The dish's own tracker wording choice (null = follows its category / the default). */
+  prep_kind_override?: 'cook' | 'prepare' | null;
+  /** The wording new order lines get: "Currently cooking" (cook) or "Currently preparing" (prepare). */
+  prep_kind?: 'cook' | 'prepare';
   modifier_group_ids: string[];
   updated_at: string;
   /** S1: price changes of individual variants (price_history above covers the item's own price/rate). */
@@ -537,7 +566,7 @@ export interface AdminItemDTO extends MenuItemDTO {
 
 export interface AdminCatalogDTO {
   groups: CatalogDTO['groups'];
-  categories: Array<MenuCategoryDTO & { status: ItemStatus; ordering_paused: boolean; station: Station; active_from: string | null; active_until: string | null; source_note: string | null; version: number }>;
+  categories: Array<MenuCategoryDTO & { status: ItemStatus; ordering_paused: boolean; station: Station; active_from: string | null; active_until: string | null; source_note: string | null; version: number; prep_kind?: 'cook' | 'prepare' | null }>;
   items: AdminItemDTO[];
   modifier_groups: Array<ModifierGroupDTO & { key: string; item_ids: string[]; version: number }>;
   review: {
@@ -632,6 +661,7 @@ export interface ItemStatsDTO {
   name: Bilingual;
   weekly: Array<{ week_start: string; net_qty: number }>;
   variants: Array<{ name: Bilingual; net_qty: number }>;
+  /** add_rate: sessions that saw the dish and added it / sessions that saw it (D-S8-06). */
   engagement: { impressions: number; detail_opens: number; detail_active_ms_median: number | null; adds: number; add_rate: number | null; submitted_orders: number; sample_sessions: number };
   portion_funnel: null | { requests: number; quoted: number; confirmed: number; grams_total: number };
   availability_days: number | null;
@@ -651,12 +681,20 @@ export interface EngagementDTO {
   active_menu_ms: { median: number | null; p90: number | null; sample: number };
   active_detail_ms: { median: number | null; p90: number | null; sample: number };
   categories: Array<{ category_id: string; name: Bilingual; sessions_exposed: number; share: number | null }>;
-  items: Array<{ item_id: string; name: Bilingual; impressions: number; detail_opens: number; adds: number; add_rate: number | null; submitted: number }>;
+  /**
+   * add_rate = sessions that saw the dish and added it / sessions that saw it (impression_sessions), D-S8-06.
+   * impressions and adds are event counts (an impression is recorded once per session, an add on every tap).
+   */
+  items: Array<{ item_id: string; name: Bilingual; impressions: number; detail_opens: number; adds: number; add_rate: number | null; submitted: number; impression_sessions?: number; add_sessions?: number }>;
   funnel: {
     sessions: number; impression_sessions: number; detail_sessions: number; add_sessions: number; quick_add_sessions: number; submit_sessions: number;
     attributed_orders: number; unattributed_orders: number;
   };
+  /** Sessions whose deepest MENU-route scroll reached each threshold (D-S8-05). */
   scroll: Array<{ threshold: number; sessions: number }>;
+  /** The scroll-depth denominator: sessions with a menu-route event in the period. */
+  scroll_sessions?: number;
+  /** active_ms is menu-route active time (the same definition as active_menu_ms). */
   daily: Array<{ date: string; sessions: number; active_ms: number }>;
   include_fixture: boolean;
   generated_at: string;
@@ -673,6 +711,8 @@ export interface KpiDTO {
   average_table_value: { value_minor: number | null; visits: number };
   operational_errors: { rate: number | null; by_reason: Array<{ reason: string; count: number }>; submitted_rounds: number };
   payment_exceptions: { count: number; value_minor: number };
+  /** Current bills whose settlement was refunded after checkout (not counted as payment exceptions; D-S8-04). */
+  refunds_after_checkout?: { count: number; value_minor: number };
   staff_response: { accept_median_s: number | null; accept_p90_s: number | null; ack_median_s: number | null; ack_p90_s: number | null; accept_sample: number; ack_sample: number };
   totals: { submitted_minor: number; accepted_minor: number; finalized_minor: number; paid_minor: number };
   cancellations: Array<{ reason: string; count: number; value_minor: number }>;
@@ -719,6 +759,7 @@ export interface ReportJobDTO {
 export interface ReportYearDTO {
   year: number;
   state: 'current' | 'completed';
+  /** telemetry_since: business date (YYYY-MM-DD) of the first real engagement session in the year. */
   coverage: { first_date: string | null; last_date: string | null; order_rounds: number; visits: number; telemetry_since: string | null };
   jobs: ReportJobDTO[];
   needs_revision: boolean; // data changed after the latest ready report

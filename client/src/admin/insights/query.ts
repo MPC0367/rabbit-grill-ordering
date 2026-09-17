@@ -5,7 +5,9 @@
 // search text and "show all" replace the current entry.
 import type { MenuStatsDTO, OrderMetric, StatsPeriod } from '../../../../shared/dto.ts';
 import { addDays, businessDate, daysBetween, monthDates, monthStart, weekDates } from '../../../../shared/time.ts';
+import { useConfig } from '../../lib/config.tsx';
 import { setQuery } from '../../lib/router.ts';
+import { useNow } from '../../lib/store.ts';
 
 export type InsightsTab = 'orders' | 'menu' | 'engagement';
 export type Measure = MenuStatsDTO['measure'];
@@ -128,20 +130,86 @@ export function queryString(params: Record<string, string | number | boolean | n
 // ------------------------------------------------------------------ period arithmetic
 
 let skewMs = 0;
-/** Align "today" with the server clock (PublicConfigDTO.server_time). */
-export function setServerTime(iso: string | null | undefined): void {
-  if (!iso) return;
-  const t = Date.parse(iso);
-  if (Number.isFinite(t)) skewMs = t - Date.now();
+/** The configured business-day cutoff hour, once the server has said it (null = not known yet). */
+let cutoff: number | null = null;
+/** A business date the server reported, with the Bangkok calendar date and time it was learned. */
+let learned: { date: string; wall: string; at: number } | null = null;
+const LEARNED_TTL_MS = 10 * 60_000;
+
+/**
+ * What the client may know about the server's clock. `business_day_cutoff_hour`
+ * and `business_date` are read when the server sends them (PublicConfigDTO);
+ * until then the cutoff falls back to 00:00 (D-11) or a recently learned date.
+ */
+export interface ServerClock {
+  server_time?: string | null;
+  business_day_cutoff_hour?: number | null;
+  business_date?: string | null;
 }
 
-/** Today's business date in Asia/Bangkok (the default 00:00 cutoff, D-11). */
+/** Align "today" with the server clock and its business-day cutoff. */
+let appliedServerTime: string | null = null;
+
+export function setServerClock(c: ServerClock | null | undefined): void {
+  if (!c) return;
+  // A server timestamp is applied once, when it arrives; re-applying an old one later would drift the skew.
+  if (c.server_time && c.server_time !== appliedServerTime) {
+    appliedServerTime = c.server_time;
+    const t = Date.parse(c.server_time);
+    if (Number.isFinite(t)) skewMs = t - Date.now();
+    if (c.business_date && isDate(c.business_date)) learnBusinessDate(c.business_date);
+  }
+  const h = c.business_day_cutoff_hour;
+  if (typeof h === 'number' && Number.isInteger(h) && h >= 0 && h <= 23) cutoff = h;
+}
+
+/** Align "today" with the server clock (PublicConfigDTO.server_time). */
+export function setServerTime(iso: string | null | undefined): void {
+  setServerClock({ server_time: iso });
+}
+
+/** Remember the server's current business date from a response (a stats period that contains today). */
+export function learnBusinessDate(date: string): void {
+  if (!isDate(date)) return;
+  const now = nowMs();
+  learned = { date, wall: businessDate(now, 0), at: now };
+}
+
+/** The cutoff hour to use for business dates on this screen (00:00 until the server says otherwise). */
+export function cutoffHour(): number {
+  return cutoff ?? 0;
+}
+
+/** Today's business date in Asia/Bangkok, honouring the configured cutoff hour (brief 26). */
 export function today(): string {
-  return businessDate(Date.now() + skewMs);
+  const now = nowMs();
+  if (cutoff !== null) return businessDate(now, cutoff);
+  const wall = businessDate(now, 0);
+  // Before the cutoff is known, a date the server reported a few minutes ago on the same calendar day wins.
+  if (learned && learned.wall === wall && now - learned.at < LEARNED_TTL_MS) return learned.date;
+  return wall;
+}
+
+/** The business date an instant belongs to (the same cutoff the server uses for date filters). */
+export function businessDateOf(iso: string): string {
+  return businessDate(iso, cutoffHour());
 }
 
 export function nowMs(): number {
   return Date.now() + skewMs;
+}
+
+/**
+ * Today's business date for a staff screen, kept in step with the public
+ * config (server time and cutoff hour) and re-read every minute so a screen
+ * left open rolls over at the cutoff.
+ */
+export function useBusinessToday(): string {
+  const { config } = useConfig();
+  // Idempotent: applied during render so this render already uses the server's clock.
+  setServerClock(config);
+  useNow(60_000);
+  return today();
 }
 
 /** The dates a period covers, mirroring server/domain/aggregates.ts resolvePeriod. */

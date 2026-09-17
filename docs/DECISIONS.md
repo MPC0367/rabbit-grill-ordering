@@ -1040,3 +1040,588 @@ the pressed half, which left the only visible button out of the tab order).
 (`/admin/orders?view=history`, as in the approved board mock). The menu review
 queue opens for every menu manager (read-only unless `menu.review`), as C6
 asked.
+
+## Review fixes: guest interface
+
+**D-G-01 · Feedback outlives checkout on the device.**
+- The bill page offers the feedback form from the moment the bill is asked
+  for (stages requested, billing, final and paid), not only after payment:
+  a cashier who records payment and completes checkout in one go used to
+  leave no window at all.
+- What the guest types is kept per visit in this tab's sessionStorage
+  (`rg.feedback.<visit>`, 3 h, outside the `rg.c2.` prefix that the ended
+  page clears), so checkout swapping the bill page for the ended page no
+  longer throws it away.
+- The ended page asks `GET /api/guest/feedback/eligibility`
+  (`{ eligible, submitted, until }`; server side, see the fix report) and
+  shows the form, with the kept draft, while the API still accepts it. A
+  server without that endpoint (404) falls back to the old session probe.
+  When feedback can no longer be sent and a draft existed, the page says so
+  ("feedback.closedDraft") instead of dropping it silently.
+
+**D-G-02 · Analytics notice and opt-out on guest screens (brief 39).**
+A quiet block at the end of the menu and at the foot of the service sheet,
+shown only while `config.analytics.enabled`: what is measured, what is never
+collected, and a switch "Measure menu use on this device · On/Off" wired to
+`useAnalyticsOptOut()` (D-C3-03 mechanics: one `session_end` marked
+`opted_out`, nothing more). Never a modal or a banner; ordering is the same
+either way. This makes the owner-side copy ("guests can turn measurement off
+on their phone") true.
+
+**D-G-03 · Join PIN length follows the visit.**
+The join screen reads `QrResolveDTO.pin_digits` (the length of the visit's
+actual code, 4 to 8) for the boxes, the auto-submit and the copy. Until the
+server sends it, the field accepts 4 to 8 digits, grows a box per digit past
+four and waits for the Join button, so a six-digit code is never cut at four
+digits (each wrong attempt counts toward the lockout).
+
+**D-G-04 · Guest screens read a leftover live 'offline' against the network.**
+`LiveProvider` sets 'offline' only from the browser's offline signal and does
+not clear it when the network returns unless the stream errors or says hello
+again; a stream that survived a short blip never does, so Send stayed
+disabled until a reload. `useGuestLiveState()` treats 'offline' as live while
+`navigator.onLine` is true (a stream that really died reports 'reconnecting'
+on its next retry). Cart, review, service sheet, Track, Bill and the shell
+banners use it. The provider itself still needs the fix (see the report).
+
+**D-G-05 · The ended screen has no dead navigation.**
+With `mode === 'ended'` the dock is not rendered, the masthead keeps only the
+Menu link (nothing marked current on the thank-you page) and the header
+service key is gone. The page's own "Browse the menu" is the way forward.
+Page bottom padding is unchanged, so nothing jumps.
+
+**D-G-06 · The restaurant's wait estimate reaches guests.**
+When `ordering.estimated_wait_minutes` is set it is shown: as a second line
+of the paused or busy banner, and, while ordering is open, as a one-line info
+banner on the menu, order and Track pages. Nothing is shown when it is empty
+(Settings: "Leave empty to show nothing").
+
+**D-G-07 · Weighed-cut quotes, search aliases, bundle weight.**
+- A priced quote card shows the staff note ("From the restaurant"), the
+  choices staff set (group: options) and what those choices add. The guest's
+  own request note stays visible in every state. The realtime payload is
+  unchanged (notes still come only from the authenticated GET).
+- Menu search also matches owner-verified aliases when the menu API sends
+  them (`aliases_th`/`aliases_en`, or `aliases` as a list or `{th, en}`): an
+  alias prefix ranks with a name contains, an alias contains with an
+  all-words match. Printed names are never changed.
+- The weighed-cut sheet keeps its gram bounds in `guest/visit/limits.ts`
+  instead of importing `shared/schemas.ts` (all of zod) at start-up;
+  `test/unit/guest-limits.test.ts` fails if they drift from the schema.
+
+## Review fixes: UI kit, styles and client lib
+
+**D-K-01 · The live client follows the server after a database restore.**
+The event bookkeeping now lives in `client/src/lib/live-cursor.ts` (tested in
+`test/unit/live-cursor.test.ts`). A cursor from the server that is lower than
+the page's own (a `hello` that did not replay, or a poll answered with
+`resync: true` below the `since` it was sent) means the event history
+restarted. The page then takes the server's cursor and clears its seen ids,
+instead of keeping its maximum, which made polling resync every 5 s and
+dropped recycled ids as duplicates. The SSE `resync` event's cursor is
+applied too. If hello or poll ever carry an `epoch` (a database identity),
+a changed epoch resets the same way; the server does not send one yet.
+Resync handlers receive `{ reset, cursor }`, so anything that remembers
+event ids (the staff alert floor) can restart from the new cursor. A poll
+answer that arrives after the transport changed (new stream, page parked)
+is dropped. An `online` event also returns a stream that survived the blip
+from 'offline' to 'live' (the provider half of D-G-04).
+
+**D-K-02 · Status words follow the top-most modal.**
+`announce()` picks its region when it writes, 80 ms after the call: inside
+the top-most `dialog:modal` (each modal sheet gets a polite and an assertive
+region when it opens), otherwise the page regions under `<body>`. The page
+behind a modal is inert and outside the accessibility tree, so the old body
+regions were silent while a sheet or drawer was open. `ListRow` marks an
+unavailable row with `aria-disabled` and ignores the click, instead of
+`disabled`, so focus stays on a row that turns unavailable as it is pressed.
+
+**D-K-03 · Keyboard focus clears pinned bars (WCAG 2.4.11).**
+`usePinnedEdge()` (ui/hooks.ts) lets the guest dock, the staff phone bar, the
+guest masthead, the category row and the workspace header report the band
+they cover. `<html>` carries the largest band per edge (`--pinned-top`,
+`--pinned-bottom`, with `data-pinned-*` flags). The bottom band becomes root
+`scroll-padding-bottom`. The top band is a `scroll-margin-top` on focused
+controls only: pages already give their own scroll targets a
+`scroll-margin-top` (menu sections, Track rounds, editor cards), and a root
+`scroll-padding-top` would have doubled those offsets.
+
+**D-K-04 · Roving groups keep a visible ring and one tab stop.**
+The base reset that hides the ring on `[tabindex="-1"]` now spares controls
+(buttons, links, form fields, menu items, options, tabs, `[data-rove]`), so
+arrow-key focus onto an item outside the tab order shows the ring. Programmatic
+focus targets (`#main`, step headings, drawer panels) still show none.
+`roveKeys` moves the one tab stop to the focused item, so Tab leaves the group
+from there; `roveBlur` on the group hands the stop back to the chosen item
+(pressed, checked, selected or current) when focus leaves, matching what
+`roveIndex()` renders.
+
+**D-K-05 · Only the connection state word is a live region.**
+The staff pill and the Track pill keep `role="status"` on the state word
+alone. The synced time ("synced 19:52:04", "last update 19:52") changes with
+every restaurant-wide event and is plain text beside it, so it is no longer
+re-announced on every staff screen for each event.
+
+**D-K-06 · The staff kit stylesheet loads with the staff platform.**
+`styles/admin-kit.css` is no longer in the entry: App.tsx loads it before the
+admin code (and before the /ui-kit gallery), so the admin screens' own
+stylesheets still come after it. Guest screens were checked for kit selectors
+in every state at 390, 820 and 1280; the only one in use (hiding the native
+search clear button) moved to components.css. The production entry
+stylesheet went from 141,957 to 114,058 bytes; the kit is a separate
+28.8 KB file that only staff pages load. `ui/index.ts` still re-exports the
+staff kit, which costs guests nothing in production (tree-shaken) but loads
+those modules in development.
+
+**D-K-07 · Language switch fades.**
+`setLang` sets `html[data-lang-switch]` for one run of `lang-fade` (opacity
+0.35 to 1 over `--dur-base`) on the app root and on the contents of an open
+sheet. The dialog itself is not animated, so its rise does not replay, and
+nothing remounts. Reduced motion shortens it to 1 ms.
+
+**D-K-08 · /ui-kit screen frames scale to fit.**
+Below its minimum layout width (1024 px for the desktop frame, 820 for the
+tablet frame) a frame lays its screen out at that width and scales it down
+with `zoom`; the label says "shown at N%". A narrow floor strip puts
+"Open Tables" on its own row under the legend (container query).
+
+## Admin operations fix pass (orders, tables, billing, shell)
+
+**D-FX-OPS-01 · Food at the pass is never hidden by round placement (updates D-C4b-01, D-C4a-01, D-C4a-03).**
+- A round still sits in the column of its least-advanced dish (D-C4b-01),
+  but its ready dishes also reach the Ready column: a compact "Ready first"
+  slip at the top of the column lists only those dishes, with
+  Mark served · n (the ready lines only) and Show ticket (switches the
+  status on tablets and phones, then focuses and outlines the ticket). The
+  ticket itself offers Serve ready · n as its secondary action. On a
+  Preparing ticket that has ready dishes, Serve ready takes the place of
+  the optional Almost done, which stays in the ⋯ panel. Kitchen-only roles
+  (no `orders.serve`) keep Almost done.
+- The Ready count is the number of rounds with any dish at the pass (whole
+  tickets plus slips), so the phone and tablet status switch, the column
+  head and Overview agree, and "No tickets here right now" never shows while
+  food waits. Pure rules: `readyPartOf` and `readyRoundCount` in
+  board/model.ts, covered by test/unit/board-model.test.ts.
+- `/admin/orders?stage=` opens a status directly (Overview's ready card links
+  to `?stage=ready`); a tap writes it back. With `?table=` and no stage, the
+  board opens on the first status that has that table's rounds.
+- After a forward step on a tablet or phone, a toast says where the ticket
+  went ("Table 02 moved to Preparing") with Show. After any board or request
+  action, focus moves to the ticket's next action, else the ticket, else the
+  ticket now in the same place, else the column head or the status switch
+  (WCAG 2.4.3). The request card keeps one Complete element in both states.
+- On desktop each column scrolls on its own with a sticky head (DESIGN
+  §10.17). On phones the five statuses (and the Tables state filter, and the
+  History outcome chips) wrap 3 + 2 instead of hiding behind a sideways swipe.
+- Kitchen sign-ins start on the Kitchen station while the device has no
+  stored choice, so one Mark ready does not announce bar drinks.
+- The Orders badge and the Requests count include cuts to weigh or confirm
+  for roles with `portions.quote` (the same number the Requests tab lists);
+  the server's `portions_to_weigh` is used instead when the overview sends it.
+- Alert sound: the owner's `notifications.sound_default` applies to devices
+  that never chose (read from `/api/staff/auth/me` as `sound_default` or
+  `notifications.sound_default` once the server sends it; never written to
+  the device). While alerts are on but the browser has not started audio, a
+  "Alert sound is paused · Tap to turn on sound" notice shows on every page.
+- Outage: after 10 s of a reconnecting stream the shell probes the server
+  every 15 s; when the probe fails too, every page shows "Can't reach the
+  restaurant system" with the paper procedure. The table grid refetches every
+  30 s so its own "out of date" banner appears. A board tap whose answer was
+  lost says the board is checking again and refetches now and on reconnect;
+  a stale conflict whose newer change is by the same person says "Your
+  earlier tap went through".
+- Pause wording: the header control pauses new orders from guests and from
+  staff (Take an order); paper orders are still accepted. The dialog, banner
+  and staff error say so. `orders.err.orderingPaused` replaces the guest
+  wording on staff screens.
+- A refund recorded after checkout shows as "Refunded after checkout ·
+  amount at time" on the staff bill (from `payment_state` / `refund`).
+- QR cards print the table label and a six-character token id in the
+  footer, never the URL (DESIGN §10.28). Table management and the print page
+  offer the SVG download (`qr.svg?download=1`, which clears "reprint needed").
+- Checking-out tables fold their checkout blockers into one line on desktop
+  too, so the bill stays in view. Checking-out tiles show the seated time;
+  every tile's fact line states what is not served yet (ready and to-accept
+  counts are on the attention badges).
+- Weighing: "Weigh again" after an expired or withdrawn quote starts from an
+  empty field with "Last weighed 420 g (quote 1)" for reference; a live
+  quote's weight is selected on focus. The staff weighing-request note is
+  labelled as seen by the guest, the quote sheet calls it "Note on the
+  request", and the in-person confirmation note says it is kept in the
+  history only (the server stores it as the audit reason).
+
+**D-FX-OPS-02 · Staff confirmation comes from the line, not the live menu.**
+Tickets read `requires_staff_confirm` (and `alcohol`) from each order line
+once the server snapshots them: alcohol lines that need it keep the
+"Alcohol · staff to confirm" row, other flagged dishes get a "Staff to
+confirm" chip, and nothing shows when neither the item nor the owner's
+alcohol switch asks for it. The board and history stop loading
+`/api/public/menu` when every line carries the field; until then they fall
+back to the menu's alcohol flag as before.
+
+## Review fixes: admin data (Insights, Reports, Audit, Menu review)
+
+**D-AD-01 · Staff dates follow the server's business-day cutoff.**
+`admin/insights/query.ts` owns the staff clock: `useBusinessToday()` applies
+`PublicConfigDTO.server_time` once per new value (re-applying an old timestamp
+would drift the skew) and reads `business_day_cutoff_hour` (and
+`business_date`) when the config carries them. Order Stats also learns the
+server's current business date from the partial bucket of a period that
+contains today, trusted for ten minutes on the same calendar day, so the
+"same weekday last week" card and the period labels line up before the config
+field exists. The Operational report presets and date caps, and the audit
+log's "Today" and day groups, use the same hook (`businessDateOf()` for the
+groups, matching the server's date filters). Until the server sends the
+cutoff, screens outside Insights still fall back to 00:00 (D-11).
+
+**D-AD-02 · Missing is not zero in the Order Stats headline.**
+When every bucket is before records began or still ahead (or there is no
+first operating date), the headline shows "—" and "No records for this
+period, <dates>", with no comparison and no selected-day card, and the view
+change is announced as "no records". The client derives this from the bucket
+states; `OrderStatsDTO.total` stays a number.
+
+**D-AD-03 · Live refetches have a maximum wait.**
+`useLiveResource` (Insights, Operational report) and `useTopicRefresh` (More)
+keep the trailing debounce but fire at most 30 s after the first event they
+hold back, so a screen left open during steady service still refreshes. Menu
+Stats listens to order, line and portion events only for a period that
+contains today; a past period refreshes on `menu.*` and `report.*`, like the
+day drill-down.
+
+**D-AD-04 · Operational report: optional server fields, shown only when sent.**
+`admin/more/reportTypes.ts` lists what the report reads beyond the stable
+`KpiDTO`: `filters` + `filter_options` + `unfiltered` (table, category and
+staff filters) and `GET /api/staff/feedback`. The filter selects appear only
+when the KPI response lists the choices, the scope line names only the
+filters the server echoes, and each figure in `unfiltered` says "Not split by
+this filter". The guest-feedback panel stays hidden while the endpoint
+answers `not_found` or `forbidden` and the page stops asking. The report CSV
+writes the filter scope, `refunds_after_checkout` and the feedback count,
+average and score distribution; comment text is never exported. Custom ranges
+use the API's 400-day limit (`MAX_CUSTOM_DAYS`) and say so under the fields.
+
+**D-AD-05 · Refunds after checkout get their own card.**
+When `KpiDTO.refunds_after_checkout` is present (financial viewers only), the
+report shows "Refunds after checkout" beside Payment exceptions, and the
+exceptions definition says those bills are counted there instead.
+
+**D-AD-06 · Phone layouts for Insights and Reports.**
+Below 480 px the period switch and the Top 5 / Top 10 / All control span the
+column, and the custom-range date fields stack. The day drill-down becomes a
+stacked list below 600 px (reference and status, then table · round · sent ·
+items, then source) with an "Order by" select; the wider table now shows
+Status right after Reference. The annual-archive card lets its year tag and
+range wrap, and `.mp__body` / `.insx-section` use a `minmax(0, 1fr)` column so
+a long child can no longer widen the page. Checked at 320, 360 and 375 in
+both languages: no sideways scroll on Insights, Reports, Audit, Team,
+Settings or Menu.
+
+**D-AD-07 · Codes use Oswald; the shell command stays monospace.**
+Usernames, audit record ids and payment-method ids use `--font-display` with
+`--track-ref` (DESIGN §4.1, §10.23). The one CLI sample on the Team page
+(`npm run admin:create …`) keeps the system monospace so it can be copied
+exactly; it is the only monospace text in the staff app.
+
+**D-AD-08 · Audit numbers that are identifiers print as plain digits.**
+Years, revisions, versions, `*_no`, `*_id` and sequence numbers show as
+"2026", not "2,026". Money fields keep baht formatting and other counts keep
+grouping.
+
+**D-AD-09 · Menu review attention uses a heat tag, not the ember mark.**
+Open notes, ambiguous prices and pending by-weight rules show a "Needs
+review" heat tag beside the figure when above zero (DESIGN §9 keeps the ember
+mark for "current"). From 480 px the card label reserves two lines, so a
+wrapped label no longer drops its figure below the rest of the row.
+
+**D-AD-10 · The payment QR setting says what V1 does.**
+The note under a payment method that has `payment_qr_image` now says the
+image is on file, is not shown to guests in this version, and that staff
+check transfers in person (brief 03, 16).
+
+## Docs and tooling pass
+
+**D-DT-01 · The development server shows the network the app, nothing else.**
+`npm run dev` binds Vite to the LAN for phone testing (brief 29). Vite's
+default allow-list is the whole project, so `/@fs/<path>` served the SQLite
+database (live visit PINs, QR tokens, password hashes), report files and the
+server source to anyone on the Wi-Fi.
+- Vite now starts through `scripts/vite-dev.ts` (`createServer` with
+  `vite.config.ts`, plus `server.fs`). Only `client/`, `shared/`, `public/`
+  and `node_modules/` are allowed.
+- The deny list repeats Vite's defaults and adds `*.db`, `*.db-*`, `*.sqlite*`,
+  `var/`, `server/`, `scripts/`, `data-src/` and `test/`. Setting `deny`
+  replaces the defaults, which is why they are repeated.
+- The API child listens on 127.0.0.1 only, and Vite proxies to it.
+- A fs block in `vite.config.ts` would be merged with this one (arrays
+  concatenate), so the two can coexist.
+- `npm run e2e` checks the result from the LAN address (test `files`): every
+  sensitive path gets 403, `shared/` still gets 200, and the API port refuses
+  LAN connections.
+
+**D-DT-02 · QR cards in development point at the LAN address.**
+When `PUBLIC_BASE_URL` is set neither in the shell nor in `.env`,
+`scripts/dev.ts` uses `http://<first LAN IPv4>:PORT`.
+- Physical adapters come before virtual ones (vEthernet, VirtualBox, WSL,
+  Docker, VPN). Then 192.168.x comes before 10.x, and 10.x before 172.16–31.x.
+- It prints every candidate address, which address the QR cards use and why,
+  and warns when only a loopback address is left.
+- `.env.example` ships the variable commented out. A copied `.env` therefore
+  no longer pins it to localhost.
+- `npm start` does not guess an address. The server warns at start instead,
+  because a restaurant install needs a deliberate address.
+
+**D-DT-03 · Seeding never runs inside a watched or production process.**
+- `npm run dev` runs `node server/db/seed.ts` to completion before any
+  watcher starts. It then starts the API with `SEED_DEMO=0`, so a file save
+  during the ~15 s first seed can no longer leave a half-seeded database.
+- `SEED_DEMO=0` (from the shell or `.env`) skips the step, and
+  `SEED_HISTORY=0` skips only the synthetic year.
+- `npm start` is now `scripts/start.ts`. It sets `SEED_DEMO` and
+  `SEED_HISTORY` to 0 unless one of them is set explicitly, so a first
+  `npm start` without `NODE_ENV` no longer creates the demo accounts, whose
+  passwords are public. It also warns when `NODE_ENV` is not `production` or
+  `dist/` is missing.
+- `npm run seed` (`scripts/seed.ts`) keeps including the synthetic year
+  unless `SEED_HISTORY=0`. That stays true even if the server's own default
+  changes.
+- Still open, in the server area: `server/config.ts` defaults, detection of a
+  partial seed, and refusing fixture staff logins in live mode.
+
+**D-DT-04 · Browser suites.**
+- **`npm run e2e`** (`test/e2e/run.ts`) is a node:test file.
+  - Each journey collects soft checks and fails its test with the full list,
+    so one broken step still reports the rest.
+  - It starts one seeded throwaway instance through the `npm run dev` path
+    (`var/e2e/<name>/`, free ports or `--port`), or uses a running instance
+    with `--base`.
+  - Journeys a–f share one visit and run in order.
+  - `--prod` runs the same journeys against `vite build` + `npm run seed` +
+    `npm start`, with QR cards on the LAN address. It swaps the dev-file
+    exposure test for a production one: bundles are served, while source maps
+    and missing bundles answer 404. The gallery check is skipped there.
+- **Scenario 12.** Browser offline emulation does not close an established
+  EventSource. The board therefore reaches the app through a small HTTP proxy
+  (`test/e2e/cutproxy.ts`) that drops the live channel at the socket level
+  while ordinary requests pass.
+- **Kitchen tablet.** It is set to "all stations" for the fulfilment journey,
+  because kitchen tablets now default to the Kitchen station.
+- **`npm run shots`** (`test/visual/shots.ts`) captures:
+  - guest screens at 320, 390, 768 and 1440 px, and staff screens at 390,
+    768, 1024 and 1440 px, in both languages;
+  - the brief-34 states;
+  - an in-page audit of each screen: overflow, Thai line height and tracking,
+    minimum text size, and 44 px targets;
+  - `index.html`, a contact sheet beside the reference mocks.
+- **What fails a shots run.** Page errors, missing translation keys and
+  horizontal overflow fail it. Other audit notes fail it only with `--strict`,
+  because they need a person's judgement.
+
+**D-DT-05 · Delivery documents.**
+- **README.md** covers the quick start, phones, going live, commands and
+  status.
+- **docs/OPERATIONS.md** covers first admin, environment, local startup, LAN
+  QR testing, backup and restore, deployment preparation, the PDF browser
+  context and jobs.
+- **docs/OWNER-CHECKLIST.md** is the file `shared/settings.ts` has always
+  pointed to. It uses the source-audit counts and the 21 owner questions.
+- **docs/FEATURE-MATRIX.md** gives every brief requirement with its state and
+  evidence. It is also the implementation checklist brief 32 asks for.
+  ARCHITECTURE.md now names it instead of the `docs/CHECKLIST.md` that was
+  never written.
+- **Honesty rule.** Every "Verified" names a test, a journey or a capture, and
+  the documents say throughout that verification is local only.
+
+## Review fixes: server
+
+**D-S8-01 · Bill adjustments: linked comps leave with their dish; one attempt, one row.**
+- A dish that leaves the bill (rejected or cancelled) voids every adjustment
+  linked to it in the same transaction (`voided_at`, `voided_by`,
+  `void_reason` "Dish cancelled: <reason>", audit `bill.adjust_void`, bill
+  version bumped). As a backstop, the running bill counts a linked adjustment
+  only while its dish is chargeable. A comp can no longer be linked to a dish
+  that is not on the bill.
+- `POST /visits/:id/adjustments` takes `idempotency_key` (same key and
+  details replay and return the bill; other details answer
+  `idempotency_mismatch`) and `bill_version` (a newer bill answers
+  `stale_version` with the current bill). Both are optional in the schema
+  only so an older client keeps working; the adjustment dialog must send
+  both and keep the key until it gets a definitive answer.
+- `POST /visits/:id/adjustments/:adj/void` (`billing.adjust`,
+  `{ bill_version, reason }`) voids one adjustment while the bill is open.
+  The staff bill lists `adjustments` and `voided_adjustments` (who, when, why).
+- Finalized revisions keep their own copy of the adjustments; nothing is
+  deleted.
+
+**D-S8-02 · Data retention is applied by a daily task.**
+`server/domain/retention.ts` (`npm run jobs -- retention [--dry-run]`, and
+once per business day in the server; off by default under `NODE_ENV=test`,
+`RETENTION_JOB=1` turns it on). Past each horizon (Bangkok business dates):
+guest note text on order lines, service requests, weighing requests and
+quotes is removed (`note_removed_at` remembers that a note existed, so "lines
+with a guest note" in old reports does not change; the allergy flag stays);
+feedback comments are removed (ratings stay); raw engagement events are
+deleted one day at a time, only after that day's item aggregates exist; audit
+entries older than `audit_days` are deleted. Housekeeping: the event outbox
+keeps 7 days and at least the newest 1,000 rows; staff sessions that ended
+30 days ago are deleted. Orders, visits, bills and payments are never
+touched. Each run leaves a `retention.run` audit entry with its counts and
+records `raw_events_purged_through`; the Engagement page's
+`raw_events_retention` note now uses that date, and Settings returns
+`retention_status` (`last_run_at`, `raw_events_purged_through`). Analytics
+sessions are kept: they carry no free text and old rounds still need them for
+attribution.
+
+**D-S8-03 · A payment correction counts against the settlement it corrects.**
+In the annual snapshot every settlement (confirmed or since reversed) counts
+in its own confirmation month; its reversal or refund record, whatever its
+date, is subtracted in that same month. "Recorded payments, net" for any
+period is therefore exactly the settlements of that period still in force,
+the same figure as the KPI screen's paid total, and nothing is subtracted
+twice (the snapshot used to subtract a refunded or next-month-reversed
+settlement once as "marked reversed" and again as its own row). A late
+correction is listed with `late = true`. Confirming a payment on a bill
+finalized on an earlier business date, and every reversal, also bump the
+report data version of the revision's year.
+
+**D-S8-04 · A refund after checkout: the bill is history, not "paid".**
+The settled revision and `bill_status: settled` stay as recorded. The staff
+bill now derives `paid` from a confirmed settlement still in force (a
+zero-total bill counts as paid) and adds `payment_state`
+(`none | paid | reversed | refunded`) and `refund` (amount, reason, who,
+when). The KPI screen reports such bills as `refunds_after_checkout`, not as
+payment exceptions; the payments list shows them once, as the refund record;
+the annual report lists them once, as "Refund recorded", and not as unpaid.
+Cashier, owner KPI and report agree.
+
+**D-S8-05 · Engagement: menu means the menu page.**
+Scroll depth counts only `route = 'menu'` events, over the sessions with a
+menu-route event (`scroll_sessions`, now in the Engagement DTO, the CSV
+denominator and the annual PDF caption). The dashboard's daily and monthly
+`active_ms` series are menu-route time, like the headline "active menu time";
+the annual export still keeps the all-routes total separately. The daily
+query is skipped in the year view, which only needs months.
+
+**D-S8-06 · Add rate is per session (updates D-S6-06).**
+add rate = sessions that saw the dish and added it / sessions that saw it.
+Impressions are recorded once per session and adds on every tap, so the old
+adds / impressions mixed units and passed 100%. The Engagement items carry
+`impression_sessions` and `add_sessions`; the dish drill-down and the export
+(raw-event days) use the same rate.
+
+**D-S8-07 · Join-PIN lockouts escalate within a visit.**
+First lockout: `lockout_minutes`; second: three times as long (capped at
+60 minutes, or the setting if longer); third: until staff rotate the PIN
+(`pin_locked` details then say `staff_unlock_required: true` with no
+`until`). Rotating the PIN, revoking guests and closing the visit reset the
+count (`visits.pin_lockouts`). The table tile's visit carries `pin_locked`
+and the visit detail `pin_lock_requires_rotation`, so floor staff see it
+without opening the drawer.
+
+**D-S8-08 · Revoked access ends at once, also mid-request.**
+A staff event stream re-checks its session before every read and ends with
+`event: access`: `{ state: 'ended' }` when the session is revoked or signed
+out or the account is deactivated or demoted (role changes revoke sessions),
+and `{ state: 'changed' }` when the account is still signed in but its
+permission set changed (permission settings): the client then reconnects and
+gets the new topic filter. Revocation and sign-out wake every stream.
+Guest mutations (orders, service, feedback, portions, bill request) re-check
+the guest session inside their transaction, so a phone revoked while its
+upload was still arriving creates nothing.
+
+**D-S8-09 · HTTP hardening for a real install.**
+- Request bodies are capped before they are read: 16 KB for `/api/public/*`,
+  8 MB for the menu CSV preview, 256 KB for everything else (the analytics
+  batch keeps its own 128 KB); larger bodies answer `413 payload_too_large`
+  with `Connection: close` (the unread body stays on that socket, so a
+  keep-alive client must not send its next request on it).
+- API JSON and CSV, and HTML, CSS and JS files above 1 KB, are gzip-compressed
+  when the browser accepts it; event streams never are. Hashed bundles are served from a
+  `.br` / `.gz` sibling when one exists.
+- Static files: hashed assets are immutable for a year and a missing one is a
+  plain 404 (never index.html); `/media` is cached for a week; every static
+  file gets a weak ETag and answers 304 to If-None-Match / If-Modified-Since;
+  `/` and `/index.html` are `no-cache`; a path with a file extension that
+  matches nothing is a 404; source maps are not served unless
+  `SERVE_SOURCEMAPS=1`.
+- `COOKIE_SECURE` unset now follows the scheme of `PUBLIC_BASE_URL` (https =
+  Secure). A production build on a plain-http LAN address could otherwise
+  sign nobody in. The server warns at start when the QR base points at this
+  computer while listening on the network, and when Secure cookies meet an
+  http base URL. The QR print batch returns `qr_base_url` and
+  `qr_base_is_local` for the print page to warn before printing.
+
+**D-S8-10 · Sign-in and join budgets count failures by address.**
+Sign-in: 10 failures per address, 5 per account from one address (the stop
+a guesser meets), 20 per account from anywhere in 15 minutes, and the
+account lock after 20 consecutive failures (15 minutes). A locked account
+answers like a full budget (`429 rate_limited`), so a response never reveals
+whether a username exists, and a guesser on another device does not lock the
+kitchen tablet out. QR join: only failed joins use the 10-a-minute address
+budget; every attempt counts against a looser 60 a minute. A request that
+arrives with `X-Forwarded-For` while `TRUST_PROXY_HOPS=0` logs a one-time
+warning.
+
+**D-S8-11 · Demo staff accounts and live mode.**
+Switching to live is refused (`409 demo_accounts_active`, with the
+usernames) while an active demo account (`is_fixture`) exists. The same
+settings request with `deactivate_demo_staff: true` deactivates them, signs
+them out and audits it, in one transaction; it is refused when the acting
+owner is itself a demo account or no real owner would remain. While live, a
+demo account can neither sign in nor use an existing session.
+
+**D-S8-12 · The availability log also records settings and seasons.**
+Settings changes to `operating_mode` or `alcohol` log every dish whose
+orderability changed (reason `settings`). A job logs seasonal dishes that
+opened or closed at the business-day boundary (reason `seasonal`, stamped at
+the start of the business day), at start and every 10 minutes. Menu Stats
+and the annual ranking no longer apply today's alcohol or mode setting to a
+past period when the dish has an availability log.
+
+**D-S8-13 · Report labels are per scope (updates D-S7-02).**
+"final" and "revised" are decided within the same scope (kind, year, demo
+data, financial, raw events). A manager's first non-financial copy of a
+completed year is therefore its own "final" and needs no reason; only a
+further copy in that scope is "revised". The year list's
+`coverage.telemetry_since` is a Bangkok business date, and the PDF's
+"Measured since" prints the business date of the measurement start.
+
+**D-S8-14 · Heavy reads stay off the service path.**
+A covering index on `analytics_events` (date, type, session, route, item,
+category, active time, depth, quick add, fixture) replaces the date index;
+the active order board is driven from open visits instead of scanning order
+history; the raw engagement CSV is streamed one business day at a time with
+a yield between days.
+
+**D-S8-15 · Paper orders cannot belong to the previous party.**
+A recovered paper order may be dated before its visit was opened (during an
+outage the party is often entered afterwards), but not before the previous
+party at the same table checked out (`validation_failed`,
+`before_previous_party`).
+
+**D-S8-16 · A manager exception close resolves the dishes that never came.**
+Completing checkout with an exception rejects each unaccepted line and
+cancels each accepted-but-unserved line, with "Closed by manager exception:
+<reason>" and a line step, so nothing stays "accepted" forever or counts as
+sold. The checkout audit records how many lines were resolved; a finalized
+revision keeps what it recorded.
+
+**D-S8-17 · "See prices on orders" is enforced by the server (updates D-23).**
+Staff without `orders.view_bill_values` receive every amount of a staff
+order (subtotal, unit, choices, line totals, rate) as 0 with
+`money_hidden: true`, on the board, the order detail and every transition,
+finish or recovery response. The client already hides money for them.
+
+**D-S8-18 · "Currently cooking" or "Currently preparing" is editable.**
+Categories and dishes take an optional `prep_kind` (`cook` | `prepare`,
+null = default: drinks, bar items and desserts prepare, the rest cook). The
+dish's choice wins over its category's. Each order line keeps the wording it
+was given. The raw salads on the printed menu are set to "prepare" (seed and
+migration); the grilled Caesar keeps "cook".
+
+**D-S8-19 · Paper recovery: "paused" and "sold out" never hide other reasons (updates D-25).**
+A recovered line that is sold out or in a paused category is re-checked with
+those two states ignored; anything else (not verified, price pending, not
+published, out of season, alcohol off) sends the order to review. An
+unverified dish, or one whose new price awaits approval, is never recorded
+from paper at that price.

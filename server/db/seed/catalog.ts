@@ -97,6 +97,9 @@ const ESPRESSO_COFFEES = [
   'latte', 'cappuccino', 'mocha', 'dirty-coffee', 'caramel-latte', 'biscoff-latte', 'black-orange',
 ];
 
+/** Raw salads are assembled, not cooked: the guest tracker says "Currently preparing" (brief 35). */
+const PREPARED_NOT_COOKED = new Set(['green-beans-peas-salad', 'green-salad-balsamic', 'tomato-salad', 'burrata-tomato-salad']);
+
 const MODIFIER_FLAG_DETAIL =
   'Demo fixture: the coffee page (bev-01) prints "SPECIAL BLEND / Balanced Blend - Bluetamp (+30 THB)" but not which coffees can take it. ' +
   'The Beans choice is attached to this espresso drink for the demo only; the owner must confirm which coffees offer the blend before live use.';
@@ -219,6 +222,7 @@ export function seedCatalog(w: Writer, r: Rng, opts: { now: string; availableSin
       sold_out: 0, sold_out_since: null,
       notes_allowed: 1, note_max: 140, max_qty: 20,
       station: it.station, alcohol: it.alcohol, requires_staff_confirm: it.alcohol,
+      prep_kind: PREPARED_NOT_COOKED.has(it.key) ? 'prepare' : null,
       image, image_alt_th: image ? it.image_alt_th : null, image_alt_en: image ? it.image_alt_en : null,
       allergen_status: 'unknown',
       source_url: src.source.reference_url, source_ref: it.source_ref, source_text: it.source_text,

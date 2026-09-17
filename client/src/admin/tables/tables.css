@@ -44,6 +44,18 @@
   .c5-views { padding: 0 8px; }
   .c5-tables .tcard { min-height: 168px; padding: 10px; }
   .c5-tables .tcard__n { font-size: var(--fs-32); }
+  /* every state filter stays visible (3 + 2), never behind a hidden sideways swipe */
+  .c5-tables .tsum .fchips {
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px;
+    width: 100%; max-width: none; overflow: hidden; background: var(--rule);
+  }
+  .c5-tables .tsum .fchips > button {
+    grid-column: span 2; min-width: 0; padding: 4px 6px; border-left: 0;
+    justify-content: center; text-align: center; white-space: normal; line-height: 1.2;
+  }
+  .c5-tables .tsum .fchips > button:nth-child(n + 4) { grid-column: span 3; }
+  .c5-tables .tsum .fchips > button:not([aria-pressed="true"]) { background: var(--surface); }
+  .c5-tables .tsum .fchips > button:lang(th), .c5-tables .tsum .fchips:lang(th) > button { line-height: var(--lh-thai-min); }
 }
 
 /* ---------- drawer ---------- */
@@ -54,6 +66,9 @@
 }
 .c5-drawer .drawer__body > .empty { padding-block: 32px 24px; }
 .c5-drawer-skel { display: grid; gap: 14px; padding: 16px 0; }
+/* the framed table box keeps its 64px square beside a long subtitle (DESIGN §10.19) */
+.drawer__head .tno.c5-tbox { flex: none; inline-size: 64px; min-inline-size: 64px; block-size: 64px; align-self: flex-start; }
+@media (max-width: 479px) { .c5-tbox .tno__k:lang(en) { letter-spacing: 0.06em; margin-right: -0.06em; } }
 .c5-seg { white-space: nowrap; }
 .c5-metalink { position: relative; display: inline; padding: 0; color: var(--action-text); font: inherit; font-weight: var(--fw-semibold); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .c5-metalink::after { content: ""; position: absolute; inset: -14px -10px; }
@@ -90,6 +105,11 @@
 .c5-dock .blockers ul { display: grid; gap: 4px; }
 .c5-dock .c5-callout { margin-top: 0; }
 .c5-dock__actions > :only-child { grid-column: 1 / -1; }
+/* the narrowest phones: one action per row, the next step first */
+@media (max-width: 359px) {
+  .c5-dock__actions { grid-template-columns: minmax(0, 1fr); }
+  .c5-dock__actions > .btn { width: 100%; }
+}
 .c5-dock__who { align-self: center; }
 .c5-dock__fold { display: grid; gap: 8px; }
 .c5-dock__fold > summary {
@@ -116,8 +136,10 @@
 /* ---------- seat dialog, covers ---------- */
 .c5-covers .field__label { font: var(--type-ui-strong); margin-bottom: 8px; }
 .c5-covers .field__help { margin-top: 8px; }
-.c5-choice { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+/* 4 columns, no holes: [Not counted · 1 · 2] [3 4 5 6] [7 · 8 · 9 or more], in reading order */
+.c5-choice { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .c5-choice > button {
+  display: inline-flex; align-items: center; justify-content: center; text-align: center;
   min-height: var(--tap-staff); padding: 0 8px; border-radius: var(--radius-ctl); border: var(--border-ctl);
   background: var(--surface); color: var(--text); font: var(--fw-medium) var(--fs-18)/1 var(--font-display);
   font-feature-settings: var(--num-features);
@@ -162,7 +184,7 @@
 /* =====================================================================
    QR print page and cards (DESIGN §10.28)
    ===================================================================== */
-.c5-qrpage { display: grid; gap: 16px; padding: 20px var(--admin-pad) 40px; min-width: 0; }
+.c5-qrpage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 20px var(--admin-pad) 40px; min-width: 0; }
 .c5-qrpage .apage__actions { gap: 10px; }
 .c5-qrpage > .apage { padding-inline: 0; padding-top: 0; }
 @media (max-width: 899px) {
@@ -180,6 +202,26 @@
 .c5-sheetprev .c5-qrcard { box-shadow: var(--shadow-card); }
 .c5-sheetprev--a4 .c5-qrcard { box-shadow: none; outline: 0.2mm dashed var(--rule-strong); outline-offset: -0.1mm; }
 .c5-qrcard--skel { width: 105mm; height: 148mm; }
+/* tablets: the A4 sheet (two 105mm columns) is wider than the workspace, so the preview is shown smaller */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .c5-sheetprev--a4 { zoom: 0.8; }
+  .c5-qrpage .apage__actions { flex-wrap: wrap; }
+}
+
+/* SVG downloads, one per card (brief 20) */
+.c5-qrdl { display: grid; gap: 6px; }
+.c5-qrdl__h { font: var(--type-cap-lg); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--text-2); }
+.c5-qrdl__h:lang(th) { font-family: var(--font-ui); letter-spacing: 0; text-transform: none; line-height: var(--lh-thai-min); }
+.c5-qrdl__help { font: var(--type-ui-sm); color: var(--text-2); }
+.c5-qrdl__help:lang(th) { line-height: var(--lh-thai-min); }
+.c5-qrdl__list { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.c5-qrdl__a {
+  display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); padding: 0 12px;
+  border: var(--border-ctl); border-radius: var(--radius-ctl); background: var(--surface);
+  font: var(--type-ui); font-weight: var(--fw-medium); color: var(--text); text-decoration: none; font-feature-settings: var(--num-features);
+}
+.c5-qrdl__a:lang(th) { line-height: var(--lh-thai-min); }
+@media (hover: hover) { .c5-qrdl__a:hover { background: var(--hover); } }
 
 .c5-qrcard {
   position: relative;
@@ -227,6 +269,7 @@
   body > :not(.c5-print) { display: none !important; }
   html, body { background: var(--surface) !important; margin: 0 !important; padding: 0 !important; min-height: 0 !important; }
   .c5-print { display: block !important; }
+  .c5-qrdl { display: none !important; }
   .c5-print--a4 { display: grid !important; grid-template-columns: repeat(2, 105mm); grid-auto-rows: 148mm; width: 210mm; }
   .c5-print--a4 .c5-qrcard { outline: 0.15mm dashed var(--rule-strong); outline-offset: -0.08mm; }
   .c5-print--a4 .c5-qrcard:nth-child(4n) { break-after: page; page-break-after: always; }

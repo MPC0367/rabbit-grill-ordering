@@ -1,10 +1,15 @@
 // Measured-weight cuts on Track (brief 44A, DECISIONS D-08, D-22). A request
 // is not an order: it waits for staff to weigh, then for the guest to confirm
 // the exact amount. Only confirmation creates a round.
+//
+// A priced card shows everything staff attached to the quote (brief 44A 4-5):
+// the choices they set (doneness and the like), what those choices add to the
+// amount, and their note, which the quote form promises the guest will see.
+// The guest's own request note stays visible in every state.
 import { useState } from 'react';
-import type { OrderDTO, PortionRequestDTO } from '../../../../shared/dto.ts';
+import type { OrderDTO, PortionQuoteDTO, PortionRequestDTO } from '../../../../shared/dto.ts';
 import { api, ApiError } from '../../lib/api.ts';
-import { clock, grams as gramsLabel } from '../../lib/format.ts';
+import { clock, grams as gramsLabel, money } from '../../lib/format.ts';
 import { useI18n, type Picked } from '../../lib/i18n.tsx';
 import { useNow } from '../../lib/store.ts';
 import { Button, Dialog, Icon, Leader, PortionQuote, TextLink, useToast, type PortionQuoteState } from '../../ui/index.ts';
@@ -194,10 +199,12 @@ export function PortionCards({ visitId, portions, orders, refresh, onConfirmed, 
               : undefined}
           >
             {state === 'revised' ? <p className="support">{t('portion.revisedNote')}</p> : null}
+            {priced && q ? <QuoteDetails quote={q} /> : null}
+            {priced && p.note ? <GuestNote note={p.note} /> : null}
             {state === 'requested' || state === 'expired' ? (
               <div className="vquote__extra">
                 {p.preferred_grams ? <Leader label={t('portion.preferredShown')} value={gramsLabel(p.preferred_grams, lang)} /> : null}
-                {p.note ? <p className="meta cartline__note"><Icon name="note" size="sm" /><span>{p.note}</span></p> : null}
+                {p.note ? <GuestNote note={p.note} /> : null}
                 <p className="meta">{t('portion.requestedAt', { time: clock(p.created_at) })}</p>
                 {state === 'expired' && !terminalExpired ? <p className="support">{t('portion.expiredHelp')}</p> : null}
               </div>
@@ -251,5 +258,53 @@ export function PortionCards({ visitId, portions, orders, refresh, onConfirmed, 
         {t('portion.cancelBody')}
       </Dialog>
     </section>
+  );
+}
+
+/** What staff attached to a quote: chosen options, their charge, and the note for the guest. */
+export function QuoteDetails({ quote }: { quote: PortionQuoteDTO }) {
+  const { t, pick } = useI18n();
+  const choices = quote.choices.filter((c) => c.options.length > 0);
+  const extra = quote.modifiers_minor ?? 0;
+  if (!choices.length && !quote.note && extra <= 0) return null;
+  return (
+    <div className="vquote__detail" data-quote-detail="">
+      {choices.length ? (
+        <ul className="vquote__choices">
+          {choices.map((c, i) => {
+            const group = pick(c.group);
+            return (
+              <li key={i}>
+                <span className="vquote__group" lang={group.lang}>{group.text}</span>
+                <span className="vquote__opts">
+                  {c.options.map((o, j) => {
+                    const name = pick(o.name);
+                    return <span key={j} lang={name.lang}>{name.text}</span>;
+                  })}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+      {extra > 0 ? <p className="meta">{t('portion.modifiersIncluded', { amount: money(extra) })}</p> : null}
+      {quote.note ? (
+        <div className="vquote__staff" data-staff-note="">
+          <p className="vquote__staff-k"><Icon name="note" size="sm" />{t('portion.staffNote')}</p>
+          {/* The staff member's own words, in whatever language they wrote. */}
+          <p className="vquote__staff-t">{quote.note}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function GuestNote({ note }: { note: string }) {
+  const { t } = useI18n();
+  return (
+    <p className="meta cartline__note vquote__mine">
+      <Icon name="note" size="sm" />
+      <span><span className="visually-hidden">{t('portion.yourNote')}: </span>{note}</span>
+    </p>
   );
 }

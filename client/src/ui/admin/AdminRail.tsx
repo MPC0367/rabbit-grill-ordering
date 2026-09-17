@@ -1,11 +1,13 @@
 // Admin rail (DESIGN.md §8.2): charcoal sidebar with the five destinations,
 // compact 84px tablet mode, and the phone bottom-bar fallback. Presentational:
 // the shell passes items, current state, counts and callbacks.
-import { forwardRef, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react';
+import { forwardRef, useRef, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react';
 import { linkHandler } from '../../lib/router.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import type { Locale } from '../../../../shared/settings.ts';
 import { Badge } from '../Badge.tsx';
+import { mergeRefs } from '../cx.ts';
+import { usePinnedEdge } from '../hooks.ts';
 import { SegmentedControl } from '../SegmentedControl.tsx';
 import { cx, Ico, type AdminIconName } from './parts.tsx';
 
@@ -38,9 +40,12 @@ export const RailNav = forwardRef<HTMLElement, RailNavProps>(function RailNav(
   ref,
 ) {
   const { t } = useI18n();
+  const own = useRef<HTMLElement | null>(null);
+  // The fixed phone bar: keyboard focus scrolls clear of it.
+  usePinnedEdge(own, 'bottom', mode === 'bar' && Boolean(fixed));
   return (
     <nav
-      ref={ref}
+      ref={mergeRefs(ref, own)}
       {...rest}
       className={cx('rnav', mode === 'bar' && 'rnav--bar', mode === 'bar' && fixed && 'rnav--fixed', className)}
       aria-label={ariaLabel ?? t('common.staff.nav')}

@@ -31,11 +31,31 @@ export function GuestBanners({ route }: { route: GuestRouteKey }) {
   const reason = joined ? session.ordering.reason : null;
   const items: Item[] = [];
 
-  // 1. connection
+  // 1. connection: the words fit the page (the menu, the draft, the table's
+  // status or bill), and a joined guest can still reach staff: offline, the
+  // service sheet explains the wave-to-staff fallback.
   const { offline } = useGuestConnection(joined);
   if (offline) {
-    items.push({ key: 'offline', variant: 'offline', title: t('shell.banner.offline.title'), body: t('shell.banner.offline.body') });
+    const bodyKey = route === 'track' ? 'shell.banner.offline.bodyTrack'
+      : route === 'bill' ? 'shell.banner.offline.bodyBill'
+        : route === 'cart' ? 'shell.banner.offline.bodyCart'
+          : 'shell.banner.offline.body';
+    items.push({
+      key: 'offline',
+      variant: 'offline',
+      title: t('shell.banner.offline.title'),
+      body: t(mode === 'ended' ? 'shell.banner.offline.body' : bodyKey),
+      callStaff: joined,
+    });
   }
+
+  // The restaurant's own wait estimate (Settings or the pause sheet): shown
+  // only when staff set one, with the pause or busy message it belongs to.
+  const waitMin = config?.ordering.estimated_wait_minutes;
+  const waitLine = typeof waitMin === 'number' && waitMin > 0 ? t('shell.banner.wait', { n: waitMin }) : null;
+  const withWait = (body: ReactNode): ReactNode => (waitLine
+    ? <>{body} <span className="gshell-wait" data-wait={waitMin}>{waitLine}</span></>
+    : body);
 
   // 2. why ordering is blocked (restaurant-wide first, then this table)
   const showOrderingState = mode !== 'ended' && route !== 'join';
@@ -48,12 +68,13 @@ export function GuestBanners({ route }: { route: GuestRouteKey }) {
         key: 'paused',
         variant: 'paused',
         title: t('shell.banner.paused.title'),
-        body: msg && msg.text ? <span lang={msg.lang}>{msg.text}</span> : t('shell.banner.paused.body'),
+        body: withWait(msg && msg.text ? <span lang={msg.lang}>{msg.text}</span> : t('shell.banner.paused.body')),
         callStaff: joined,
       });
     } else if (closedHours) {
       items.push({ key: 'hours', variant: 'paused', icon: 'clock', title: t('shell.banner.hours.title'), body: t('shell.banner.hours.body') });
     }
+    let busy = false;
     if (joined) {
       const billing = session.visit.status === 'billing' || reason === 'visit_billing';
       if (billing) {
@@ -63,8 +84,13 @@ export function GuestBanners({ route }: { route: GuestRouteKey }) {
       } else if (reason === 'table_disabled') {
         items.push({ key: 'table-off', variant: 'paused', title: t('shell.banner.tableOff.title'), body: t('shell.banner.tableOff.body'), callStaff: true });
       } else if (reason === 'intake_full' && !paused) {
-        items.push({ key: 'busy', variant: 'warning', title: t('shell.banner.busy.title'), body: t('shell.banner.busy.body') });
+        busy = true;
+        items.push({ key: 'busy', variant: 'warning', title: t('shell.banner.busy.title'), body: withWait(t('shell.banner.busy.body')) });
       }
+    }
+    // Ordering is open but staff announced a wait: say it where guests decide.
+    if (waitLine && !paused && !closedHours && !busy && (route === 'menu' || route === 'cart' || route === 'track')) {
+      items.push({ key: 'wait', variant: 'info', icon: 'clock', title: waitLine, body: null });
     }
   }
 
@@ -99,7 +125,7 @@ export function GuestBanners({ route }: { route: GuestRouteKey }) {
           title={b.title}
           icon={b.icon}
           data-banner={b.key}
-          action={b.callStaff && !offline ? (
+          action={b.callStaff && (!offline || b.key === 'offline') ? (
             <Button variant="outline" icon="bell" opensDialog onClick={openService}>{t('shell.callStaff')}</Button>
           ) : undefined}
         >

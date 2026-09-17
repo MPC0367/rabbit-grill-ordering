@@ -356,17 +356,22 @@ function variantTotals(from: string, to: string, include: boolean, itemId: strin
   return out;
 }
 
-/** Could this item be ordered at all (ignoring sold-out, which availability covers)? */
-function orderableInPrinciple(item: ItemCatalogRow, variantPriced: Set<string>): boolean {
+/**
+ * Could this item be ordered at all (ignoring sold-out, which availability covers)?
+ * With an availability log (`logged`), today's alcohol and operating-mode
+ * settings are not applied to the past: the log records when those settings
+ * switched the dish on or off (D-S8-12).
+ */
+function orderableInPrinciple(item: ItemCatalogRow, variantPriced: Set<string>, logged: boolean): boolean {
   const s = getSettings();
   if (item.status !== 'published' || item.cat_status !== 'published') return false;
-  if ((item.alcohol === 1 || item.cat_alcohol === 1) && !s.alcohol.enabled) return false;
+  if (!logged && (item.alcohol === 1 || item.cat_alcohol === 1) && !s.alcohol.enabled) return false;
   const priced = item.pricing_type === 'fixed' ? item.price_minor !== null
     : item.pricing_type === 'variant' ? variantPriced.has(item.id)
       : item.rate_minor !== null && item.rate_basis_grams !== null;
   if (!priced) return false;
   if (item.review_status === 'verified') return true;
-  return s.operating_mode === 'demo' && item.demo_orderable === 1;
+  return (logged || s.operating_mode === 'demo') && item.demo_orderable === 1;
 }
 
 /** A seasonal category whose active window misses the whole period. */
@@ -474,7 +479,7 @@ export function menuStats(q: MenuStatsParams): MenuStatsDTO {
     if (!totals) {
       // Zero-order candidates must have been orderable and actually available (D-S6-07).
       if (span.days === 0) continue;
-      if (!orderableInPrinciple(item, variantPriced)) continue;
+      if (!orderableInPrinciple(item, variantPriced, av.known)) continue;
       if (seasonallyInactive(item, rp.from, rp.to)) continue;
       if (av.known && !days) continue;
     }
@@ -585,10 +590,15 @@ export function itemStats(itemId: string, q: StatsParams): ItemStatsDTO {
       GROUP BY e.session_id, COALESCE(e.interaction_ref, e.event_id)`,
     { item: itemId, from: rp.from, to: rp.to },
   ).map((r) => r.ms);
-  const sampleSessions = one<{ n: number }>(
-    `SELECT COUNT(DISTINCT e.session_id) AS n FROM analytics_events e
-      WHERE e.item_id = :item AND e.business_date BETWEEN :from AND :to AND ${fixtureSql('e', include)}`,
-    { item: itemId, from: rp.from, to: rp.to })?.n ?? 0;
+  // Sessions (not events) on both sides of the add rate (D-S8-06).
+  const perSession = one<{ sessions: number; saw: number; converted: number }>(
+    `SELECT COUNT(*) AS sessions, COALESCE(SUM(imp > 0), 0) AS saw, COALESCE(SUM(imp > 0 AND adds > 0), 0) AS converted
+       FROM (SELECT e.session_id, SUM(e.type = 'item_impression') AS imp, SUM(e.type = 'cart_add') AS adds
+               FROM analytics_events e
+              WHERE e.item_id = :item AND e.business_date BETWEEN :from AND :to AND ${fixtureSql('e', include)}
+              GROUP BY e.session_id)`,
+    { item: itemId, from: rp.from, to: rp.to }) ?? { sessions: 0, saw: 0, converted: 0 };
+  const sampleSessions = perSession.sessions;
   const submittedOrders = one<{ n: number }>(
     `SELECT COUNT(DISTINCT o.id) AS n FROM orders o JOIN order_lines l ON l.order_id = o.id
       WHERE l.item_id = :item AND o.analytics_session_id IS NOT NULL
@@ -626,7 +636,7 @@ export function itemStats(itemId: string, q: StatsParams): ItemStatsDTO {
       detail_opens: counts.get('item_detail_open') ?? 0,
       detail_active_ms_median: distribution(dwell).median,
       adds,
-      add_rate: impressions > 0 ? Math.round((adds / impressions) * 10_000) / 10_000 : null,
+      add_rate: perSession.saw > 0 ? Math.round((perSession.converted / perSession.saw) * 10_000) / 10_000 : null,
       submitted_orders: submittedOrders,
       sample_sessions: sampleSessions,
     },

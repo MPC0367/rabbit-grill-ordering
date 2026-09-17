@@ -105,6 +105,11 @@ function today(): string {
   return businessDate(Date.now(), cutoffHour());
 }
 
+/** Bump the report data version of each distinct business date's year (once per date). */
+function touchReportDates(...dates: Array<string | null | undefined>): void {
+  for (const d of new Set(dates.filter((x): x is string => Boolean(x)))) touchReportData(d);
+}
+
 function enabledMethod(id: string): PaymentMethod {
   const m = getSettings().payment_methods.find((x) => x.id === id && x.enabled);
   if (!m) {
@@ -207,6 +212,9 @@ export function confirmPayment(visitId: string, input: z.infer<typeof PaymentBod
     throw new AppError('bill_changed', 'The bill was changed on another device.');
   }
   if (!updateVersioned('bills', bill.id, bill.version, { status: 'settled', updated_at: now })) staleVersion();
+  // Payment exceptions are dated by the revision: settling a bill finalized on an
+  // earlier day (or year) changes that day's figures (D-S8-03).
+  if (revision.business_date !== today()) touchReportData(revision.business_date);
 
   audit(staff.actor, 'payment.confirm', { type: 'payment', id, visit_id: visit.id }, {
     // No payment reference here: audit entries are widely readable.
@@ -273,9 +281,8 @@ export function reversePayment(paymentId: string, input: z.infer<typeof ReverseP
 
   if (!closed) reopenSettlement(visit, original.bill_revision_id);
 
-  // A reversal changes a day that may already have been reported.
-  touchReportData(original.business_date);
-  if (original.business_date !== today()) touchReportData(today());
+  // A reversal changes the payment's day, today, and the day its bill was finalized.
+  touchReportDates(original.business_date, today(), getRevision(original.bill_revision_id)?.business_date);
 
   audit(staff.actor, kind === 'reversal' ? 'payment.reverse' : 'payment.refund_record', { type: 'payment', id: original.id, visit_id: visit.id }, {
     reason: input.reason,

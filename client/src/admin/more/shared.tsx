@@ -243,13 +243,18 @@ export const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.strin
  * so its topic refetch never fires; this keeps the timer across re-subscribes.
  * Keep `topics` on useResource as well: that part still refetches after a reconnect.
  */
-export function useTopicRefresh(prefixes: string[], refresh: () => unknown, debounceMs = 300) {
+export function useTopicRefresh(prefixes: string[], refresh: () => unknown, debounceMs = 300, maxWaitMs = 30_000) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstPending = useRef<number | null>(null);
   const latest = useRef(refresh);
   latest.current = refresh;
   useLiveEvent(prefixes, () => {
+    const now = Date.now();
+    if (firstPending.current === null) firstPending.current = now;
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => { timer.current = null; void latest.current(); }, debounceMs);
+    // Trailing debounce that still fires within maxWaitMs while events keep coming.
+    const delay = Math.max(0, Math.min(debounceMs, maxWaitMs - (now - firstPending.current)));
+    timer.current = setTimeout(() => { timer.current = null; firstPending.current = null; void latest.current(); }, delay);
   });
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 }

@@ -68,6 +68,58 @@
 .served__acts .btn { flex: 1 1 auto; min-width: 0; padding: 0 10px; }
 .served__help { padding: 2px 4px 4px; font: var(--type-ui-sm); line-height: var(--lh-thai-min); color: var(--text-2); text-align: center; }
 
+/* ready dishes of rounds still cooking: compact slips at the top of the pass */
+.passpart { display: grid; gap: 6px; padding-bottom: 10px; border-bottom: 1px dashed var(--rule-strong); }
+.passpart__list { display: grid; gap: 6px; }
+.passpart__row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 10px;
+  padding: 8px; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-sm);
+  box-shadow: inset 3px 0 0 var(--rail-pass);
+}
+.passpart__dishes { grid-column: 1 / -1; display: grid; gap: 2px; font: var(--type-ui); line-height: var(--lh-thai-min); overflow-wrap: anywhere; }
+.passpart__dishes li { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.passpart__q { flex: none; font: var(--fw-medium) var(--fs-17)/1 var(--font-display); font-feature-settings: var(--num-features); }
+.passpart__rest { grid-column: 1 / -1; font: var(--type-ui-sm); line-height: var(--lh-thai-min); color: var(--text-2); }
+.passpart .served__acts { flex-wrap: wrap; }
+.passpart .served__acts .btn--primary { flex: 1 1 100%; }
+/* one status at a time: the slips span the grid and sit side by side */
+.board--single .passpart { grid-column: 1 / -1; }
+.board--single .passpart__list { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-items: start; }
+.board--single .served { grid-column: 1 / -1; }
+
+/* 216 px columns: the progress words get their own row instead of wrapping beside the bar */
+.ob .board .meter { flex-wrap: wrap; row-gap: 4px; }
+.ob .board .meter__t { flex: 1 1 100%; }
+
+/* a ticket found from a slip or a "moved" toast */
+@keyframes ob-locate { 0%, 60% { box-shadow: 0 0 0 3px var(--now); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.ticket.ob-located { animation: ob-locate 1.4s var(--ease-out) 1; }
+@media (prefers-reduced-motion: reduce) { .ticket.ob-located { animation: none; box-shadow: 0 0 0 3px var(--now); } }
+
+/* desktop: each column scrolls on its own and keeps its head in view (DESIGN §10.17) */
+@media (min-width: 1200px) {
+  .ob .board > .col {
+    min-height: min(640px, calc(100dvh - var(--admin-header-h) - 20px));
+    max-height: calc(100dvh - var(--admin-header-h) - 20px);
+    overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin;
+  }
+  .ob .board > .col > .col__head { position: sticky; top: 0; z-index: 2; background: var(--well); }
+}
+
+/* phones: all five statuses stay visible, 3 + 2, never behind a sideways swipe */
+@media (max-width: 767px) {
+  .ob > .boardtabs.is-on { overflow: visible; padding-inline: 16px; }
+  .ob > .boardtabs.is-on .seg { display: grid; grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); width: 100%; }
+  .ob > .boardtabs.is-on .seg > button { grid-column: span 2; min-width: 0; padding: 4px 6px; white-space: normal; line-height: 1.2; text-align: center; }
+  .ob > .boardtabs.is-on .seg > button:nth-child(n + 4) { grid-column: span 3; }
+  .ob > .boardtabs.is-on .seg > button:lang(th), .ob > .boardtabs.is-on .seg:lang(th) > button { line-height: var(--lh-thai-min); }
+  /* history outcome chips: two by two instead of a clipped row */
+  .ob-histchips.fchips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; width: 100%; background: var(--rule); }
+  .ob-histchips.fchips > button { justify-content: center; border-left: 0; white-space: normal; text-align: center; line-height: 1.25; padding: 4px 8px; }
+  .ob-histchips.fchips > button:not([aria-pressed="true"]) { background: var(--surface); }
+  .ob-histchips.fchips > button:lang(th), .ob-histchips.fchips:lang(th) > button { line-height: var(--lh-thai-min); }
+}
+
 /* ================================================================== history */
 .ob--history { padding-top: 6px; }
 .ob-histbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 10px var(--admin-pad) 0; }
@@ -182,6 +234,8 @@
 .rq__quote.is-expired { box-shadow: inset 3px 0 0 var(--edge); }
 .rq__quote-main { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
 .rq__quote-main .num { font: var(--fw-medium) var(--fs-22)/1.1 var(--font-display); font-feature-settings: var(--num-features); }
+/* "420 กรัม": the Thai unit shares the Oswald run, so it keeps the Thai line-height (DESIGN §4.2) */
+.rq__quote-main .num:lang(th) { line-height: var(--lh-thai-min); }
 .rq__quote-main .i { color: var(--text-2); }
 .rq__quote.is-expired .rq__quote-main .num { color: var(--text-2); text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .rq__quote-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font: var(--type-ui-sm); color: var(--text-2); line-height: var(--lh-thai-min); font-feature-settings: var(--num-features); }
@@ -221,6 +275,7 @@
   letter-spacing: 0.02em;
 }
 .qsheet__grams .field__affix { font: var(--fw-medium) var(--fs-18)/1 var(--font-ui); }
+.qsheet__grams .field__affix:lang(th) { line-height: var(--lh-thai-min); }
 .qsheet__amount {
   display: grid; align-content: start; gap: 2px; min-height: 76px; margin-top: 30px; padding: 8px 14px;
   border-radius: var(--radius-ctl); background: var(--selected); box-shadow: inset 3px 0 0 var(--action);

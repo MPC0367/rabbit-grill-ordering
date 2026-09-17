@@ -300,7 +300,8 @@ test('active time comes only from active chunks, never from how long the party h
     ev('active_time_chunk', { ...long, route: 'cart', active_ms: 20_000, interaction_ref: 'ivl_c' }),
   ], { accepted: 4, duplicates: 0, rejected: 0 });
   const after = await engagement();
-  assert.equal(dayRow(after, d).active_ms - dayRow(before, d).active_ms, 62_000, 'exactly the chunks sent, nothing else');
+  // The daily series is menu time, like the headline (D-S8-05): the 20 s on the cart page is not in it.
+  assert.equal(dayRow(after, d).active_ms - dayRow(before, d).active_ms, 42_000, 'exactly the menu chunks sent, nothing else');
   assert.equal(after.active_menu_ms.sample - before.active_menu_ms.sample, 1);
   const menuMs = srv.sql<{ ms: number }>(`SELECT SUM(active_ms) AS ms FROM analytics_events WHERE session_id = ? AND type = 'active_time_chunk' AND route = 'menu'`, [s])[0].ms;
   assert.equal(menuMs, 42_000);
@@ -380,6 +381,48 @@ test('a browser without a table cookie is a public session and never enters the 
   const reached = (e: any, t: number) => e.scroll.find((x: any) => x.threshold === t).sessions;
   assert.equal(reached(after, 50) - reached(before, 50), 1);
   assert.equal(reached(after, 75) - reached(before, 75), 0);
+});
+
+test('scroll depth counts only the menu page, over sessions that opened the menu (D-S8-05)', async () => {
+  const { token, visit } = await seat();
+  const guest = await join(token, visit.join_pin);
+  const before = await engagement();
+  const onMenu = sid();
+  const billOnly = sid();
+  // Scrolled half the menu, then the whole (long) Track page.
+  await sendOk(guest, onMenu, [
+    ev('menu_view'), ev('scroll_depth', { depth: 50 }), ev('scroll_depth', { route: 'track', depth: 100 }),
+  ], { accepted: 3, duplicates: 0, rejected: 0 });
+  // Never opened the menu: only the bill page.
+  await sendOk(guest, billOnly, [ev('scroll_depth', { route: 'bill', depth: 100 })], { accepted: 1, duplicates: 0, rejected: 0 });
+  const after = await engagement();
+  const reached = (x: any, t: number) => x.scroll.find((r: any) => r.threshold === t).sessions;
+  assert.deepEqual([25, 50, 75, 100].map((t) => reached(after, t) - reached(before, t)), [1, 1, 0, 0]);
+  assert.equal(after.scroll_sessions - before.scroll_sessions, 1, 'the denominator: sessions with a menu-route event');
+  assert.equal(after.coverage.measured_sessions - before.coverage.measured_sessions, 2);
+  for (const r of after.scroll) assert.ok(r.sessions <= after.scroll_sessions);
+  const csv = await owner.get('/api/staff/stats/export.csv?view=engagement');
+  const line = String(csv.body).split(/\r?\n/).find((l) => l.startsWith('scroll_depth,reached_25,'));
+  assert.ok(line?.endsWith(`,${after.scroll_sessions},`), line);
+});
+
+test('add rate is sessions that saw and added a dish over sessions that saw it, so it never passes 100% (D-S8-06)', async () => {
+  const { token, visit } = await seat();
+  const guest = await join(token, visit.join_pin);
+  const dish = T.items.dessert; // no other engagement test touches it
+  const [a, b] = [sid(), sid()];
+  // Session a sees the dessert once and taps Add three times; session b only sees it.
+  await sendOk(guest, a, [
+    ev('item_impression', { item_id: dish }),
+    ...[1, 2, 3].map(() => ev('cart_add', { item_id: dish, quantity_delta: 1 })),
+  ], { accepted: 4, duplicates: 0, rejected: 0 });
+  await sendOk(guest, b, [ev('item_impression', { item_id: dish })], { accepted: 1, duplicates: 0, rejected: 0 });
+  const after = await engagement();
+  const row = itemRow(after, dish);
+  assert.deepEqual([row.impressions, row.adds, row.impression_sessions, row.add_sessions, row.add_rate], [2, 3, 2, 1, 0.5]);
+  const drill = await get(`/api/staff/stats/menu/items/${dish}`);
+  assert.deepEqual([drill.engagement.adds, drill.engagement.add_rate, drill.engagement.sample_sessions], [3, 0.5, 2]);
+  for (const r of after.items) assert.ok(r.add_rate === null || (r.add_rate >= 0 && r.add_rate <= 1), `${r.item_id}: ${r.add_rate}`);
 });
 
 test('a public session that joins a table becomes a dining session for that visit, and loses it with its access', async () => {

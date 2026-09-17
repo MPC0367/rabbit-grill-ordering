@@ -17,8 +17,10 @@ import {
   SegmentedControl, Skeleton, SkeletonDishRow, Tag, useToast,
   type CategoryListGroup, type CategoryTab,
 } from '../../ui/index.ts';
+import { useOrderingState } from '../cart/ordering.ts';
 import { noteCatalogVersion, useCart, type AddResult } from '../cart/store.ts';
 import { useCatalog } from '../shell/catalog.tsx';
+import { AnalyticsNotice } from '../shell/AnalyticsNotice.tsx';
 import { ReconnectSlot } from '../shell/GuestShell.tsx';
 import { useOnline } from '../shell/hooks.ts';
 import { useOverlays } from '../shell/overlays.tsx';
@@ -42,6 +44,7 @@ export default function MenuPage() {
   const { mode, session, error: sessionError } = useGuestSession();
   const overlays = useOverlays();
   const cart = useCart();
+  const ordering = useOrderingState();
   const toast = useToast();
   const online = useOnline();
   const { hash } = useRoute();
@@ -202,8 +205,8 @@ export default function MenuPage() {
   const access: RowAccess = mode === 'joined' ? 'order' : mode === 'loading' ? 'loading' : 'explain';
 
   // ------------------------------------------------------------ row actions (stable identity)
-  const latest = useRef({ cart, overlays, toast, t, pick, sessionError });
-  latest.current = { cart, overlays, toast, t, pick, sessionError };
+  const latest = useRef({ cart, overlays, toast, t, pick, sessionError, ordering });
+  latest.current = { cart, overlays, toast, t, pick, sessionError, ordering };
 
   const actions = useMemo<MenuRowActions>(() => {
     const undoAdd = (res: AddResult) => {
@@ -223,8 +226,19 @@ export default function MenuPage() {
     };
     return {
       quickAdd: (item) => {
-        const { cart: c, toast: tt, t: tr, pick: pk } = latest.current;
+        const { cart: c, toast: tt, t: tr, pick: pk, ordering: ord, overlays: ov } = latest.current;
         const name = pk(item.name).text;
+        // Checking out: new dishes go through staff, as the dish sheet says. A
+        // draft that could never be sent is not started (pauses keep drafts).
+        if (ord.block?.code === 'visit_billing') {
+          tt.show({
+            tone: 'info',
+            message: `${tr('cart.block.quickAdd')} · ${ord.block.body}`,
+            action: { label: tr('cart.block.callStaff'), onClick: () => ov.openService() },
+            duration: 6000,
+          });
+          return false;
+        }
         let res: AddResult | null = null;
         try {
           res = c.add({ item_id: item.id, item, quantity: 1, quick_add: true });
@@ -500,6 +514,7 @@ export default function MenuPage() {
           <div id="menu-list" className={ready ? 'mlist mlist--in' : 'mlist'} data-group={group}>
             {content}
           </div>
+          {ready ? <AnalyticsNotice /> : null}
         </main>
         <aside className="g-cart g-desk-only" aria-label={t('common.nav.order')}>
           <DeskOrderPanel />

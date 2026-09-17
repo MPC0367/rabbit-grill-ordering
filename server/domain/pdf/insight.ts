@@ -1,12 +1,27 @@
 // Sections 05-08: engagement, service operations, cancellations and
 // exceptions, bills and payments (financial reports only).
 import type { EngagementItem, ReasonRow, ReportSnapshot } from '../export/types.ts';
+import { businessDate } from '../../../shared/time.ts';
 import { funnel } from './charts.ts';
 import { dateLong, dateTime, duration, esc, grams, LINE_STATUS_LABEL, money, monthName, num, oneName, pct, SERVICE_LABEL, statCells } from './format.ts';
 import { h3, kpi, rowsChunked, sectionHead, type Col, table, thead, tr } from './parts.ts';
 
+/** Month state from the order calendar: future and pre-records months carry no counts. */
+function monthState(s: ReportSnapshot, key: string): string {
+  return s.monthly.find((m) => m.key === key)?.state ?? 'complete';
+}
+const MONTH_TAG: Record<string, string> = { partial: 'in progress', future: 'future', before_records: 'before records' };
+const monthLabel = (s: ReportSnapshot, key: string): string => {
+  const tag = MONTH_TAG[monthState(s, key)];
+  return `${monthName(key)}${tag ? ` <span class="state">${tag}</span>` : ''}`;
+};
+const noCounts = (s: ReportSnapshot, key: string): boolean => ['future', 'before_records'].includes(monthState(s, key));
+
 export async function engagementSection(s: ReportSnapshot, tick: () => Promise<void>): Promise<string> {
   const e = s.engagement;
+  // The measurement start is a UTC instant; the header shows its Bangkok business date.
+  const measuredSince = e.instrumentation_started_at ? businessDate(e.instrumentation_started_at, s.range.cutoff_hour) : null;
+  const scrollBase = e.scroll_sessions ?? e.sessions;
   const loc = s.default_locale;
   const f = e.funnel;
   const none = e.raw_events === 0 && e.agg_fallback_days === 0;
@@ -22,7 +37,7 @@ export async function engagementSection(s: ReportSnapshot, tick: () => Promise<v
   ];
   const itemsBody = await rowsChunked(e.items, (i) => tr(itemCols, i), tick);
   return `<section class="section">
-  ${sectionHead('05', 'Guest engagement', 'การใช้งานเมนูของลูกค้า', e.instrumentation_started_at ? `Measured since<br>${dateLong(e.instrumentation_started_at.slice(0, 10))}` : 'Measurement start not recorded')}
+  ${sectionHead('05', 'Guest engagement', 'การใช้งานเมนูของลูกค้า', measuredSince ? `Measured since<br>${dateLong(measuredSince)}` : 'Measurement start not recorded')}
   <p class="lead">Measured from the guest menu's own telemetry: pseudonymous browsing sessions, never people, never cross-visit identities.
     Active time counts only while the page is visible and the guest has interacted recently; it is observed activity, not attention.
     Order counts elsewhere in this report never depend on this telemetry.</p>
@@ -57,26 +72,28 @@ export async function engagementSection(s: ReportSnapshot, tick: () => Promise<v
       ${table<(typeof e.scroll)[number]>([
         { head: 'Reached at least', cell: (x) => `${x.threshold}% of the menu` },
         { head: 'Sessions', num: true, cell: (x) => num(x.sessions) },
-        { head: 'Share', num: true, cell: (x) => pct(f.sessions ? x.sessions / f.sessions : null) },
+        { head: 'Share', num: true, cell: (x) => pct(scrollBase ? x.sessions / scrollBase : null) },
       ], e.scroll, { cls: 'compact' })}
-      <p class="caption">Depth depends on screen size, images and filters, so it is approximate. Reaching 100% does not mean every dish was read.</p>
+      <p class="caption">Share of the ${num(scrollBase)} measured sessions that opened the menu (dining and public); only scrolling on the menu page counts.
+        Depth depends on screen size, images and filters, so it is approximate. Reaching 100% does not mean every dish was read.</p>
     </div>
   </div>
 
   ${h3('Item exposure and adds', 'การเห็นและการเพิ่มแต่ละเมนู')}
   ${e.items.length ? `<table class="dense">${thead(itemCols)}<tbody>${itemsBody}</tbody></table>` : '<p class="muted">No item-level events recorded.</p>'}
-  <p class="caption">Add rate = adds / impressions (an impression is the dish at least half visible for a second). Attributed quantity counts every line of
+  <p class="caption">Add rate = sessions that saw the dish and added it / sessions that saw it (an impression is the dish at least half visible for a second;
+    it is counted once per session, while every tap on Add counts as an add). Attributed quantity counts every line of
     rounds linked to a measured, not-opted-out session. A session that continues past the business-day cutoff counts once per business day in the session columns.
     ${e.agg_fallback_days ? `${num(e.agg_fallback_days)} day(s) use daily aggregates, which carry counts but not session detail.` : ''}</p>
 
   <div class="two">
     <div class="block">${h3('By month', 'รายเดือน')}
       ${table<(typeof e.monthly)[number]>([
-        { head: 'Month', cell: (m) => monthName(m.key) },
-        { head: 'Sessions', num: true, cell: (m) => num(m.sessions) },
-        { head: 'At a table', num: true, cell: (m) => num(m.dining_sessions) },
-        { head: 'Active time', num: true, cell: (m) => duration(m.active_ms / 1000) },
-        { head: 'Events', num: true, cell: (m) => num(m.events) },
+        { head: 'Month', cell: (m) => monthLabel(s, m.key) },
+        { head: 'Sessions', num: true, cell: (m) => (noCounts(s, m.key) ? '–' : num(m.sessions)) },
+        { head: 'At a table', num: true, cell: (m) => (noCounts(s, m.key) ? '–' : num(m.dining_sessions)) },
+        { head: 'Active time', num: true, cell: (m) => (noCounts(s, m.key) ? '–' : duration(m.active_ms / 1000)) },
+        { head: 'Events', num: true, cell: (m) => (noCounts(s, m.key) ? '–' : num(m.events)) },
       ], e.monthly, { cls: 'compact' })}
     </div>
     <div class="block">${h3('Scope and limitations', 'ขอบเขตและข้อจำกัด')}
@@ -85,7 +102,8 @@ export async function engagementSection(s: ReportSnapshot, tick: () => Promise<v
         <b>engagement_daily.csv</b> and every raw event row is in <b>engagement_events.csv</b> in the annual data export (owner permission to export raw data required).</div>
       <ul class="plain small">
         <li>Telemetry first observed: ${e.first_event_at ? dateTime(e.first_event_at) : 'never'}; measurement switched on: ${e.instrumentation_started_at ? dateTime(e.instrumentation_started_at) : 'not recorded'}; analytics is currently ${e.enabled_now ? 'on' : 'off'}.</li>
-        <li>Raw events are kept for ${num(e.raw_retention_days)} days under the retention setting; daily aggregates are kept longer.</li>
+        <li>Raw events older than ${num(e.raw_retention_days)} days are removed by the daily retention task (only once the daily item totals for those dates are built);
+          ${e.agg_fallback_days ? `${num(e.agg_fallback_days)} day(s) of this year are covered by those daily totals only.` : 'every day of this year still has its raw events.'}</li>
         <li>${num(e.opted_out_sessions)} sessions opted out and are excluded from rates.</li>
         <li>Closing a browser or losing signal can drop the last active interval, so active time is a floor, not an exact figure.</li>
         <li>Long dwell is not "interest" and an unsubmitted cart is not "abandonment"; the report describes behaviour only.</li>
@@ -124,13 +142,12 @@ export function operationsSection(s: ReportSnapshot): string {
   <tbody>${rows.map((r) => `<tr><td>${esc(r.label)}</td>${statCells(r.stat, r.unit)}</tr>`).join('')}</tbody></table>
   <p class="caption">p90: nine in ten intervals were this long or shorter. ${num(t.visits_closed)} visits were checked out in ${s.job.year}.</p>
 
-  <div class="two">
-    <div class="block">${h3('Table service requests', 'คำขอจากโต๊ะ')}
-      <table class="compact fixed"><colgroup><col><col style="width:11mm"><col style="width:10mm"><col style="width:11mm"><col style="width:9mm"><col style="width:16mm"><col style="width:16mm"></colgroup>
-      <thead><tr><th>Request</th><th class="n">Count</th><th class="n">Done</th><th class="n">Canc.</th><th class="n">Open</th><th class="n">Ack. median</th><th class="n">Ack. p90</th></tr></thead>
+  ${h3('Table service requests', 'คำขอจากโต๊ะ')}
+      <table class="compact fixed words"><colgroup><col><col style="width:18mm"><col style="width:18mm"><col style="width:18mm"><col style="width:18mm"><col style="width:24mm"><col style="width:24mm"></colgroup>
+      <thead><tr><th>Request</th><th class="n">Count</th><th class="n">Completed</th><th class="n">Cancelled</th><th class="n">Still open</th><th class="n">Ack. median</th><th class="n">Ack. p90</th></tr></thead>
       <tbody>${t.service.length ? t.service.map((r) => `<tr><td>${esc(SERVICE_LABEL[r.type] ?? r.type)}</td><td class="n">${num(r.count)}</td><td class="n">${num(r.completed)}</td><td class="n">${num(r.cancelled)}</td><td class="n">${num(r.open)}</td><td class="n">${duration(r.ack_s.median)}</td><td class="n">${duration(r.ack_s.p90)}</td></tr>`).join('') : '<tr><td colspan="7" class="muted">No service requests recorded.</td></tr>'}</tbody></table>
       <p class="caption">Acknowledgement time runs from the guest's request to the first staff acknowledgement. Every request row is in service_requests.csv.</p>
-    </div>
+  <div class="two">
     <div class="block">${h3('Priced-by-weight portions', 'การชั่งน้ำหนักเนื้อ')}
       ${table<{ label: string; value: string }>([
         { head: 'Stage', cell: (r) => esc(r.label) },
@@ -208,13 +225,13 @@ export function exceptionsSection(s: ReportSnapshot): string {
 export function paymentsSection(s: ReportSnapshot): string {
   const p = s.payments;
   if (!p) return '';
-  const beforeRecords = (key: string) => s.monthly.find((m) => m.key === key)?.state === 'before_records';
+  const blank = (key: string) => noCounts(s, key);
   return `<section class="section">
   ${sectionHead('08', 'Bills & payments', 'บิลและการชำระเงิน', 'Owner scope')}
   <div class="kpis money">
     ${kpi('Finalized bill value', 'ยอดบิลที่สรุปแล้ว', money(p.finalized_minor), `${num(p.finalized_bills)} current revisions, dated by finalization`)}
     ${kpi('Settlements recorded', 'การชำระที่บันทึก', money(p.settled_minor), `${num(p.settlements)} settlements, dated by confirmation`)}
-    ${kpi('Reversals and refunds', 'การกลับรายการ/คืนเงิน', money(p.reversal_minor + p.refund_minor), `${num(p.reversals)} reversals`)}
+    ${kpi('Reversals and refunds', 'การกลับรายการ/คืนเงิน', money(p.reversal_minor + p.refund_minor), `${num(p.reversals)} reversals · ${num(p.refunds)} refunds after checkout, each in its payment's month`)}
     ${kpi('Adjustments', 'ส่วนลด/ปรับยอด', money(p.adjustments.minor), `${num(p.adjustments.count)} adjustments, ${num(p.adjustments.voided)} voided`)}
   </div>
   <div class="two">
@@ -229,9 +246,9 @@ export function paymentsSection(s: ReportSnapshot): string {
     </div>
     <div class="block">${h3('By month', 'รายเดือน')}
       ${table<(typeof p.monthly)[number]>([
-        { head: 'Month', cell: (m) => `${monthName(m.key)}${beforeRecords(m.key) ? ' <span class="state">before records</span>' : ''}` },
-        { head: 'Finalized', num: true, cell: (m) => (beforeRecords(m.key) ? '–' : money(m.finalized_minor)) },
-        { head: 'Paid, net', num: true, cell: (m) => (beforeRecords(m.key) ? '–' : money(m.paid_minor)) },
+        { head: 'Month', cell: (m) => monthLabel(s, m.key) },
+        { head: 'Finalized', num: true, cell: (m) => (blank(m.key) ? '–' : money(m.finalized_minor)) },
+        { head: 'Paid, net', num: true, cell: (m) => (blank(m.key) ? '–' : money(m.paid_minor)) },
       ], p.monthly, { cls: 'compact' })}
     </div>
   </div>

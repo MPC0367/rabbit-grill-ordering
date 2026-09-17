@@ -30,14 +30,15 @@ interface Props extends TileHandlers {
   perms: TilePerms;
 }
 
+/**
+ * Rounds and unresolved items (brief 36). Ready food and rounds to accept are
+ * already counted on the tile's attention badges (READY 2, NEW 2), so the
+ * fact line always states what is still not served.
+ */
 function roundsFact(t: (k: string, v?: Record<string, string | number>) => string, v: NonNullable<TableTileDTO['visit']>): string {
   if (v.rounds === 0) return t('tables.tile.noRounds');
   const rounds = t(v.rounds === 1 ? 'tables.tile.round' : 'tables.tile.rounds', { n: v.rounds });
-  let tail: string;
-  if (v.ready_lines > 0) tail = t('tables.tile.ready', { n: v.ready_lines });
-  else if (v.unaccepted_rounds > 0) tail = t(v.unaccepted_rounds === 1 ? 'tables.tile.toAcceptOne' : 'tables.tile.toAccept', { n: v.unaccepted_rounds });
-  else if (v.unresolved_lines > 0) tail = t('tables.tile.unserved', { n: v.unresolved_lines });
-  else tail = t('tables.tile.allServed');
+  const tail = v.unresolved_lines > 0 ? t('tables.tile.unservedAll', { n: v.unresolved_lines }) : t('tables.tile.allServed');
   return `${rounds} · ${tail}`;
 }
 
@@ -57,6 +58,9 @@ export const TableGridTile = forwardRef<HTMLButtonElement, Props>(function Table
     facts.push(roundsFact(t, v));
     action = { onClick: () => onDetails(tile) };
   } else if (tile.state === 'checking_out' && v) {
+    // The kit prints the seated line for dining tiles only; a table paying has been seated just as long.
+    seated = seatedFor(t, v.seated_at, now);
+    facts.push(<>{t('common.tile.seated')} <b>{seated}</b></>);
     if (bill) {
       const at = paidAt(bill);
       facts.push(
@@ -97,6 +101,10 @@ export const TableGridTile = forwardRef<HTMLButtonElement, Props>(function Table
     facts.unshift(t(tile.state === 'available' ? 'common.tile.noVisit' : 'common.tile.noSeating'));
   }
 
+  // The tile's one button reads e.g. "Details": its description names the table and state (WCAG 2.4.6).
+  const tileId = `c5-tile-${tile.id}`;
+  if (action) action = { ...action, describedBy: action.describedBy ?? tileId };
+
   const kinds = attentionKinds(tile.attention);
   const attention = kinds.map((kind: AttnKind) => ({
     kind,
@@ -124,6 +132,7 @@ export const TableGridTile = forwardRef<HTMLButtonElement, Props>(function Table
       ariaLabel={spoken}
       className={freed ? 'c5-freed' : undefined}
       data-table-id={tile.id}
+      id={tileId}
     />
   );
 });

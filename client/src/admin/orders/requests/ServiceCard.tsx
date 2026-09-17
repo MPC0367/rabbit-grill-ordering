@@ -1,6 +1,6 @@
 // One table request in the service queue (brief 22): table, type, the
 // guest's note, age, status and who acknowledged it, with versioned actions.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ServiceRequestDTO } from '../../../../../shared/dto.ts';
 import type { Permission } from '../../../../../shared/permissions.ts';
 import type { ServiceStatus } from '../../../../../shared/status.ts';
@@ -39,6 +39,36 @@ export function ServiceCard({ req, now, can, onChanged, onStale, conflict, onRev
   const wait = minutesSince(req.created_at, now);
   const handle = can('service.handle');
   const blocked = Boolean(conflict);
+  const cardRef = useRef<HTMLElement>(null);
+  const completeRef = useRef<HTMLButtonElement>(null);
+
+  /**
+   * Keep keyboard and screen reader users in place (WCAG 2.4.3): after
+   * Acknowledge, Complete takes the focus; when the card leaves the queue,
+   * the next card (or the one before, or the queue heading) does.
+   */
+  const followFocus = (to: ServiceStatus) => {
+    const card = cardRef.current;
+    const siblings = card?.parentElement ? Array.from(card.parentElement.children) as HTMLElement[] : [];
+    const at = card ? siblings.indexOf(card) : -1;
+    const section = card?.closest('section');
+    const leaving = to !== 'acknowledged';
+    // A finished request stays on screen until the queue refetches: wait (up to ~4 s) for the card to go.
+    const settle = (tries: number) => {
+      if (leaving && card?.isConnected && tries > 0) { setTimeout(() => settle(tries - 1), 100); return; }
+      const active = document.activeElement;
+      const lost = !active || active === document.body || !active.isConnected || Boolean(card && card.contains(active));
+      if (!lost || (active && active.closest('dialog') && active.isConnected)) return;
+      if (!leaving && completeRef.current?.isConnected) { completeRef.current.focus(); return; }
+      if (card?.isConnected) return;
+      const next = [siblings[at + 1], siblings[at - 1]].find((el) => el?.isConnected);
+      const target = next?.querySelector<HTMLElement>('.ticket__actions .btn') ?? section?.querySelector<HTMLElement>('h2, h3');
+      if (!target) return;
+      if (!target.matches('button, a[href]') && !target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+    };
+    requestAnimationFrame(() => requestAnimationFrame(() => settle(40)));
+  };
 
   const move = async (to: ServiceStatus, reason?: string): Promise<boolean> => {
     if (busy) return false;
@@ -48,6 +78,7 @@ export function ServiceCard({ req, now, can, onChanged, onStale, conflict, onRev
       onChanged(next);
       const words = t(`requests.done.${to}`, { type: typeWords, table: req.table_label });
       announce(words);
+      followFocus(to);
       if (to === 'cancelled') toast.show({ message: words });
       return true;
     } catch (err) {
@@ -72,7 +103,7 @@ export function ServiceCard({ req, now, can, onChanged, onStale, conflict, onRev
   const late = req.status === 'sent' && wait >= 5;
 
   return (
-    <article className={`ticket rq${blocked ? ' has-conflict' : ''}`} aria-label={tn({ t, has }, 'requests.aria', wait, { type: typeWords, table: req.table_label })}>
+    <article ref={cardRef} className={`ticket rq${blocked ? ' has-conflict' : ''}`} aria-label={tn({ t, has }, 'requests.aria', wait, { type: typeWords, table: req.table_label })}>
       <header className="ticket__head">
         <TableBox label={req.table_label} />
         <div className="ticket__r1">
@@ -110,38 +141,33 @@ export function ServiceCard({ req, now, can, onChanged, onStale, conflict, onRev
       {handle ? (
         <div className="ticket__actions">
           {req.status === 'sent' ? (
-            <>
-              <Button variant="primary" size="staff" icon="check" iconBold loading={busy === 'acknowledged'}
-                aria-disabled={blocked || Boolean(busy) || undefined}
-                aria-label={t('requests.ackAria', { type: typeWords, table: req.table_label })}
-                onClick={() => void move('acknowledged')}
-              >
-                {t('requests.ack')}
-              </Button>
-              <Button variant="outline" size="staff" loading={busy === 'completed'}
-                aria-disabled={blocked || Boolean(busy) || undefined}
-                aria-label={t('requests.completeAria', { type: typeWords, table: req.table_label })}
-                onClick={() => void move('completed')}
-              >
-                {t('requests.complete')}
-              </Button>
-            </>
-          ) : (
-            <Button variant="primary" size="staff" icon="check" iconBold loading={busy === 'completed'}
+            <Button variant="primary" size="staff" icon="check" iconBold loading={busy === 'acknowledged'}
               aria-disabled={blocked || Boolean(busy) || undefined}
-              aria-label={t('requests.completeAria', { type: typeWords, table: req.table_label })}
-              onClick={() => void move('completed')}
+              aria-label={t('requests.ackAria', { type: typeWords, table: req.table_label })}
+              onClick={() => void move('acknowledged')}
             >
-              {t('requests.complete')}
+              {t('requests.ack')}
             </Button>
-          )}
+          ) : null}
+          {/* One Complete element in both states, so focus survives Acknowledge. */}
+          <Button ref={completeRef} variant={req.status === 'sent' ? 'outline' : 'primary'} size="staff"
+            icon={req.status === 'sent' ? undefined : 'check'} iconBold loading={busy === 'completed'}
+            aria-disabled={blocked || Boolean(busy) || undefined}
+            aria-label={t('requests.completeAria', { type: typeWords, table: req.table_label })}
+            onClick={() => void move('completed')}
+          >
+            {t('requests.complete')}
+          </Button>
           {onAssist && (req.type === 'order_change' || req.type === 'call_staff') && can('orders.assist') ? (
-            <Button variant="ghost" size="staff" icon="plus" opensDialog className="rq__wide" onClick={() => onAssist(req.visit_id)}>
+            <Button variant="ghost" size="staff" icon="plus" opensDialog className="rq__wide" onClick={() => onAssist(req.visit_id)}
+              aria-label={t('orders.focus.assistAria', { table: req.table_label })}
+            >
               {t('orders.focus.assist')}
             </Button>
           ) : null}
           {can('service.cancel') ? (
             <Button variant="quiet" size="staff" opensDialog className="rq__wide rq__cancel"
+              aria-label={t('requests.cancelAria', { type: typeWords, table: req.table_label })}
               aria-disabled={blocked || Boolean(busy) || undefined}
               onClick={() => { setCancelError(null); setCancelOpen(true); }}
             >

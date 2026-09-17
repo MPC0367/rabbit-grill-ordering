@@ -4,7 +4,10 @@
 //  - active menu time: per session, the sum of menu-route active chunks;
 //  - active detail time: one value per detail open (session, item, interaction);
 //  - category exposure: sessions with a category view / measured sessions;
-//  - add rate: adds / impressions; attributed quantity: every line of rounds
+//  - add rate: sessions that saw the dish and added it / sessions that saw it
+//    (per session on both sides, so it can never pass 100%, D-S8-06);
+//  - scroll depth: the deepest menu-route depth per session, over sessions
+//    with a menu-route event (D-S8-05); attributed quantity: every line of rounds
 //    whose analytics session is a stored, not-opted-out session;
 //  - the funnel covers measured dining sessions (public browsers cannot order).
 //
@@ -43,7 +46,7 @@ export interface EngagementInput {
 }
 
 interface SessionInfo { kind: string; visit_id: string | null; opted_out: number }
-interface SessionFlags { imp: boolean; det: boolean; add: boolean; qa: boolean; depth: number }
+interface SessionFlags { imp: boolean; det: boolean; add: boolean; qa: boolean; menu: boolean; depth: number }
 
 export async function readEngagement(r: SnapshotReader, input: EngagementInput): Promise<EngagementSnap> {
   const { fx } = input;
@@ -55,6 +58,8 @@ export async function readEngagement(r: SnapshotReader, input: EngagementInput):
   const items = new Map<string, EngagementItem>();
   const flags = new Map<string, SessionFlags>();
   const typeCounts = new Map<string, number>();
+  /** item -> sessions (summed per day) that saw the dish and added it. */
+  const converted = new Map<string, number>();
   const monthly = new Map<string, { key: string; sessions: number; dining_sessions: number; active_ms: number; events: number }>();
   const monthSessions = new Map<string, { all: Set<string>; dining: Set<string> }>();
   const daily: EngagementSnap['daily'] = [];
@@ -113,13 +118,14 @@ export async function readEngagement(r: SnapshotReader, input: EngagementInput):
 
     if (day.events > 0) {
       // Per-session flags; every session with an event today is a measured session.
-      for (const f of r.all<{ session_id: string; imp: number; det: number; addf: number; qa: number; depth: number | null }>(
+      for (const f of r.all<{ session_id: string; imp: number; det: number; addf: number; qa: number; menu: number; depth: number | null }>(
         `SELECT session_id,
                 MAX(type = 'item_impression') AS imp,
                 MAX(type = 'item_detail_open') AS det,
                 MAX(type = 'cart_add') AS addf,
                 MAX(type = 'cart_add' AND quick_add = 1) AS qa,
-                MAX(CASE WHEN type = 'scroll_depth' THEN depth END) AS depth
+                MAX(route = 'menu') AS menu,
+                MAX(CASE WHEN type = 'scroll_depth' AND route = 'menu' THEN depth END) AS depth
            FROM analytics_events WHERE business_date = :d AND (:fx = 1 OR is_fixture = 0) GROUP BY session_id`, p)) {
         const prev = flags.get(f.session_id);
         const dining = info.get(f.session_id)?.kind === 'dining';
@@ -134,6 +140,7 @@ export async function readEngagement(r: SnapshotReader, input: EngagementInput):
           det: (prev?.det ?? false) || f.det === 1,
           add: (prev?.add ?? false) || f.addf === 1,
           qa: (prev?.qa ?? false) || f.qa === 1,
+          menu: (prev?.menu ?? false) || f.menu === 1,
           depth: Math.max(prev?.depth ?? 0, f.depth ?? 0),
         });
       }
@@ -175,6 +182,17 @@ export async function readEngagement(r: SnapshotReader, input: EngagementInput):
         if (it.type === 'item_impression') { acc.impressions += it.n; acc.impression_sessions += it.s; day.impressions += it.n; }
         else if (it.type === 'item_detail_open') { acc.detail_opens += it.n; day.detail_opens += it.n; }
         else { acc.adds += it.n; acc.add_sessions += it.s; day.adds += it.n; }
+      }
+
+      for (const c of r.all<{ item_id: string; conv: number }>(
+        `SELECT item_id, SUM(imp AND addf) AS conv FROM (
+           SELECT item_id, session_id, MAX(type = 'item_impression') AS imp, MAX(type = 'cart_add') AS addf
+             FROM analytics_events
+            WHERE business_date = :d AND type IN ('item_impression','cart_add') AND item_id IS NOT NULL
+              AND (:fx = 1 OR is_fixture = 0)
+            GROUP BY item_id, session_id)
+          GROUP BY item_id HAVING conv > 0`, p)) {
+        converted.set(c.item_id, (converted.get(c.item_id) ?? 0) + c.conv);
       }
     }
     daily.push(day);
@@ -221,14 +239,16 @@ export async function readEngagement(r: SnapshotReader, input: EngagementInput):
     submitSessions.add(sid);
     for (const [itemId, qty] of input.attributedQty.get(sid) ?? []) itemAcc(itemId).attributed_qty += qty;
   }
-  for (const it of items.values()) it.add_rate = ratio(it.adds, it.impressions);
+  for (const it of items.values()) it.add_rate = ratio(converted.get(it.item_id) ?? 0, it.impression_sessions);
 
   // Funnel over measured dining sessions.
   let funnelSessions = 0, imp = 0, det = 0, add = 0, qa = 0, submitted = 0, dining = 0, publicSessions = 0;
   const measuredVisits = new Set<string>();
   const scroll = SCROLL_THRESHOLDS.map((threshold) => ({ threshold, sessions: 0 }));
+  let scrollSessions = 0;
   for (const [sid, f] of flags) {
     const s = info.get(sid);
+    if (f.menu) scrollSessions++;
     for (const t of scroll) if (f.depth >= t.threshold) t.sessions++;
     if (s?.kind !== 'dining') { publicSessions++; continue; }
     dining++;
@@ -282,6 +302,7 @@ export async function readEngagement(r: SnapshotReader, input: EngagementInput):
       staff_orders: input.staffRounds,
     },
     scroll,
+    scroll_sessions: scrollSessions,
     monthly: [...monthly.values()].sort((a, b) => a.key.localeCompare(b.key)),
     daily,
     event_types: [...typeCounts.entries()].map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count),

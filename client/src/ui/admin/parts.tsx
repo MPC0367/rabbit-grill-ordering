@@ -1,5 +1,5 @@
 // Internal helpers for the staff & data kit. Not exported from the barrel.
-import type { KeyboardEvent } from 'react';
+import type { FocusEvent, KeyboardEvent } from 'react';
 import { Icon, type IconName } from '../Icon.tsx';
 
 /** Class-name join that drops falsy parts. */
@@ -10,10 +10,14 @@ export function cx(...parts: Array<string | false | null | undefined | 0>): stri
 /** Icon ids from the design-system set (docs/DESIGN.md §6). */
 export type AdminIconName = IconName;
 
+const ROVE_CURRENT = '[aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], [aria-current]:not([aria-current="false"])';
+
 /**
  * Roving focus inside a group of buttons marked `data-rove`: arrow keys and
  * Home/End move focus; Enter/Space activate the focused button natively.
- * Pair with `roveIndex()` so exactly one item is in the tab order.
+ * The focused item takes the one tab stop, so Tab leaves the group from where
+ * focus is. Pair with `roveIndex()` for the initial tab stop and `roveBlur`
+ * on the group, which hands the tab stop back to the chosen item on the way out.
  */
 export function roveKeys(e: KeyboardEvent<HTMLElement>, orientation: 'horizontal' | 'vertical' | 'both' = 'horizontal'): void {
   const next = orientation === 'vertical' ? ['ArrowDown'] : orientation === 'both' ? ['ArrowRight', 'ArrowDown'] : ['ArrowRight'];
@@ -31,7 +35,25 @@ export function roveKeys(e: KeyboardEvent<HTMLElement>, orientation: 'horizontal
   else if (e.key === 'End') to = items.length - 1;
   else return;
   e.preventDefault();
+  if (items.some((el) => el.tabIndex === 0)) {
+    for (const el of items) el.tabIndex = el === items[to] ? 0 : -1;
+  }
   items[to].focus();
+}
+
+/**
+ * Focus left a `roveKeys` group: the chosen item (pressed / checked /
+ * selected / current, else the first) takes the tab stop again, matching
+ * what `roveIndex()` renders, so the group never keeps two tab stops.
+ */
+export function roveBlur(e: FocusEvent<HTMLElement>): void {
+  const group = e.currentTarget;
+  if (e.relatedTarget instanceof Node && group.contains(e.relatedTarget)) return;
+  const items = Array.from(group.querySelectorAll<HTMLElement>('[data-rove]'));
+  // Groups whose items are all out of the tab order (a read-only chart) stay so.
+  if (!items.some((el) => el.tabIndex === 0)) return;
+  const chosen = items.find((el) => el.matches(ROVE_CURRENT)) ?? items[0];
+  for (const el of items) el.tabIndex = el === chosen ? 0 : -1;
 }
 
 /** tabIndex for item `i` of a roving group whose active item is `active` (-1 = none → first). */

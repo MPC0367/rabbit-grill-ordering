@@ -9,10 +9,16 @@ export interface Limit { limit: number; windowMs: number }
 
 export const LIMITS = {
   qrResolve: { limit: 30, windowMs: 60_000 },
+  /** Failed joins per address. */
   join: { limit: 10, windowMs: 60_000 },
+  /** Every join attempt per address (a seating wave behind one restaurant address fits easily). */
+  joinAll: { limit: 60, windowMs: 60_000 },
   joinPerTable: { limit: 30, windowMs: 60_000 },
   login: { limit: 10, windowMs: 5 * 60_000 },
-  loginPerUser: { limit: 8, windowMs: 5 * 60_000 },
+  /** One account from one address. */
+  loginPerUserAddress: { limit: 5, windowMs: 5 * 60_000 },
+  /** One account from anywhere (with the database lock, LOCK_AFTER in routes/auth.ts). */
+  loginPerUser: { limit: 20, windowMs: 15 * 60_000 },
   submitOrder: { limit: 20, windowMs: 60_000 },
   quote: { limit: 120, windowMs: 60_000 },
   service: { limit: 20, windowMs: 60_000 },

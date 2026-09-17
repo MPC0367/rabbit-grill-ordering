@@ -72,11 +72,15 @@ export function useRememberScroll(group: GroupKey, active: boolean): void {
 }
 
 // ---------------------------------------------------------------- geometry
-/** Height of the sticky chrome: masthead + its double rule, plus the category row when shown. */
+/**
+ * Height of the sticky chrome: masthead + its double rule (when it is pinned;
+ * short viewports let it scroll away), plus the category row when shown.
+ */
 export function stickyOffset(): number {
   const mast = document.querySelector<HTMLElement>('.mast');
   const row = document.querySelector<HTMLElement>('.catrow');
-  const mastBottom = mast ? Math.max(0, mast.getBoundingClientRect().bottom) + 5 : 0;
+  const pinned = mast ? getComputedStyle(mast).position === 'sticky' || getComputedStyle(mast).position === 'fixed' : false;
+  const mastBottom = mast && pinned ? Math.max(0, mast.getBoundingClientRect().bottom) + 5 : 0;
   const rowH = row && row.offsetParent !== null ? row.offsetHeight : 0;
   return Math.round(mastBottom + rowH);
 }

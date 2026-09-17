@@ -19,7 +19,7 @@ import type {
   ModifierGroupDTO, PublicConfigDTO,
 } from '../../shared/dto.ts';
 import { SERVICE_TYPES } from '../../shared/status.ts';
-import { businessDate, nowIso } from '../../shared/time.ts';
+import { businessDate, businessRangeUtc, nowIso } from '../../shared/time.ts';
 import { config } from '../config.ts';
 import { insert, many, one } from '../db/index.ts';
 import type { Actor } from '../lib/audit.ts';
@@ -27,7 +27,7 @@ import { AppError } from '../lib/errors.ts';
 import { cutoffHour, getSettings } from '../lib/settings.ts';
 import { publicOrderingState } from './guards.ts';
 import {
-  bi, catalogVersion, getCategory, hasPrice, getItem, itemGroups, itemVariants, seasonalActive, unavailableReason,
+  bi, catalogVersion, getCategory, hasPrice, getItem, itemGroups, itemVariants, prepKind, seasonalActive, unavailableReason,
   type CategoryRow, type GroupRow, type ItemRow, type OptionRow, type VariantRow,
 } from './pricing.ts';
 
@@ -232,6 +232,36 @@ export function publishBlockersFor(itemId: string): string[] {
  * real transition. Reasons: sold_out | restocked | published | archived |
  * seasonal | category_paused | orderability.
  */
+/**
+ * Seasonal windows open and close at the business-day boundary without anyone
+ * editing the menu, so no edit logs them. Compare each seasonal dish with its
+ * last availability row and log any difference, stamped at the start of the
+ * business day (or now, if the last row is later). Idempotent; the job runner
+ * calls it at start and every few minutes (D-S8-12).
+ */
+export function syncSeasonalAvailability(now = Date.now()): number {
+  const cutoff = cutoffHour();
+  const today = businessDate(now, cutoff);
+  const dayStart = businessRangeUtc(today, today, cutoff).start;
+  let logged = 0;
+  for (const { id } of many<{ id: string }>(
+    `SELECT i.id FROM menu_items i JOIN menu_categories c ON c.id = i.category_id WHERE c.seasonal = 1 ORDER BY i.id`)) {
+    const orderable = isItemOrderable(id);
+    const last = one<{ available: number; changed_at: string }>(
+      'SELECT available, changed_at FROM availability_log WHERE item_id = ? ORDER BY changed_at DESC, id DESC LIMIT 1', [id]);
+    if (last && (last.available === 1) === orderable) continue;
+    insert('availability_log', {
+      item_id: id,
+      available: orderable ? 1 : 0,
+      reason: 'seasonal',
+      changed_at: last && last.changed_at > dayStart ? new Date(now).toISOString() : dayStart,
+      changed_by: 'system',
+    });
+    logged++;
+  }
+  return logged;
+}
+
 export function logAvailability(itemId: string, available: boolean, reason: string, actor: Actor | string | null): void {
   const last = one<{ available: number }>('SELECT available FROM availability_log WHERE item_id = ? ORDER BY id DESC LIMIT 1', [itemId]);
   if (last && (last.available === 1) === available) return;
@@ -393,6 +423,8 @@ export function publicConfig(): PublicConfigDTO {
     notes_max_length: s.menu.note_max_length,
     sold_out_display: s.menu.sold_out_display,
     server_time: nowIso(),
+    business_day_cutoff_hour: s.business_day_cutoff_hour,
+    business_date: businessDate(Date.now(), s.business_day_cutoff_hour),
   };
 }
 
@@ -445,6 +477,8 @@ function buildAdminItem(item: ItemRow, cat: CategoryRow, data: CatalogData, extr
     publish_blockers: publishBlockers(item, variants, groups),
     unpublished_changes: item.published_version !== item.version,
     requires_staff_confirm: item.requires_staff_confirm === 1,
+    prep_kind_override: item.prep_kind,
+    prep_kind: prepKind(item, cat),
     modifier_group_ids: groups.map((g) => g.id),
     updated_at: item.updated_at,
     variant_price_history: history.filter((h) => h.variant_id !== null).map((h) => ({
@@ -525,6 +559,7 @@ export function adminCatalog(): AdminCatalogDTO {
       active_from: c.active_from,
       active_until: c.active_until,
       source_note: c.source_note,
+      prep_kind: c.prep_kind,
       version: c.version,
     })),
     items,

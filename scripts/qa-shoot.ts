@@ -9,7 +9,7 @@
 // for scripted interactions (click, type, wait) before capturing.
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { Page } from 'puppeteer-core';
+import type { Browser, Page } from 'puppeteer-core';
 import { launchBrowser } from './browser.ts';
 
 export const DEMO_PASSWORD = (role: string) => `rabbit-${role}-demo`;
@@ -59,6 +59,16 @@ export async function guestAccess(base: string, tableLabel: string): Promise<{ t
 
 export async function openSession(opts: { base: string; as?: string; lang?: 'th' | 'en'; width?: number; height?: number; dark?: boolean }) {
   const { browser, dispose } = await launchBrowser();
+  try {
+    return await prepareSession(browser, dispose, opts);
+  } catch (err) {
+    // A failed sign-in or join must not leave the browser running.
+    await dispose();
+    throw err;
+  }
+}
+
+async function prepareSession(browser: Browser, dispose: () => Promise<void>, opts: { base: string; as?: string; lang?: 'th' | 'en'; width?: number; height?: number; dark?: boolean }) {
   const page: Page = await browser.newPage();
   const width = opts.width ?? 390;
   const height = opts.height ?? 844;

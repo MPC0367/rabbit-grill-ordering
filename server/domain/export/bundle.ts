@@ -266,7 +266,7 @@ export async function writeCsvBundle(r: SnapshotReader, s: ReportSnapshot, outPa
       for (const m of months(job.year)) {
         yield r.all<ServiceCsv>(
           `SELECT id, business_date, created_at, table_label, visit_id, type, status, acknowledged_at, completed_at, cancelled_at, close_reason,
-                  (note IS NOT NULL AND TRIM(note) <> '') AS has_note
+                  ((note IS NOT NULL AND TRIM(note) <> '') OR note_removed_at IS NOT NULL) AS has_note
              FROM service_requests WHERE business_date BETWEEN :mf AND :mt AND (:fx = 1 OR is_fixture = 0) ORDER BY created_at`, { ...base, ...m });
         await r.tick();
       }

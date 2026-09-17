@@ -19,9 +19,11 @@ export function csvCell(value: string | number | boolean | null | undefined): st
   return s;
 }
 
-export function toCsv<T>(rows: T[], columns: CsvColumn<T>[], opts: { bom?: boolean } = {}): string {
-  const lines = [columns.map((c) => csvCell(c.header)).join(',')];
+/** CSV text. `header: false` and `bom: false` produce a continuation chunk for a streamed file. */
+export function toCsv<T>(rows: T[], columns: CsvColumn<T>[], opts: { bom?: boolean; header?: boolean } = {}): string {
+  const lines = opts.header === false ? [] : [columns.map((c) => csvCell(c.header)).join(',')];
   for (const r of rows) lines.push(columns.map((c) => csvCell(c.value(r))).join(','));
+  if (lines.length === 0) return '';
   return `${opts.bom === false ? '' : '﻿'}${lines.join('\r\n')}\r\n`;
 }
 

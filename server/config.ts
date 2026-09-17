@@ -20,15 +20,23 @@ const int = (v: string | undefined, d: number) => (v !== undefined && v !== '' &
 const flag = (v: string | undefined, d: boolean) => (v === undefined || v === '' ? d : v === '1' || v.toLowerCase() === 'true');
 
 const production = env.NODE_ENV === 'production';
+const publicBaseUrl = (env.PUBLIC_BASE_URL || `http://localhost:${int(env.PORT, 8344)}`).replace(/\/+$/, '');
 
 export const config = {
   production,
   /** Port the API listens on. In `npm run dev` this is API_PORT behind Vite. */
   port: int(env.RG_LISTEN_PORT, int(env.PORT, 8344)),
   host: env.HOST || '0.0.0.0',
-  publicBaseUrl: (env.PUBLIC_BASE_URL || `http://localhost:${int(env.PORT, 8344)}`).replace(/\/+$/, ''),
+  publicBaseUrl,
+  /** PUBLIC_BASE_URL was not configured, so QR cards point at localhost. */
+  publicBaseUrlDefaulted: !env.PUBLIC_BASE_URL,
   trustProxyHops: int(env.TRUST_PROXY_HOPS, 0),
-  cookieSecure: flag(env.COOKIE_SECURE, production),
+  /**
+   * Secure cookies. Unset: follows the scheme of PUBLIC_BASE_URL (https = Secure).
+   * Browsers drop Secure cookies over plain http, so a production build on a
+   * LAN address would otherwise let nobody sign in or join a table (D-S8-09).
+   */
+  cookieSecure: flag(env.COOKIE_SECURE, publicBaseUrl.startsWith('https:')),
   databasePath: resolve(env.DATABASE_PATH || 'var/rabbit-grill.db'),
   reportsDir: resolve(env.REPORTS_DIR || 'var/reports'),
   distDir: resolve('dist'),
@@ -38,9 +46,17 @@ export const config = {
   browserPath: env.BROWSER_PATH || '',
   paymentProvider: env.PAYMENT_PROVIDER || '',
   serveClient: flag(env.SERVE_CLIENT, true),
+  /** Serve dist/assets/*.map (off by default: source maps publish the whole client source). */
+  serveSourceMaps: flag(env.SERVE_SOURCEMAPS, false),
   staffSessionHours: int(env.STAFF_SESSION_HOURS, 14),
   guestSessionHours: int(env.GUEST_SESSION_HOURS, 12),
   logRequests: flag(env.LOG_REQUESTS, false),
+  /**
+   * The daily data-retention task (D-S8-02). Off by default under NODE_ENV=test,
+   * where tests plant old records on purpose and run the task themselves
+   * (npm run jobs -- retention).
+   */
+  retentionJob: flag(env.RETENTION_JOB, env.NODE_ENV !== 'test'),
 };
 
 export type Config = typeof config;

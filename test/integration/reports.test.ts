@@ -350,7 +350,7 @@ test('the New Year rollover queues final reports for the completed year and dele
   const y25 = years.find((y: any) => y.year === 2025);
   const now = years.find((y: any) => y.year === year);
   assert.equal(y25.state, 'completed');
-  assert.deepEqual(y25.coverage, { first_date: '2025-06-10', last_date: '2025-12-31', order_rounds: 4, visits: 3, telemetry_since: bkk('2025-06-10', '19:05') });
+  assert.deepEqual(y25.coverage, { first_date: '2025-06-10', last_date: '2025-12-31', order_rounds: 4, visits: 3, telemetry_since: '2025-06-10' });
   assert.equal(now.state, 'current');
   const y24 = years.find((y: any) => y.year === 2024);
   assert.ok(y24, 'the demo-only year is listed');
@@ -485,6 +485,21 @@ test('a manager cannot download a financial report requested by someone else', a
   const anonymous = await download(srv.client(), csv.id);
   assert.equal(anonymous.status, 401);
   assert.equal(anonymous.json.error.code, 'auth_required');
+});
+
+test('a manager\'s first non-financial copy of a completed year is its own final, not a revision of the owner\'s (D-S8-13)', async () => {
+  const { pdf } = await finalReports();
+  assert.equal(pdf.financial, true);
+  const job = await requestJob(manager, { year: 2025, kind: 'annual_pdf' });
+  assert.deepEqual([job.label, job.financial, job.supersedes_job_id, job.reason], ['final', false, null, null]);
+  // Another copy in the same scope, once that one is ready, is a revision and needs a reason.
+  const ready = await waitJob(job.id);
+  if (ready.status === 'ready') {
+    const refused = await manager.post('/api/staff/reports/jobs', { year: 2025, kind: 'annual_pdf' });
+    assert.equal(refused.status, 422, JSON.stringify(refused.body));
+    const revised = await requestJob(manager, { year: 2025, kind: 'annual_pdf', reason: 'Late cancellation entered' });
+    assert.deepEqual([revised.label, revised.supersedes_job_id], ['revised', job.id]);
+  }
 });
 
 // ================================================================== revisions

@@ -15,13 +15,20 @@ import { Icon } from './Icon.tsx';
 import { Button } from './Button.tsx';
 
 // ---------------------------------------------------------------- announcer
+// While a modal <dialog> is open (showModal), everything outside it is inert
+// and leaves the accessibility tree, so a region under <body> is silent. Each
+// open modal therefore gets its own pair of regions (created when it opens,
+// see Sheet.tsx), and the words go to the top-most modal's pair, chosen when
+// they are written rather than when announce() was called: a dialog that
+// closes inside the delay hands the message back to the page regions.
 type Politeness = 'polite' | 'assertive';
-let regions: Record<Politeness, HTMLElement> | null = null;
+type Regions = Record<Politeness, HTMLElement>;
+let pageRegions: Regions | null = null;
+const modalRegions = new WeakMap<Element, Regions>();
 const timers: Partial<Record<Politeness, ReturnType<typeof setTimeout>>> = {};
+const written: Partial<Record<Politeness, HTMLElement>> = {};
 
-function ensureRegions(): Record<Politeness, HTMLElement> | null {
-  if (typeof document === 'undefined' || !document.body) return null;
-  if (regions && regions.polite.isConnected && regions.assertive.isConnected) return regions;
+function makeRegions(host: HTMLElement): Regions {
   const make = (p: Politeness) => {
     const el = document.createElement('div');
     el.className = 'visually-hidden';
@@ -29,21 +36,70 @@ function ensureRegions(): Record<Politeness, HTMLElement> | null {
     el.setAttribute('aria-atomic', 'true');
     el.setAttribute('role', p === 'assertive' ? 'alert' : 'status');
     el.dataset.rgAnnouncer = p;
-    document.body.appendChild(el);
+    host.appendChild(el);
     return el;
   };
-  regions = { polite: make('polite'), assertive: make('assertive') };
-  return regions;
+  return { polite: make('polite'), assertive: make('assertive') };
+}
+
+function ensureRegions(): Regions | null {
+  if (typeof document === 'undefined' || !document.body) return null;
+  if (pageRegions && pageRegions.polite.isConnected && pageRegions.assertive.isConnected) return pageRegions;
+  pageRegions = makeRegions(document.body);
+  return pageRegions;
+}
+
+function isModal(d: Element): boolean {
+  try { return d.matches(':modal'); } catch { return (d as HTMLDialogElement).open && d.getAttribute('aria-modal') === 'true'; }
+}
+
+/** The modal dialog on top: the one holding focus, else the last one opened. */
+function topModal(): HTMLElement | null {
+  if (typeof document === 'undefined') return null;
+  const active = document.activeElement?.closest('dialog');
+  if (active && isModal(active)) return active;
+  const open = Array.from(document.querySelectorAll('dialog[open]')).filter(isModal);
+  return (open.at(-1) as HTMLElement | undefined) ?? null;
+}
+
+/**
+ * Give a modal dialog its own announcer regions. Call when it opens: a region
+ * must already be in the accessibility tree when its text changes.
+ */
+export function ensureModalRegions(dialog: HTMLElement): Regions {
+  const known = modalRegions.get(dialog);
+  if (known && known.polite.parentNode === dialog && known.assertive.parentNode === dialog) return known;
+  const made = makeRegions(dialog);
+  modalRegions.set(dialog, made);
+  return made;
+}
+
+function targetRegion(politeness: Politeness): { el: HTMLElement; fresh: boolean } | null {
+  const modal = topModal();
+  if (modal) {
+    const fresh = !modalRegions.has(modal);
+    return { el: ensureModalRegions(modal)[politeness], fresh };
+  }
+  const page = ensureRegions();
+  return page ? { el: page[politeness], fresh: false } : null;
 }
 
 /** Speak a message once. Repeating the same words re-announces them. */
 export function announce(message: string, politeness: Politeness = 'polite'): void {
-  const r = ensureRegions();
-  if (!r || !message) return;
-  const el = r[politeness];
-  el.textContent = '';
+  if (!message || !ensureRegions()) return;
+  const first = targetRegion(politeness);
+  if (!first) return;
+  first.el.textContent = '';
+  if (written[politeness] && written[politeness] !== first.el) written[politeness]!.textContent = '';
   if (timers[politeness]) clearTimeout(timers[politeness]);
-  timers[politeness] = setTimeout(() => { el.textContent = message; }, 80);
+  // A region created just now needs a moment in the tree before it speaks.
+  timers[politeness] = setTimeout(() => {
+    const at = targetRegion(politeness);
+    if (!at) return;
+    if (written[politeness] && written[politeness] !== at.el) written[politeness]!.textContent = '';
+    at.el.textContent = message;
+    written[politeness] = at.el;
+  }, first.fresh ? 250 : 80);
 }
 
 /** `announce(text)` for polite updates; `announce(text, { assertive: true })` for errors only. */

@@ -2,8 +2,8 @@
 // only). Same safety rules as the server's toCsv(): UTF-8 with a BOM, CRLF,
 // every field quoted when needed, and text that a spreadsheet could read as a
 // formula is prefixed with an apostrophe.
-import type { KpiDTO } from '../../../../shared/dto.ts';
 import { ApiError, type ClientErrorCode } from '../../lib/api.ts';
+import type { FeedbackListDTO, KpiView } from './reportTypes.ts';
 
 type Cell = string | number | boolean | null | undefined;
 
@@ -26,13 +26,26 @@ const baht = (minor: number | null) => (minor === null ? null : (minor / 100).to
  * One long table: section, metric, value, unit, sample, note. Money is in
  * baht with two decimals; durations in seconds; ratios as 0..1.
  */
-export function kpiCsv(k: KpiDTO, opts: { generatedAt: string }): string {
+export function kpiCsv(k: KpiView, opts: { generatedAt: string; feedback?: FeedbackListDTO | null }): string {
   const rows: Cell[][] = [
     ['section', 'metric', 'key', 'value', 'unit', 'sample', 'note'],
     ['scope', 'range_from', '', k.from, 'business_date', '', 'Asia/Bangkok business days'],
     ['scope', 'range_to', '', k.to, 'business_date', '', 'inclusive'],
     ['scope', 'include_demo_data', '', k.include_fixture, '', '', ''],
     ['scope', 'generated_at', '', k.generated_at ?? opts.generatedAt, 'utc', '', ''],
+  ];
+  if (k.filters) {
+    const f = k.filters;
+    const o = k.filter_options;
+    const catName = f.category_id ? o?.categories.find((c) => c.id === f.category_id)?.name : null;
+    rows.push(['scope', 'table', f.table_id ?? 'all', f.table_id ? o?.tables.find((x) => x.id === f.table_id)?.label ?? '' : 'all tables', 'table_label', '', '']);
+    rows.push(['scope', 'category', f.category_id ?? 'all', f.category_id ? catName?.en ?? catName?.th ?? '' : 'all categories', 'category', '', '']);
+    rows.push(['scope', 'staff', f.staff_id ?? 'all', f.staff_id ? o?.staff.find((x) => x.id === f.staff_id)?.name ?? '' : 'all staff', 'staff_member', '', 'acceptances, request responses and payments recorded by this person']);
+    if ((f.table_id || f.category_id || f.staff_id) && k.unfiltered?.length) {
+      rows.push(['scope', 'not_filtered', '', k.unfiltered.join(' '), 'figures', '', 'these figures cover all tables, categories and staff']);
+    }
+  }
+  rows.push(
     ['kpi', 'qr_adoption', '', k.qr_adoption.value, 'ratio', k.qr_adoption.denominator, `${k.qr_adoption.numerator} of ${k.qr_adoption.denominator} eligible visits had a customer-origin round`],
     ['kpi', 'guest_order_time_median', '', k.guest_order_time.median_s, 'seconds', k.guest_order_time.sample, 'join to first guest round'],
     ['kpi', 'guest_order_time_p90', '', k.guest_order_time.p90_s, 'seconds', k.guest_order_time.sample, ''],
@@ -44,10 +57,22 @@ export function kpiCsv(k: KpiDTO, opts: { generatedAt: string }): string {
     ['kpi', 'acknowledgement_median', '', k.staff_response.ack_median_s, 'seconds', k.staff_response.ack_sample, 'service request to acknowledged'],
     ['kpi', 'acknowledgement_p90', '', k.staff_response.ack_p90_s, 'seconds', k.staff_response.ack_sample, ''],
     ['kpi', 'open_bills_now', '', k.open_bills, 'visits', '', 'current, not limited to the range'],
-  ];
+  );
   if (k.financial_visible !== false) {
     rows.push(['kpi', 'payment_exceptions', 'count', k.payment_exceptions.count, 'bills', '', 'recorded payments compared with bills, not bank records']);
     rows.push(['kpi', 'payment_exceptions', 'value', baht(k.payment_exceptions.value_minor), 'THB', '', '']);
+    const refunds = k.refunds_after_checkout;
+    if (refunds) {
+      rows.push(['kpi', 'refunds_after_checkout', 'count', refunds.count, 'bills', '', 'settled bills refunded after checkout; not counted as payment exceptions']);
+      rows.push(['kpi', 'refunds_after_checkout', 'value', baht(refunds.value_minor), 'THB', '', '']);
+    }
+  }
+  const fb = opts.feedback;
+  if (fb) {
+    rows.push(['kpi', 'guest_feedback', 'entries', fb.count, 'entries', '', 'comment text is not exported']);
+    rows.push(['kpi', 'guest_feedback', 'average_rating', fb.average_rating === null ? null : Math.round(fb.average_rating * 100) / 100, 'rating_1_to_5', fb.rated, '']);
+    rows.push(['kpi', 'guest_feedback', 'with_comment', fb.with_comment, 'entries', '', '']);
+    for (const d of fb.distribution ?? []) rows.push(['guest_feedback', 'ratings', String(d.rating), d.count, 'entries', '', '']);
   }
   rows.push(['totals', 'submitted', '', baht(k.totals.submitted_minor), 'THB', '', 'all submitted lines']);
   rows.push(['totals', 'accepted', '', baht(k.totals.accepted_minor), 'THB', '', 'chargeable lines (accepted, not rejected or cancelled)']);

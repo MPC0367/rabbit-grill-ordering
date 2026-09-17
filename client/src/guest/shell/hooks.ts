@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useConfig } from '../../lib/config.tsx';
 import { useI18n } from '../../lib/i18n.tsx';
-import { useLive } from '../../lib/live.tsx';
+import { useLive, type LiveState } from '../../lib/live.tsx';
 import {
   endVisit, setVisit, useInitTracker, useTrackRoute, type TrackRoute,
 } from '../../lib/tracker.ts';
@@ -24,6 +24,20 @@ export function useOnline(): boolean {
   return useSyncExternalStore(subscribeOnline, () => navigator.onLine !== false, () => true);
 }
 
+/**
+ * The live state as guest screens should read it. LiveProvider says 'offline'
+ * only from the browser's own offline signal, and it does not clear that when
+ * the network returns unless its stream errors or says hello again, which a
+ * stream that survived a short blip never does. So while the browser is
+ * online, a leftover 'offline' counts as live: if the stream really died, its
+ * next retry fails and the provider reports 'reconnecting' (DECISIONS D-G-04).
+ */
+export function useGuestLiveState(): LiveState {
+  const online = useOnline();
+  const { state } = useLive();
+  return state === 'offline' && online ? 'live' : state;
+}
+
 /** A stream down for this long means the restaurant server is out of reach, not a blip. */
 const LONG_OUTAGE_MS = 12_000;
 
@@ -36,15 +50,15 @@ const LONG_OUTAGE_MS = 12_000;
  */
 export function useGuestConnection(joined: boolean): { offline: boolean; reconnecting: boolean } {
   const online = useOnline();
-  const live = useLive();
+  const state = useGuestLiveState();
   // Before the first 'hello' the provider may still say 'offline' from the
   // time it had no url: only a failure it reported, or a drop after being live, counts.
   const [seenLive, setSeenLive] = useState(false);
   useEffect(() => {
     if (!joined) setSeenLive(false);
-    else if (live.state === 'live') setSeenLive(true);
-  }, [joined, live.state]);
-  const down = joined && (live.state === 'reconnecting' || (seenLive && live.state !== 'live' && live.state !== 'ended'));
+    else if (state === 'live') setSeenLive(true);
+  }, [joined, state]);
+  const down = joined && (state === 'reconnecting' || (seenLive && state !== 'live' && state !== 'ended'));
   const [since, setSince] = useState<number | null>(null);
   const [, setTick] = useState(0);
   useEffect(() => {

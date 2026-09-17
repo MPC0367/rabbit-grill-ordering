@@ -13,7 +13,7 @@ import {
 } from '../../shared/schemas.ts';
 import { nowIso } from '../../shared/time.ts';
 import { tx } from '../db/index.ts';
-import { assertCan, guestOf, requireGuest, requireStaff, staffOf, type StaffContext } from '../lib/auth.ts';
+import { assertCan, guestOf, guestTx, requireGuest, requireStaff, staffOf, type StaffContext } from '../lib/auth.ts';
 import { AppError } from '../lib/errors.ts';
 import { body, query } from '../lib/http.ts';
 import { hit, LIMITS } from '../lib/ratelimit.ts';
@@ -68,7 +68,7 @@ export const serviceGuest = new Hono<AppEnv>()
   .post('/service', requireGuest(), async (c) => {
     const g = guestOf(c);
     const input = await body(c, ServiceRequestBody);
-    const result = tx(() => createServiceRequest({
+    const result = guestTx(g.guestId, () => createServiceRequest({
       visit: { id: g.visitId },
       type: input.type,
       note: input.note,
@@ -81,7 +81,7 @@ export const serviceGuest = new Hono<AppEnv>()
   .post('/feedback', requireGuest(), async (c) => {
     const g = guestOf(c);
     const input = await body(c, FeedbackBody);
-    const result = tx(() => submitFeedback({
+    const result = guestTx(g.guestId, () => submitFeedback({
       visitId: g.visitId,
       guestSessionId: g.guestId,
       rating: input.rating,
@@ -100,7 +100,7 @@ export const serviceGuest = new Hono<AppEnv>()
     const g = guestOf(c);
     const input = await body(c, PortionRequestBody);
     hit(`portion:${g.guestId}`, LIMITS.portion);
-    const result = tx(() => createPortionRequest({
+    const result = guestTx(g.guestId, () => createPortionRequest({
       visitId: g.visitId,
       itemId: input.item_id,
       preferredGrams: input.preferred_grams,
@@ -116,7 +116,7 @@ export const serviceGuest = new Hono<AppEnv>()
     const id = routeId(c);
     const input = await body(c, PortionConfirmBody);
     hit(`portion:${g.guestId}`, LIMITS.portion);
-    const result = confirmedOrThrow(tx(() => confirmPortion({
+    const result = confirmedOrThrow(guestTx(g.guestId, () => confirmPortion({
       requestId: id,
       quoteId: input.quote_id,
       revision: input.revision,
@@ -137,14 +137,14 @@ export const serviceGuest = new Hono<AppEnv>()
     const id = routeId(c);
     const input = await body(c, PortionDeclineBody);
     hit(`portion:${g.guestId}`, LIMITS.portion);
-    const dto = tx(() => declinePortion({ requestId: id, quoteId: input.quote_id, revision: input.revision, visitId: g.visitId, actor: g.actor }));
+    const dto = guestTx(g.guestId, () => declinePortion({ requestId: id, quoteId: input.quote_id, revision: input.revision, visitId: g.visitId, actor: g.actor }));
     return c.json<PortionRequestDTO>(dto);
   })
   .post('/portions/:id/cancel', requireGuest(), (c) => {
     const g = guestOf(c);
     const id = routeId(c);
     hit(`portion:${g.guestId}`, LIMITS.portion);
-    const dto = tx(() => cancelPortion({ requestId: id, visitId: g.visitId, actor: g.actor }));
+    const dto = guestTx(g.guestId, () => cancelPortion({ requestId: id, visitId: g.visitId, actor: g.actor }));
     return c.json<PortionRequestDTO>(dto);
   });
 

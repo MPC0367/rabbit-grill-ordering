@@ -106,6 +106,19 @@ function disarmGesture(): void {
 
 if (soundStore.get().enabled) armGesture();
 
+/**
+ * The owner's "Alert sound on for new devices" (settings.notifications.sound_default).
+ * It applies only while this device has never chosen: a device choice always
+ * wins, and it is not written to storage, so a later change of the owner
+ * default still reaches devices nobody set (D-FX-OPS-01).
+ */
+export function applySoundDefault(on: boolean): void {
+  if (storage.get<boolean | null>(PREF_KEY, null) !== null) return;
+  soundStore.set((s) => (s.enabled === on ? s : { ...s, enabled: on }));
+  if (on && !soundStore.get().unlocked) armGesture();
+  if (!on) disarmGesture();
+}
+
 // Another tab on this device changed the preference.
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {
@@ -194,6 +207,8 @@ export interface AlertSound {
   supported: boolean;
   /** Same as test(), with the outcome. */
   testNow(): Promise<boolean>;
+  /** Call from a tap: starts audio without playing anything. Resolves whether sound can now play. */
+  resume(): Promise<boolean>;
 }
 
 export function useAlertSound(): AlertSound {
@@ -210,7 +225,7 @@ export function useAlertSound(): AlertSound {
   }, []);
   const test = useCallback(() => { void testAlert(); }, []);
   const play = useCallback((kind: AlertKind) => { playAlert(kind); }, []);
-  return { enabled: s.enabled, setEnabled, test, play, unlocked: s.unlocked, supported: s.supported, testNow: testAlert };
+  return { enabled: s.enabled, setEnabled, test, play, unlocked: s.unlocked, supported: s.supported, testNow: testAlert, resume: unlock };
 }
 
 // ---------------------------------------------------------------- live alerts

@@ -14,13 +14,13 @@ import { clock } from '../../lib/format.ts';
 import { dictionaries } from '../../i18n/index.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { navigate, setQuery, useRoute } from '../../lib/router.ts';
-import { useLive } from '../../lib/live.tsx';
 import { useTrackRoute } from '../../lib/tracker.ts';
 import {
   Button, Card, EmptyState, Icon, Leader, LinkButton, PageHead, Price, RunningTotal, Skeleton, Tag, TextLink,
   announce, cx, useToast,
 } from '../../ui/index.ts';
 import { useCatalog } from '../shell/catalog.tsx';
+import { useGuestLiveState } from '../shell/hooks.ts';
 import { useOverlays } from '../shell/overlays.tsx';
 import { useGuestSession } from '../shell/session.tsx';
 import NoAccessPanel from '../visit/NoAccessPanel.tsx';
@@ -207,8 +207,8 @@ function Totals({ cart, subtotal, count, showCharges, note, className }: {
 
 function QuoteStatusNote({ cart }: { cart: CartView }) {
   const { t } = useI18n();
-  const live = useLive();
-  if (cart.quoteStatus === 'offline' || (live.state === 'offline' && cart.lines.length > 0)) {
+  const liveState = useGuestLiveState();
+  if (cart.quoteStatus === 'offline' || (liveState === 'offline' && cart.lines.length > 0)) {
     return <Notice tone="heat" icon="wifi-off">{t('cart.check.offline')}</Notice>;
   }
   if (cart.quoteStatus === 'denied') {
@@ -237,7 +237,7 @@ function ListStep({ cart, sub, focus }: { cart: ReturnType<typeof useCart>; sub:
   const { openItem, openPortion } = useOverlays();
   const ordering = useOrderingState();
   const toast = useToast();
-  const live = useLive();
+  const liveState = useGuestLiveState();
   const pageRef = useStepFocus<HTMLElement>(focus);
   const hintId = useId();
   const listId = useId();
@@ -305,7 +305,7 @@ function ListStep({ cart, sub, focus }: { cart: ReturnType<typeof useCart>; sub:
     );
   }
 
-  const offline = cart.quoteStatus === 'offline' || live.state === 'offline';
+  const offline = cart.quoteStatus === 'offline' || liveState === 'offline';
   const pendingElsewhere = sub.pending !== null;
   const canSend = !ordering.block && !cart.reviewNeeded && !offline && !pendingElsewhere && cart.quoteStatus !== 'denied';
   const hint = ordering.block ? `${ordering.block.title} · ${ordering.block.code === 'visit_billing' ? ordering.block.body : t('cart.block.kept')}`
@@ -462,7 +462,7 @@ function ReviewStep({ cart, sub, focus }: { cart: ReturnType<typeof useCart>; su
   const { item } = useCatalog();
   const { openService } = useOverlays();
   const ordering = useOrderingState();
-  const live = useLive();
+  const liveState = useGuestLiveState();
   const pageRef = useStepFocus<HTMLElement>(focus);
   const statusRef = useRef<HTMLDivElement>(null);
   const [localNote, setLocalNote] = useState<'offline' | 'review' | null>(null);
@@ -494,7 +494,7 @@ function ReviewStep({ cart, sub, focus }: { cart: ReturnType<typeof useCart>; su
   const count = views.reduce((n, v) => n + v.line.quantity, 0);
   const subtotal = pending ? pending.payload.expected_subtotal_minor : cart.subtotalMinor;
   const hasNotes = views.some((v) => v.line.note);
-  const offline = live.state === 'offline' || cart.quoteStatus === 'offline';
+  const offline = liveState === 'offline' || cart.quoteStatus === 'offline';
   const busy = sub.phase === 'sending';
   const canPlace = !pending && cart.ready && !ordering.block && !offline && cart.quoteStatus === 'fresh';
 
@@ -549,7 +549,9 @@ function ReviewStep({ cart, sub, focus }: { cart: ReturnType<typeof useCart>; su
             subtotal={subtotal}
             count={count}
             showCharges={!pending && cart.ready}
-            note={t('cart.totalNote')}
+            note={sub.phase === 'checking' ? t('submit.checking.title')
+              : sub.phase === 'sending' ? t('submit.sending.title')
+                : t('cart.totalNote')}
             className="c1b-review__totals"
           />
         </Card>

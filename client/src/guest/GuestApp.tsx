@@ -135,17 +135,36 @@ function GuestRoutes() {
     if (shownKey.current === pageKey) return;
     shownKey.current = pageKey;
     if (route.key !== 'menu') window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
-    let frames = 0;
+    // A page whose code is still loading leaves the previous page in the DOM,
+    // hidden by Suspense (display: none), and focus() on a hidden heading does
+    // nothing. So wait (up to ~3 s) for a heading that is actually rendered,
+    // and try again while focus has not landed, unless the guest has moved on.
+    const started = performance.now();
+    const from = document.activeElement;
     let raf = 0;
+    const shownHeading = (root: HTMLElement | null): HTMLElement | null => {
+      if (!root) return null;
+      for (const h of root.querySelectorAll<HTMLElement>('h1')) {
+        if (h.getClientRects().length === 0) continue;
+        if (h.closest('[hidden], [aria-hidden="true"], .gpage--loading')) continue;
+        return h;
+      }
+      return null;
+    };
     const focusHeading = () => {
-      const root = document.getElementById('main');
-      const h1 = root?.querySelector<HTMLElement>('h1');
-      if (!h1 && frames++ < 90) { raf = requestAnimationFrame(focusHeading); return; }
       if (document.querySelector('dialog[open]')) return; // a sheet owns focus
+      const active = document.activeElement;
+      // The guest (or the page itself) already moved focus somewhere on purpose.
+      if (active && active !== from && active !== document.body && active.id !== 'main') return;
+      const root = document.getElementById('main');
+      const h1 = shownHeading(root);
+      const waiting = performance.now() - started < 3_000;
+      if (!h1 && waiting) { raf = requestAnimationFrame(focusHeading); return; }
       const target = h1 ?? root;
       if (!target) return;
       if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
       target.focus({ preventScroll: true });
+      if (document.activeElement !== target && waiting) raf = requestAnimationFrame(focusHeading);
     };
     raf = requestAnimationFrame(focusHeading);
     return () => cancelAnimationFrame(raf);

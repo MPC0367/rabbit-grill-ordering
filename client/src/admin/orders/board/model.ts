@@ -33,6 +33,29 @@ export function placementOf(lines: readonly OrderLineDTO[]): Placement {
   return FORWARD[min] as BoardStage;
 }
 
+/**
+ * Dishes already at the pass on a round whose ticket sits in an earlier
+ * column (a round is placed by its least-advanced dish). Runners still need
+ * them: the Ready column lists them as a "ready part" and the ticket offers
+ * Mark served for them (brief 19, 35; D-FX-OPS-01).
+ */
+export function readyPartOf(lines: readonly OrderLineDTO[], placement: Placement): OrderLineDTO[] {
+  if (placement === 'ready' || placement === 'served' || placement === 'void') return [];
+  return lines.filter((l) => l.status === 'ready');
+}
+
+/**
+ * Rounds the Ready column counts: whole tickets placed there plus rounds with
+ * a ready part elsewhere. Every round with a dish at the pass counts once.
+ */
+export function readyRoundCount(rows: ReadonlyArray<{ lines: readonly OrderLineDTO[]; placement: Placement }>): number {
+  let n = 0;
+  for (const r of rows) {
+    if (r.placement === 'ready' || readyPartOf(r.lines, r.placement).length > 0) n += 1;
+  }
+  return n;
+}
+
 export interface StageAction {
   to: LineStatus;
   permission: Permission;

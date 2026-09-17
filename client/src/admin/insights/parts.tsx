@@ -33,13 +33,28 @@ export interface Sticky<T> extends Resource<T> {
   failed: boolean;
 }
 
-export interface LiveOpts { topics?: string[]; debounceMs?: number; intervalMs?: number }
+export interface LiveOpts {
+  topics?: string[];
+  debounceMs?: number;
+  intervalMs?: number;
+  /** Longest a refetch may wait while events keep arriving (default 30 s), so steady service still refreshes. */
+  maxWaitMs?: number;
+}
+
+export const LIVE_MAX_WAIT_MS = 30_000;
 
 /**
- * useResource with the live refetch wired here. lib/live.tsx useResource
- * keeps its debounce timer in an effect that re-runs whenever the provider
- * value changes, which it does on every event, so the pending refetch is
- * cleared before it fires. This hook keeps its own timer (reported to C0/foundation).
+ * Delay for a debounced refetch that never waits longer than `maxWait` after
+ * the first event it is holding back (a trailing debounce alone restarts on
+ * every event and starves during steady service).
+ */
+export function debounceDelay(now: number, firstPendingAt: number, debounce: number, maxWait: number): number {
+  return Math.max(0, Math.min(debounce, maxWait - (now - firstPendingAt)));
+}
+
+/**
+ * useResource with the live refetch wired here: a trailing debounce with a
+ * maximum wait, and a refetch after every reconnect.
  */
 export function useLiveResource<T>(path: string | null, opts: LiveOpts = {}): Resource<T> {
   const r = useResource<T>(path, { intervalMs: opts.intervalMs });
@@ -47,20 +62,26 @@ export function useLiveResource<T>(path: string | null, opts: LiveOpts = {}): Re
   const refreshRef = useRef(r.refresh);
   refreshRef.current = r.refresh;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstPending = useRef<number | null>(null);
   const topics = opts.topics ?? [];
   const active = Boolean(path) && topics.length > 0;
   const debounce = opts.debounceMs ?? 150;
+  const maxWait = opts.maxWaitMs ?? LIVE_MAX_WAIT_MS;
   useLiveEvent(topics.length > 0 ? topics : ['~no-topic~'], () => {
     if (!active) return;
+    const now = Date.now();
+    if (firstPending.current === null) firstPending.current = now;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       timer.current = null;
+      firstPending.current = null;
       void refreshRef.current();
-    }, debounce);
+    }, debounceDelay(now, firstPending.current, debounce, maxWait));
   });
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
+    firstPending.current = null;
   }, [path]);
   // Refetch after every (re)connect: events may have been missed.
   useEffect(() => {

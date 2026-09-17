@@ -89,6 +89,15 @@ export function OrderDetails({ order, can, busy, conflict, onReview, onClose, on
     setError(null);
   }, [step.kind]);
 
+  // After a step the button that was pressed unmounts: carry on from the dish list's lede.
+  const refocus = () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (active && active !== document.body && active.isConnected && bodyRef.current?.closest('dialog')?.contains(active)) return;
+      bodyRef.current?.querySelector<HTMLElement>('[data-step-focus]')?.focus();
+    }));
+  };
+
   const chosen = order.lines.filter((l) => selected.has(l.id));
   const plan = planSelection(chosen);
   const allergy = [...new Set(order.lines.filter((l) => l.allergy_flag && l.note).map((l) => l.note!.trim()))].join(' · ');
@@ -195,7 +204,7 @@ export function OrderDetails({ order, can, busy, conflict, onReview, onClose, on
           onClick={async () => {
             setError(null);
             const out = await onTransition(order, chosen, f.to, { kind: 'panel', silent: true });
-            if (out.ok) setSelected(new Set());
+            if (out.ok) { setSelected(new Set()); refocus(); }
             else if (out.message) setError(out.message);
           }}
         >
@@ -324,7 +333,7 @@ export function OrderDetails({ order, can, busy, conflict, onReview, onClose, on
           const lines = order.lines.filter((l) => step.lineIds.includes(l.id));
           setError(null);
           const out = await onTransition(order, lines, step.to, { reason, kind: 'panel', silent: true });
-          if (out.ok) { setSelected(new Set()); setStep({ kind: 'lines' }); }
+          if (out.ok) { setSelected(new Set()); setStep({ kind: 'lines' }); refocus(); }
           else if (out.stale) setStep({ kind: 'lines' });
           else setError(out.message);
         }}

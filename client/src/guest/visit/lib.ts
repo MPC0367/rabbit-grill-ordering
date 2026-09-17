@@ -183,6 +183,13 @@ export function itemCount(order: OrderDTO): number {
   return order.lines.reduce((s, l) => s + l.quantity, 0);
 }
 
+/** Words for when the current step was reached: sent, started (preparing), or since. */
+function sinceKey(status: LineStatus): string {
+  if (status === 'submitted') return 'common.sentAt';
+  if (status === 'preparing' || status === 'almost_done') return 'common.startedAt';
+  return 'track.since';
+}
+
 export interface OrderTimeline {
   steps: TimelineStep[];
   /** Key of the current step, null when everything is served. */
@@ -215,7 +222,8 @@ export function orderTimeline(t: T, order: OrderDTO): OrderTimeline | null {
       const here = unserved.filter((l) => l.status === status);
       const started = here.map((l) => lineReached(l, order.submitted_at)[status]).filter((x): x is string => Boolean(x));
       const parts: string[] = [];
-      if (started.length) parts.push(t(status === 'submitted' ? 'common.sentAt' : 'common.startedAt', { time: clock(earliest(started)) }));
+      // 'Started' only where something really started (preparation); 'Since' otherwise.
+      if (started.length) parts.push(t(sinceKey(status), { time: clock(earliest(started)) }));
       if (mixed) parts.push(...summaryParts(t, active));
       return { key: status, label, state: 'current', sub: parts.length ? parts.join(' · ') : undefined };
     }

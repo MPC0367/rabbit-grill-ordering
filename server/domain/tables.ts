@@ -40,6 +40,7 @@ interface ActiveVisitStats {
   bill_attention: number;
   portions_waiting: number;
   guests: number;
+  pin_locked: number;
 }
 
 /**
@@ -63,7 +64,8 @@ const ACTIVE_VISIT_STATS_SQL = `
     (SELECT COUNT(*) FROM service_requests s WHERE s.visit_id = v.id AND s.status IN ('sent','acknowledged') AND s.type <> 'bill') AS open_assistance,
     CASE WHEN ${BILL_ATTENTION_SQL} THEN 1 ELSE 0 END AS bill_attention,
     (SELECT COUNT(*) FROM portion_requests p WHERE p.visit_id = v.id AND p.status = 'requested') AS portions_waiting,
-    (SELECT COUNT(*) FROM guest_sessions g WHERE g.visit_id = v.id AND g.revoked_at IS NULL) AS guests
+    (SELECT COUNT(*) FROM guest_sessions g WHERE g.visit_id = v.id AND g.revoked_at IS NULL) AS guests,
+    CASE WHEN v.pin_locked_until > strftime('%Y-%m-%dT%H:%M:%fZ', 'now') THEN 1 ELSE 0 END AS pin_locked
   FROM visits v
   WHERE v.status <> 'closed'`;
 
@@ -117,6 +119,7 @@ function buildTile(t: TableRow, v: ActiveVisitStats | undefined, qr: QrState | u
           bill_requested: v.bill_requested_at !== null || v.bill_attention === 1,
           guests: v.guests,
           version: v.version,
+          pin_locked: v.pin_locked === 1,
         }
       : null,
     attention,

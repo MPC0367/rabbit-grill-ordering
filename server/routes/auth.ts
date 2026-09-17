@@ -7,7 +7,7 @@ import { AppError } from '../lib/errors.ts';
 import { assertUnderLimit, hit, LIMITS } from '../lib/ratelimit.ts';
 import {
   buildStaffContext, burnPasswordCheck, endStaffSession, guestOf, loadStaff, requireGuest, requireStaff,
-  resolveGuest, staffOf, startStaffSession, verifyPassword, type StaffUserRow,
+  resolveGuest, staffOf, startStaffSession, verifyPassword, type StaffContext, type StaffUserRow,
 } from '../lib/auth.ts';
 import { one, run, tx } from '../db/index.ts';
 import { audit } from '../lib/audit.ts';
@@ -17,8 +17,9 @@ import { getSettings } from '../lib/settings.ts';
 import type { StaffMeDTO, StaffUserDTO } from '../../shared/dto.ts';
 import { eventsSince, hiddenTopicsFor, sseStream } from '../lib/events.ts';
 
-const LOCK_AFTER = 5;
-const LOCK_MINUTES = 5;
+/** Consecutive failures (from any address) that lock an account; the per-address budget stops a guesser first. */
+const LOCK_AFTER = 20;
+const LOCK_MINUTES = 15;
 
 export function staffUserDTO(u: StaffUserRow): StaffUserDTO {
   return {
@@ -49,22 +50,39 @@ export const authRoutes = new Hono<AppEnv>()
     const input = await body(c, LoginBody);
     // Only FAILED attempts use up the budget: several staff signing in at one
     // shared tablet (or behind one proxy address) must not lock each other out.
-    const ipKey = `login:ip:${clientIp(c)}`;
-    const userKey = `login:user:${input.username.toLowerCase()}`;
-    assertUnderLimit(ipKey, LIMITS.login);
-    assertUnderLimit(userKey, LIMITS.loginPerUser);
+    //
+    // Budgets (D-S8-10): per address; per account from one address (the hard
+    // stop a guesser meets); and a looser per-account total across addresses,
+    // which the database lock also enforces across restarts. Someone guessing
+    // from their phone therefore cannot lock the kitchen tablet out, and a
+    // known username answers exactly like an unknown one: 401, then 429.
+    const ip = clientIp(c);
+    const name = input.username.toLowerCase();
+    const keys = [
+      [`login:ip:${ip}`, LIMITS.login],
+      [`login:user-ip:${name}|${ip}`, LIMITS.loginPerUserAddress],
+      [`login:user:${name}`, LIMITS.loginPerUser],
+    ] as const;
+    for (const [key, limit] of keys) assertUnderLimit(key, limit);
     const failed = () => {
-      hit(ipKey, LIMITS.login);
-      hit(userKey, LIMITS.loginPerUser);
+      for (const [key, limit] of keys) hit(key, limit);
     };
-    const user = one<StaffUserRow>('SELECT * FROM staff_users WHERE username = :u', { u: input.username });
-    if (!user || user.active !== 1) {
-      burnPasswordCheck(input.password);
+    const refuse = (): never => {
       failed();
       throw new AppError('invalid_credentials', 'Username or password is incorrect.');
+    };
+    const user = one<StaffUserRow>('SELECT * FROM staff_users WHERE username = :u', { u: input.username });
+    // Demo accounts have published passwords: they never sign in to a live restaurant.
+    if (!user || user.active !== 1 || (user.is_fixture === 1 && getSettings().operating_mode === 'live')) {
+      burnPasswordCheck(input.password);
+      return refuse();
     }
     if (user.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
-      throw new AppError('account_locked', 'Too many attempts. Try again in a few minutes.', { until: user.locked_until });
+      // Same shape as a full per-account budget: the lock does not reveal that the account exists.
+      burnPasswordCheck(input.password);
+      failed();
+      const retry = Math.max(1, Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 1000));
+      throw new AppError('rate_limited', 'Too many attempts. Please wait a moment.', { retry_after_seconds: retry });
     }
     const ok = verifyPassword(input.password, user.password_hash);
     const actor = { type: 'staff' as const, id: user.id, label: user.display_name };
@@ -80,10 +98,7 @@ export const authRoutes = new Hono<AppEnv>()
       startStaffSession(c, user.id);
       audit(actor, 'staff.login', { type: 'staff_user', id: user.id });
     });
-    if (!ok) {
-      failed();
-      throw new AppError('invalid_credentials', 'Username or password is incorrect.');
-    }
+    if (!ok) refuse();
     const fresh = one<StaffUserRow>('SELECT * FROM staff_users WHERE id = ?', [user.id])!;
     c.set('staff', buildStaffContext(fresh, ''));
     return c.json(meDTO(c));
@@ -100,10 +115,22 @@ export const authRoutes = new Hono<AppEnv>()
 
 // ------------------------------------------------------------------ live streams
 // Mounted at /api/staff and /api/guest respectively.
+/** What a staff stream was authorised with: the account and its exact permission set. */
+const accessPrint = (s: StaffContext) => `${s.user.id}|${[...s.permissions].sort().join(',')}`;
+
 export const streamsStaff = new Hono<AppEnv>()
   .get('/events', requireStaff(), (c) => {
     const s = staffOf(c);
-    return sseStream(c, { kind: 'staff', hiddenTopics: hiddenTopicsFor(s.can) });
+    const print = accessPrint(s);
+    // Signed out, deactivated, demoted or re-permissioned: the stream ends (D-S8-08).
+    let signedIn = true;
+    const stillValid = () => {
+      const now = loadStaff(c);
+      signedIn = now !== null && now.user.id === s.user.id;
+      return signedIn && accessPrint(now!) === print;
+    };
+    const endState = () => (signedIn ? 'changed' as const : 'ended' as const);
+    return sseStream(c, { kind: 'staff', hiddenTopics: hiddenTopicsFor(s.can), stillValid, endState });
   })
   // Polling fallback: GET /api/staff/events/poll?since=<id>
   .get('/events/poll', requireStaff(), (c) => {

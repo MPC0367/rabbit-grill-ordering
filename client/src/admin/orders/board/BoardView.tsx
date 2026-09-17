@@ -11,7 +11,7 @@ import { navigate, setQuery, useRoute } from '../../../lib/router.ts';
 import { useMedia, useNow } from '../../../lib/store.ts';
 import {
   attentionKinds, Banner, BOARD_STAGES, BoardColumn, BoardGrid, BoardStatusSwitch, BoardToolbar, Button, EmptyState,
-  normalizeSearch, Skeleton, TableStrip, TextLink, useAnnounce, type BoardStage, type FloorTable, type TicketFlagSpec,
+  normalizeSearch, Skeleton, TableStrip, TextLink, useAnnounce, useToast, type BoardStage, type FloorTable, type TicketFlagSpec,
 } from '../../../ui/index.ts';
 import { useStaff } from '../../shell/session.tsx';
 import AssistOrderPanel from '../AssistOrderPanel.tsx';
@@ -21,10 +21,12 @@ import {
 } from '../support.ts';
 import { useBoardActions, type BusyKind, type OrdersResponse } from './actions.ts';
 import {
-  matchesQuery, placementOf, readySince, sortOrders, tableOf, visibleLines, type Placement, type SortKey,
+  matchesQuery, placementOf, readyPartOf, readyRoundCount, readySince, sortOrders, tableOf, visibleLines,
+  type Placement, type SortKey,
 } from './model.ts';
 import { OrderDetails } from './OrderDetails.tsx';
-import { OrderTicket } from './OrderTicket.tsx';
+import { linesCarryConfirm, OrderTicket } from './OrderTicket.tsx';
+import { ReadyPartList, type ReadyPart } from './ReadyParts.tsx';
 import { ServedList } from './ServedList.tsx';
 import { useNewRoundAlerts } from './alerts.ts';
 
@@ -32,18 +34,73 @@ interface Row { order: StaffOrderDTO; lines: OrderLineDTO[]; placement: Placemen
 
 const SORTS: SortKey[] = ['oldest', 'newest', 'table', 'late'];
 
-/** A panel action shows as busy on the ticket's primary button. */
+/** A panel action shows as busy on the ticket's primary button; serving a ready part, on its serve button. */
 function busyOf(kind: BusyKind | undefined): 'primary' | 'secondary' | null {
   if (!kind) return null;
-  return kind === 'secondary' ? 'secondary' : 'primary';
+  return kind === 'secondary' || kind === 'part' ? 'secondary' : 'primary';
+}
+
+function isStage(v: string | null): v is BoardStage {
+  return v !== null && (BOARD_STAGES as readonly string[]).includes(v);
+}
+
+const shown = (el: Element | null | undefined): el is HTMLElement => Boolean(el) && (el as HTMLElement).offsetParent !== null;
+
+/** Focus without jumping the page for touch users; keyboard users get it scrolled into view. */
+function focusCalm(el: HTMLElement): void {
+  if (!el.hasAttribute('tabindex') && !el.matches('button, a[href], input, select, textarea')) el.setAttribute('tabindex', '-1');
+  el.focus({ preventScroll: true });
+  let keyboard = false;
+  try { keyboard = el.matches(':focus-visible'); } catch { /* old engines */ }
+  if (keyboard) el.scrollIntoView({ block: 'nearest' });
+}
+
+/** Where focus was before a ticket action: the column and position, for when the ticket leaves it. */
+interface FocusOrigin { column: HTMLElement | null; index: number }
+
+function focusOrigin(orderId: string): FocusOrigin {
+  const ticket = document.getElementById(`ticket-${orderId}`);
+  const column = ticket?.closest<HTMLElement>('.col') ?? null;
+  const list = column ? Array.from(column.querySelectorAll('.ticket')) : [];
+  return { column, index: ticket ? list.indexOf(ticket) : -1 };
+}
+
+/**
+ * After an action, a ticket often re-mounts in another column and the button
+ * that had focus is gone (WCAG 2.4.3). Put focus on the ticket's next action,
+ * else the ticket, else the ticket now at the same place in the old column,
+ * else that column's heading, else the status switch.
+ */
+function restoreFocus(orderId: string, from: FocusOrigin): void {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected) return;
+    const ticket = document.getElementById(`ticket-${orderId}`);
+    const next = ticket?.querySelector<HTMLElement>('.ticket__actions .btn:not([aria-disabled="true"])');
+    if (shown(next)) { focusCalm(next); return; }
+    if (shown(ticket)) { focusCalm(ticket); return; }
+    const col = from.column?.isConnected ? from.column : null;
+    if (col) {
+      const list = Array.from(col.querySelectorAll<HTMLElement>('.ticket'));
+      const same = list[Math.min(Math.max(from.index, 0), list.length - 1)];
+      const btn = same?.querySelector<HTMLElement>('.ticket__actions .btn:not([aria-disabled="true"])');
+      if (shown(btn)) { focusCalm(btn); return; }
+      if (shown(same)) { focusCalm(same); return; }
+      const head = col.querySelector<HTMLElement>('.col__head h2');
+      if (shown(head)) { focusCalm(head); return; }
+    }
+    const pressed = document.querySelector<HTMLElement>('.boardtabs button[aria-pressed="true"]');
+    if (shown(pressed)) focusCalm(pressed);
+  }));
 }
 
 export default function BoardView() {
   const { t } = useI18n();
-  const { can } = useStaff();
+  const { can, me } = useStaff();
   const { query } = useRoute();
   const live = useLive();
   const announce = useAnnounce();
+  const toast = useToast();
   const now = useNow(15_000);
   const narrow = useMedia('(max-width: 1199px)');
   const phone = useMedia('(max-width: 767px)');
@@ -55,13 +112,16 @@ export default function BoardView() {
     topics: ['table.', 'visit.', 'order.', 'line.', 'service.', 'portion.', 'bill.'],
     intervalMs: SAFETY_REFRESH_MS,
   });
-  const menu = useResource<CatalogDTO>('/api/public/menu', { topics: ['menu.'] });
+  // Lines carry their own staff-confirmation snapshot once the server sends it;
+  // until then the live menu's alcohol flag stands in (D-FX-OPS-02).
+  const needMenu = Boolean(res.data) && !res.data!.orders.every((o) => linesCarryConfirm(o.lines));
+  const menu = useResource<CatalogDTO>(needMenu ? '/api/public/menu' : null, { topics: ['menu.'] });
   const alcoholItems = useMemo(() => new Set((menu.data?.items ?? []).filter((i) => i.alcohol).map((i) => i.id)), [menu.data]);
 
   const actions = useBoardActions(res);
 
   // ---------------------------------------------------------------- filters (station persisted per device)
-  const [station, setStationState] = useState<StationPref>(() => readStation());
+  const [station, setStationState] = useState<StationPref>(() => readStation(me.user.role));
   const setStation = (s: StationPref) => { setStationState(s); writeStation(s); };
   const table = query.get('table') ?? 'all';
   const setTable = (v: string) => setQuery({ table: v === 'all' ? null : v });
@@ -75,7 +135,16 @@ export default function BoardView() {
     sort === 'late' ? t('orders.sort.late', { n: LATE_AFTER_MINUTES }) : t(`orders.sort.${sort}`),
     search.trim() ? `“${search.trim()}”` : null,
   ].filter(Boolean).join(' · ');
-  const [stage, setStage] = useState<BoardStage>('submitted');
+  // The one status shown on tablets and phones. `?stage=` opens a status
+  // directly (Overview's ready card); a tap writes it back to the address.
+  const stageParam = query.get('stage');
+  const queryStage = isStage(stageParam) ? stageParam : null;
+  const [stage, setStageState] = useState<BoardStage>(queryStage ?? 'submitted');
+  useEffect(() => { if (queryStage) setStageState(queryStage); }, [queryStage]);
+  const setStage = useCallback((s: BoardStage) => {
+    setStageState(s);
+    setQuery({ stage: s === 'submitted' ? null : s });
+  }, []);
   const [details, setDetails] = useState<{ id: string; startAt?: 'finish' } | null>(null);
   const [assist, setAssist] = useState<{ visitId: string; mode: 'assist' | 'recover' } | null>(null);
   const lastKnown = useRef(new Map<string, StaffOrderDTO>());
@@ -126,14 +195,42 @@ export default function BoardView() {
       return sortOrders(list.map((r) => r.order), sort).map((o) => byId.get(o.id)!);
     };
     for (const s of BOARD_STAGES) g[s] = sorted(g[s]);
-    // The pass reads in the order food came up.
-    if (sort === 'oldest' || sort === 'late') {
-      g.ready.sort((a, b) => (readySince(a.lines) ?? '').localeCompare(readySince(b.lines) ?? ''));
+    // Ready dishes of rounds that sit in an earlier column also wait at the pass.
+    const parts: ReadyPart[] = [];
+    for (const s of BOARD_STAGES) {
+      if (s === 'ready') continue;
+      for (const r of g[s]) {
+        const ready = readyPartOf(r.lines, r.placement);
+        if (ready.length === 0) continue;
+        const rest = r.lines.filter((l) => !ready.includes(l) && l.status !== 'served' && l.status !== 'rejected' && l.status !== 'cancelled');
+        parts.push({ order: r.order, ready, rest, placement: s });
+      }
     }
-    return { columns: g, served: sorted(served), voided: sorted(voided) };
+    // The pass reads in the order food came up.
+    const byReady = <X,>(key: (x: X) => string | null) => (a: X, b: X) => (key(a) ?? '').localeCompare(key(b) ?? '');
+    parts.sort(byReady((p) => readySince(p.ready)));
+    if (sort === 'oldest' || sort === 'late') {
+      g.ready.sort(byReady((r) => readySince(r.lines)));
+    }
+    return { columns: g, parts, served: sorted(served), voided: sorted(voided) };
   }, [rows, sort, now]);
 
   const counts = Object.fromEntries(BOARD_STAGES.map((s) => [s, groups.columns[s].length])) as Record<BoardStage, number>;
+  // Every round with a dish at the pass counts once, so Ready agrees with Overview.
+  counts.ready = readyRoundCount(BOARD_STAGES.flatMap((s) => groups.columns[s]));
+
+  // Tablets and phones: a table picked from elsewhere (?table=) opens on the
+  // first status that has its rounds, unless the address names one.
+  const pickedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!res.data || pickedFor.current === table) return;
+    const first = pickedFor.current === null;
+    pickedFor.current = table;
+    if (first && (queryStage || table === 'all')) return;
+    if (counts[stage] > 0) return;
+    const target = BOARD_STAGES.find((s) => counts[s] > 0);
+    if (target) setStageState(target);
+  }, [res.data, table, queryStage, counts, stage]);
 
   // ---------------------------------------------------------------- floor strip
   const floor: FloorTable[] = useMemo(() => (tablesRes.data?.tables ?? [])
@@ -188,9 +285,82 @@ export default function BoardView() {
   }, [oldestNew, now, station, t]);
 
   // ---------------------------------------------------------------- actions
+  // A ticket asked to be found (from a ready part or a "moved" toast): focus it once it is on screen.
+  const locate = useRef<string | null>(null);
+  const [locateTick, setLocateTick] = useState(0);
+  const showTicket = useCallback((orderId: string, where: BoardStage) => {
+    if (narrow) setStage(where);
+    locate.current = orderId;
+    setLocateTick((n) => n + 1);
+  }, [narrow, setStage]);
+  useEffect(() => {
+    const id = locate.current;
+    if (!id) return;
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(`ticket-${id}`);
+      if (!shown(el)) return;
+      locate.current = null;
+      el.setAttribute('tabindex', '-1');
+      el.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      el.focus({ preventScroll: true });
+      el.classList.remove('ob-located');
+      void el.offsetWidth; // restart the outline pulse
+      el.classList.add('ob-located');
+      setTimeout(() => el.classList.remove('ob-located'), 1600);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [locateTick, stage]);
+
+  const shownStageRef = useRef<BoardStage | null>(null);
+  shownStageRef.current = narrow ? stage : null;
+  const stationRef = useRef(station);
+  stationRef.current = station;
+
+  const afterMove = useCallback((order: StaffOrderDTO, from: FocusOrigin, updated: StaffOrderDTO[]) => {
+    const next = updated.find((o) => o.id === order.id);
+    const showing = shownStageRef.current;
+    if (next && showing) {
+      // One status at a time: say where the ticket went, with a way to follow it.
+      const lines = visibleLines(next, stationRef.current);
+      const p = lines.length ? placementOf(lines) : 'void';
+      if (p !== showing && isStage(p)) {
+        toast.show({
+          message: t('orders.toast.moved', { table: tableOf(next), status: t(`common.staff.status.${p}`) }),
+          tone: 'info',
+          action: { label: t('orders.toast.show'), onClick: () => showTicket(next.id, p) },
+        });
+      }
+    }
+    restoreFocus(order.id, from);
+  }, [showTicket, t, toast]);
+
   const onAdvance = useCallback((order: StaffOrderDTO, lines: OrderLineDTO[], to: LineStatus, which: 'primary' | 'secondary') => {
-    void actions.transition(order, lines, to, { kind: which });
+    const from = focusOrigin(order.id);
+    void actions.transition(order, lines, to, { kind: which }).then((out) => {
+      if (out.ok) afterMove(order, from, out.orders);
+    });
+  }, [actions.transition, afterMove]);
+  const onServePart = useCallback((part: ReadyPart) => {
+    const row = document.activeElement?.closest<HTMLElement>('.passpart__row');
+    const list = row?.parentElement ?? null;
+    const index = row && list ? Array.from(list.children).indexOf(row) : -1;
+    void actions.transition(part.order, part.ready, 'served', { kind: 'part' }).then((out) => {
+      if (!out.ok) return;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const active = document.activeElement;
+        if (active && active !== document.body && active.isConnected) return;
+        // The slip is gone: the next slip at its place, else the column's first ticket, else the column.
+        const rows = Array.from(document.querySelectorAll<HTMLElement>('.passpart__row'));
+        const same = rows[Math.min(Math.max(index, 0), rows.length - 1)];
+        const target = same?.querySelector<HTMLElement>('.btn')
+          ?? document.querySelector<HTMLElement>('.col--ready .ticket .ticket__actions .btn')
+          ?? document.querySelector<HTMLElement>('.col--ready .col__head h2');
+        if (shown(target)) focusCalm(target);
+        else restoreFocus(part.order.id, { column: null, index: -1 });
+      }));
+    });
   }, [actions.transition]);
+  const onShowPart = useCallback((part: ReadyPart) => showTicket(part.order.id, part.placement), [showTicket]);
   const onMore = useCallback((order: StaffOrderDTO) => setDetails({ id: order.id }), []);
   const closeDetails = useCallback(() => {
     setDetails(null);
@@ -287,13 +457,23 @@ export default function BoardView() {
           <BoardColumn
             key={s}
             stage={s}
-            count={groups.columns[s].length}
+            count={counts[s]}
             current={s === stage}
             help={s === 'ready' ? readyHelp : undefined}
             empty={s === 'ready' && groups.served.length > 0 ? <span hidden /> : emptyFor(s)}
           >
+            {s === 'ready' ? (
+              <ReadyPartList
+                parts={groups.parts}
+                now={now}
+                can={can}
+                busy={actions.busy}
+                onServe={onServePart}
+                onShow={onShowPart}
+              />
+            ) : null}
             {groups.columns[s].map(ticket)}
-            {s === 'ready' && groups.served.length > 0 && groups.columns.ready.length === 0 ? emptyFor(s) : null}
+            {s === 'ready' && groups.served.length > 0 && counts.ready === 0 ? emptyFor(s) : null}
             {s === 'ready' ? (
               <ServedList
                 orders={groups.served.map((r) => r.order)}

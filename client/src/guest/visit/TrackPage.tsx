@@ -7,7 +7,7 @@ import type { GuestBillDTO, OrderDTO, PortionRequestDTO } from '../../../../shar
 import { isChargeable } from '../../../../shared/status.ts';
 import { clock } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { useLive, type Resource } from '../../lib/live.tsx';
+import type { Resource } from '../../lib/live.tsx';
 import { setQuery, useRoute } from '../../lib/router.ts';
 import { useNow } from '../../lib/store.ts';
 import {
@@ -15,6 +15,7 @@ import {
   UnsentCard, announce, useToast,
 } from '../../ui/index.ts';
 import { useCartCount } from '../cart/store.ts';
+import { useGuestConnection, useGuestLiveState } from '../shell/hooks.ts';
 import { useOverlays } from '../shell/overlays.tsx';
 import { useGuestSession } from '../shell/session.tsx';
 import { useCommitted, useServiceRequests, useVisitResource } from './hooks.ts';
@@ -82,19 +83,41 @@ export default function TrackPage() {
   // Polite words for changes that leave no live region behind.
   const prevStatus = useRef<Map<string, string> | null>(null);
   const prevPortion = useRef<Map<string, string> | null>(null);
+  const prevLine = useRef<Map<string, string> | null>(null);
   useEffect(() => {
     if (!data) return;
     const before = prevStatus.current;
     const beforeP = prevPortion.current;
+    const beforeL = prevLine.current;
     prevStatus.current = new Map(data.orders.map((o) => [o.id, o.status]));
     prevPortion.current = new Map(data.portions.map((p) => [p.id, p.status]));
-    if (!animate || !before || !beforeP) return;
+    prevLine.current = new Map(data.orders.flatMap((o) => o.lines.map((l) => [l.id, l.status] as const)));
+    if (!animate || !before || !beforeP || !beforeL) return;
     const newest = Math.max(0, ...data.orders.map((o) => o.round_no));
     const words: string[] = [];
     for (const o of data.orders) {
       if (o.round_no !== newest && o.status === 'served' && before.get(o.id) && before.get(o.id) !== 'served') {
         words.push(t('track.servedAnnounce', { n: o.round_no }));
       }
+    }
+    // A dish reaching "almost done" or "ready" while the rest of its round is
+    // still cooking: the round's own status line does not change, so say it
+    // here, once per update, naming at most three dishes.
+    const nameOf = (b: { th: string | null; en: string | null }) => b[lang] ?? b.en ?? b.th ?? '';
+    for (const status of ['ready', 'almost_done'] as const) {
+      const names: string[] = [];
+      for (const o of data.orders) {
+        const roundSays = o.status === status && before.get(o.id) !== status;
+        if (roundSays) continue;
+        for (const l of o.lines) {
+          const was = beforeL.get(l.id);
+          if (l.status === status && was !== undefined && was !== status) names.push(nameOf(l.name));
+        }
+      }
+      if (!names.length) continue;
+      const shown = names.slice(0, 3).join(', ');
+      const list = names.length > 3 ? t('track.andMore', { names: shown, n: names.length - 3 }) : shown;
+      words.push(t(status === 'ready' ? 'track.dishesReady' : 'track.dishesAlmost', { names: list }));
     }
     for (const p of data.portions) {
       if (p.status === 'quoted' && beforeP.get(p.id) !== 'quoted') {
@@ -172,7 +195,8 @@ interface TrackBodyProps {
 
 function TrackBody({ label, visitId, services, billingNow, orders, bill, animate, placed, onPlaced, errorText }: TrackBodyProps) {
   const { t, lang } = useI18n();
-  const live = useLive();
+  const liveState = useGuestLiveState();
+  const { offline: shellOffline } = useGuestConnection(true);
   const cartCount = useCartCount();
   const { openService } = useOverlays();
   const now = useNow(15_000);
@@ -189,11 +213,18 @@ function TrackBody({ label, visitId, services, billingNow, orders, bill, animate
   const nextRound = Math.max(0, ...list.map((o) => o.round_no)) + 1;
   const hasPortions = visiblePortions(portions, list, now).length > 0;
 
+  // The running amount is what the restaurant has confirmed; its round count
+  // counts only the rounds that contribute to it (not rounds awaiting staff).
   const runningMinor = bill
     ? bill.subtotal_minor
     : list.reduce((s, o) => s + o.lines.filter((l) => isChargeable(l.status)).reduce((x, l) => x + l.line_total_minor, 0), 0);
+  const confirmedRounds = bill
+    ? new Set(bill.lines.map((l) => l.order_reference)).size
+    : list.filter((o) => o.lines.some((l) => isChargeable(l.status))).length;
+  const runningLabel = confirmedRounds === 0 ? t('track.runningLabelNone')
+    : confirmedRounds === 1 ? t('track.runningLabelOne') : t('track.runningLabel', { n: confirmedRounds });
 
-  const stale = orders.stale || live.state === 'reconnecting' || live.state === 'offline';
+  const stale = orders.stale || liveState === 'reconnecting' || liveState === 'offline';
 
   const kicker = rounds === 0
     ? t('track.kickerNone', { label })
@@ -205,10 +236,11 @@ function TrackBody({ label, visitId, services, billingNow, orders, bill, animate
         kicker={kicker}
         title={t('track.title')}
         secondary={lang === 'th' ? t('track.titleEn') : undefined}
-        row={<ConnectionIndicator variant="track" stale={orders.stale} />}
+        row={<ConnectionIndicator variant="track" state={liveState} stale={orders.stale} />}
         support={t('track.shared', { label })}
       />
-      {stale && data ? (
+      {/* Offline, the shell banner already says the status may be old and offers staff. */}
+      {stale && data && !shellOffline ? (
         <div className="vnote vnote--heat vnote--action" role="status">
           <Icon name="clock" />
           <span className="vnote__body">
@@ -305,8 +337,8 @@ function TrackBody({ label, visitId, services, billingNow, orders, bill, animate
       <UnsentCard count={cartCount} nextRound={nextRound} href="/menu/cart" />
       {rounds > 0 ? (
         <RunningTotal
-          aria-label={t(rounds === 1 ? 'track.runningLabelOne' : 'track.runningLabel', { n: rounds })}
-          label={t(rounds === 1 ? 'track.runningLabelOne' : 'track.runningLabel', { n: rounds })}
+          aria-label={runningLabel}
+          label={runningLabel}
           totalMinor={runningMinor}
           size="xl"
           note={t('track.runningNote')}
@@ -339,13 +371,14 @@ function ServicePair({
   const { t, has } = useI18n();
   const toast = useToast();
   const { openService } = useOverlays();
-  const live = useLive();
+  // Offline, Call staff opens the service sheet (it explains the in-person
+  // fallback) and Request the bill waits: it cannot be sent from here.
+  const { offline } = useGuestConnection(true);
   const callOn = services.includes('call_staff');
   const billOn = services.includes('bill') && billAllowed;
   const call = svc.slots.get('call_staff')?.active ?? null;
   const billReq = svc.slots.get('bill')?.active ?? null;
   const billDone = billingNow || Boolean(billReq) || Boolean(billRequestedAt);
-  const offline = live.state === 'offline';
 
   if (!callOn && !billOn) return null;
 
@@ -353,13 +386,13 @@ function ServicePair({
     if (offline) { openService(); return; }
     const active = type === 'call_staff' ? call : billReq;
     if (active) {
-      toast.show({ message: t('track.alreadySent', { time: clock(active.created_at) }), tone: 'info' });
+      toast.show({ message: t(active.status === 'acknowledged' ? 'track.alreadySeen' : 'track.alreadySent', { time: clock(active.created_at) }), tone: 'info' });
       return;
     }
     try {
       const r = await svc.send(type);
-      if (type === 'bill') toast.show({ message: r.existing ? t('help.existing') : t('bill.requestedToast') });
-      else toast.show({ message: r.existing ? t('help.existing') : t('help.sentToast', { name: t('service.call_staff') }) });
+      if (type === 'bill') toast.show({ message: r.existing ? t(r.seen ? 'help.existingSeen' : 'help.existing') : t('bill.requestedToast') });
+      else toast.show({ message: r.existing ? t(r.seen ? 'help.existingSeen' : 'help.existing') : t('help.sentToast', { name: t('service.call_staff') }) });
     } catch (err) {
       toast.show({ message: `${t('help.failed')} · ${errorWords(t, has, err)}`, tone: 'error' });
     }
@@ -408,9 +441,10 @@ function ServicePair({
               size="lg"
               icon="receipt"
               loading={svc.busy === 'bill'}
+              disabled={offline}
               onClick={() => void send('bill')}
               data-service="bill"
-              data-state="idle"
+              data-state={offline ? 'offline' : 'idle'}
             >
               {t('service.bill')}
             </Button>

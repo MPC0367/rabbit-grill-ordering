@@ -139,10 +139,15 @@ export function useLiveKick(prefixes: string[], fn: () => void, opts: { visitId?
 }
 
 /** useResource plus a live refresh that only listens to one visit's events (or all when visitId is null). */
-export function useLiveResource<V>(path: string | null, prefixes: string[], visitId: string | null = null): Resource<V> {
-  const res = useResource<V>(path);
+export function useLiveResource<V>(path: string | null, prefixes: string[], visitId: string | null = null, intervalMs?: number): Resource<V> {
+  const res = useResource<V>(path, { intervalMs });
   useLiveKick(prefixes, () => void res.refresh(), { visitId, enabled: path !== null });
   return res;
+}
+
+/** The table's QR as an SVG attachment (brief 20). The server marks the card downloaded, which clears "reprint needed". */
+export function qrDownloadHref(tableId: string): string {
+  return `/api/staff/tables/${encodeURIComponent(tableId)}/qr.svg?download=1`;
 }
 
 export const VISIT_TOPICS = ['visit.', 'order.', 'line.', 'service.', 'portion.', 'bill.', 'payment.', 'table.'];

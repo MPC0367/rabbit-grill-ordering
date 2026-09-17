@@ -7,7 +7,7 @@ import '@fontsource-variable/cormorant-garamond/wght-italic.css';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
-import './styles/admin-kit.css';
+// styles/admin-kit.css (the staff kit) loads with the staff platform: see App.tsx.
 import { App } from './App.tsx';
 
 createRoot(document.getElementById('root')!).render(

@@ -131,7 +131,8 @@ function actionCards(
     label: t('overview.card.ready'),
     value: d.ready_lines,
     detail: d.ready_lines > 0 ? t('overview.card.readyHint') : t('overview.card.readyNone'),
-    href: '/admin/orders',
+    // Opens the Ready status directly on tablets and phones (one status at a time).
+    href: '/admin/orders?stage=ready',
     go: t('overview.go.board'),
     urgent: d.ready_lines > 0,
   });

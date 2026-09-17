@@ -533,8 +533,12 @@ test('a manager can close a visit with a recorded exception; a cashier cannot', 
   assert.equal(after.remaining.amount_due_minor, 15000);
   assert.deepEqual(rows(`SELECT reason FROM audit_events WHERE visit_id = ? AND action = 'visit.checkout'`, [visit.id]), [{ reason }]);
 
-  // History is not rewritten: the dish stays accepted, the bill stays unpaid, and the exception is listed.
-  assert.equal(count(`SELECT COUNT(*) AS n FROM order_lines WHERE visit_id = ? AND status = 'accepted'`, [visit.id]), 1);
+  // The dish that never came is resolved (D-S8-16): cancelled with the exception as its reason and a
+  // cancel step, so it no longer counts as sold. The bill stays unpaid and the exception is listed.
+  assert.deepEqual(rows('SELECT status, status_reason FROM order_lines WHERE visit_id = ?', [visit.id]),
+    [{ status: 'cancelled', status_reason: `Closed by manager exception: ${reason}` }]);
+  assert.equal(count(`SELECT COUNT(*) AS n FROM line_events WHERE visit_id = ? AND kind = 'cancel' AND actor_id = 'stf_manager'`, [visit.id]), 1);
+  assert.equal(JSON.parse(rows(`SELECT after_json FROM audit_events WHERE visit_id = ? AND action = 'visit.checkout'`, [visit.id])[0].after_json).lines_resolved, 1);
   assert.equal(count('SELECT COUNT(*) AS n FROM payments WHERE visit_id = ?', [visit.id]), 0);
   const list = ok(await manager.get('/api/staff/payments'));
   const listed = list.exceptions.filter((e: { visit_id: string }) => e.visit_id === visit.id);
@@ -675,7 +679,10 @@ test('a refund recorded after checkout is kept as history and never reopens the 
   const paymentId = ok(await pay(visit.id, rev)).payments[0].id;
   ok(await checkout(visit.id));
   const kpiExceptions = async () => ok(await owner.get('/api/staff/stats/kpis')).payment_exceptions;
+  const kpiRefunds = async (): Promise<{ count: number; value_minor: number }> => ok(await owner.get('/api/staff/stats/kpis')).refunds_after_checkout;
   const exceptionsBefore = await kpiExceptions();
+  const refundsBefore = await kpiRefunds();
+  assert.equal((await bill(visit.id, manager)).payment_state, 'paid');
 
   expectError(await cashier.post(`/api/staff/payments/${paymentId}/reverse`, { reason: 'Refunded at the door', idempotency_key: key('rev') }), 403, 'forbidden');
   const refunded = ok(await manager.post(`/api/staff/payments/${paymentId}/reverse`, { reason: 'Refunded at the door', idempotency_key: key('rev') }));
@@ -697,15 +704,19 @@ test('a refund recorded after checkout is kept as history and never reopens the 
   const list = ok(await manager.get('/api/staff/payments'));
   assert.deepEqual(list.exceptions.filter((e: { visit_id: string }) => e.visit_id === visit.id).map((e: any) => [e.kind, e.amount_minor, e.reason]),
     [['refund_record', 15000, 'Refunded at the door']]);
-  // The KPI treats the closed revision as having no confirmed settlement any more.
-  const exceptionsAfter = await kpiExceptions();
-  assert.equal(exceptionsAfter.count, exceptionsBefore.count + 1);
-  assert.equal(exceptionsAfter.value_minor, exceptionsBefore.value_minor + 15000);
-  // Current behaviour, reported as ambiguous: the closed bill itself still reads "settled / paid"
-  // (the revision is not reopened after close) while its only settlement is reversed.
+  // D-S8-04: a refund after checkout is explained, not an unexplained payment exception. The KPI
+  // reports it on its own line, and the payments list shows it once, as the refund record.
+  assert.deepEqual(await kpiExceptions(), exceptionsBefore);
+  assert.deepEqual(await kpiRefunds(), { count: refundsBefore.count + 1, value_minor: refundsBefore.value_minor + 15000 });
+  // The settled revision stays as history, but the bill no longer reads paid: it was refunded.
   const closedBill = await bill(visit.id, manager);
   assert.equal(closedBill.bill_status, 'settled');
-  assert.equal(closedBill.paid, true);
+  assert.equal(closedBill.current_revision.status, 'settled');
+  assert.equal(closedBill.paid, false);
+  assert.equal(closedBill.payment_state, 'refunded');
+  assert.equal(closedBill.refund.amount_minor, 15000);
+  assert.equal(closedBill.refund.reason, 'Refunded at the door');
+  assert.equal(closedBill.refund.by, 'Test manager');
 });
 
 test('adjustments are refused while a payable revision exists', async () => {

@@ -475,6 +475,104 @@ test('manual recovery never records a dish that has no current price at 0 THB, e
   }
 });
 
+test('paper recovery never records an unverified dish just because it is sold out or its category is paused (D-S8-19)', async () => {
+  const { visit } = await newParty();
+  // Live mode: the dessert is published and priced but not verified, so nobody may order it.
+  const dessert = T.items.dessert;
+  let n = 0;
+  const recover = () => manager.post('/api/staff/orders/recover', {
+    visit_id: visit.id, manual_reference: `PAPER-UV-${++n}-${key('r')}`.slice(0, 40), original_time: new Date(Date.now() - 5 * 60_000).toISOString(),
+    lines: [{ item_id: dessert, quantity: 1, modifiers: [] }], already: 'served', reason: 'Card reader outage',
+  });
+  const catVersion = () => srv.sql<{ version: number }>('SELECT version FROM menu_categories WHERE id = ?', [T.categories.dessert])[0].version;
+  const setSoldOut = (soldOut: boolean) => manager.post(`/api/staff/menu/items/${dessert}/availability`, { sold_out: soldOut, version: itemVersion(dessert) });
+  const setPaused = (paused: boolean) => manager.patch(`/api/staff/menu/categories/${T.categories.dessert}`, { ordering_paused: paused, version: catVersion() });
+  const refused = async (why: string) => {
+    const r = await recover();
+    assert.equal(r.status, 409, `${why}: ${JSON.stringify(r.body)}`);
+    assert.equal(r.body.error.code, 'cart_changed');
+    assert.equal(orderCount(visit.id), 0, why);
+  };
+  try {
+    await refused('unverified');
+    assert.equal((await setPaused(true)).status, 200);
+    await refused('unverified in a paused category');
+    assert.equal((await setSoldOut(true)).status, 200);
+    await refused('unverified, sold out and paused');
+    assert.equal((await setPaused(false)).status, 200);
+    await refused('unverified and sold out');
+
+    // Verified, the same dish may be recorded from paper while sold out and paused (D-25).
+    const verified = await owner.post(`/api/staff/menu/items/${dessert}/review`, { review_status: 'verified', version: itemVersion(dessert) });
+    assert.equal(verified.status, 200, JSON.stringify(verified.body));
+    assert.equal((await setPaused(true)).status, 200);
+    const ok = await recover();
+    assert.equal(ok.status, 201, JSON.stringify(ok.body));
+    assert.equal(ok.body.order.subtotal_minor, 18_000);
+
+    // A price change awaiting approval puts the dish back to review: refused again.
+    const repriced = await manager.patch(`/api/staff/menu/items/${dessert}`, { price_minor: 19_000, price_change_reason: 'New supplier', version: itemVersion(dessert) });
+    assert.equal(repriced.status, 200, JSON.stringify(repriced.body));
+    assert.notEqual(repriced.body.review_status, 'verified');
+    const again = await recover();
+    assert.equal(again.status, 409, JSON.stringify(again.body));
+    assert.equal(orderCount(visit.id), 1);
+  } finally {
+    if (srv.sql<{ p: number }>('SELECT ordering_paused AS p FROM menu_categories WHERE id = ?', [T.categories.dessert])[0].p) await setPaused(false);
+    if (srv.sql<{ s: number }>('SELECT sold_out AS s FROM menu_items WHERE id = ?', [dessert])[0].s) await setSoldOut(false);
+    await manager.patch(`/api/staff/menu/items/${dessert}`, { price_minor: 18_000, price_change_reason: 'Test restore', version: itemVersion(dessert) });
+    await owner.post(`/api/staff/menu/items/${dessert}/review`, { review_status: 'unverified', version: itemVersion(dessert) });
+  }
+});
+
+test('a paper order cannot be dated before the previous party at the table checked out (D-S8-15)', async () => {
+  const first = await newParty();
+  const closed = await (await srv.staff('cashier')).post(`/api/staff/visits/${first.visit.id}/checkout`, { idempotency_key: key('co') });
+  assert.equal(closed.status, 200, JSON.stringify(closed.body));
+  const closedAt = srv.sql<{ closed_at: string }>('SELECT closed_at FROM visits WHERE id = ?', [first.visit.id])[0].closed_at;
+  const next = await srv.openVisit(first.tableId);
+  const recover = (ref: string, at: number) => manager.post('/api/staff/orders/recover', {
+    visit_id: next.id, manual_reference: ref, original_time: new Date(at).toISOString(),
+    lines: [soup()], already: 'none', reason: 'Tablet was down',
+  });
+  const early = await recover(`PAPER-EARLY-${key('e')}`.slice(0, 40), Date.parse(closedAt) - 20 * 60_000);
+  assert.equal(early.status, 422, JSON.stringify(early.body));
+  assert.equal(early.body.error.details.issues[0].message, 'before_previous_party');
+  assert.equal(orderCount(next.id), 0);
+  // Taken after the previous party left - even if before this visit was opened in the system - is fine.
+  const fine = await recover(`PAPER-LATE-${key('l')}`.slice(0, 40), Date.parse(closedAt) + 1000);
+  assert.equal(fine.status, 201, JSON.stringify(fine.body));
+});
+
+test('a category or dish can say "preparing" instead of "cooking", and each order line keeps what it was given (D-S8-18)', async () => {
+  const { visit, guest } = await newParty();
+  const catVersion = () => srv.sql<{ version: number }>('SELECT version FROM menu_categories WHERE id = ?', [T.categories.grill])[0].version;
+  const lineKind = (orderId: string) => srv.sql<{ item_id: string; prep_kind: string }>('SELECT item_id, prep_kind FROM order_lines WHERE order_id = ? ORDER BY line_no', [orderId]).map((r) => r.prep_kind);
+  try {
+    const before = await submit(guest, key('pk'), [soup()], 15_000);
+    assert.equal(before.status, 201);
+    assert.deepEqual(lineKind(before.body.order.id), ['cook']);
+
+    const cat = await manager.patch(`/api/staff/menu/categories/${T.categories.grill}`, { prep_kind: 'prepare', version: catVersion() });
+    assert.equal(cat.status, 200, JSON.stringify(cat.body));
+    assert.equal(cat.body.categories.find((c: any) => c.id === T.categories.grill).prep_kind, 'prepare');
+    const item = await manager.patch(`/api/staff/menu/items/${T.items.steak}`, { prep_kind: 'cook', version: itemVersion(T.items.steak) });
+    assert.equal(item.status, 200, JSON.stringify(item.body));
+    assert.deepEqual([item.body.prep_kind_override, item.body.prep_kind], ['cook', 'cook']);
+
+    const after = await submit(guest, key('pk'), [soup(), steak([rare], [])], 74_000);
+    assert.equal(after.status, 201, JSON.stringify(after.body));
+    assert.deepEqual(lineKind(after.body.order.id), ['prepare', 'cook']);
+    assert.deepEqual(lineKind(before.body.order.id), ['cook'], 'an earlier round keeps its wording');
+    const bad = await manager.patch(`/api/staff/menu/items/${T.items.soup}`, { prep_kind: 'bake', version: itemVersion(T.items.soup) });
+    assert.equal(bad.status, 422);
+  } finally {
+    await manager.patch(`/api/staff/menu/categories/${T.categories.grill}`, { prep_kind: null, version: catVersion() });
+    await manager.patch(`/api/staff/menu/items/${T.items.steak}`, { prep_kind: null, version: itemVersion(T.items.steak) });
+  }
+  assert.equal(orderCount(visit.id), 2);
+});
+
 // ------------------------------------------------------------------ scenario 7 (runs last: it edits the shared catalog)
 test('scenario 7: catalog changes after a cart is prepared return cart_changed on the exact lines, then the re-reviewed cart is priced right', async () => {
   // A round placed before any change keeps its accepted snapshot.

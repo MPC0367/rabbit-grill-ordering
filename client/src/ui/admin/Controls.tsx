@@ -4,7 +4,7 @@
 import { forwardRef, useId, type ChangeEvent, type HTMLAttributes, type ReactNode } from 'react';
 import { useI18n } from '../../lib/i18n.tsx';
 import { IconButton } from '../Button.tsx';
-import { cx, Ico, roveIndex, roveKeys, safeId, type AdminIconName } from './parts.tsx';
+import { cx, Ico, roveBlur, roveIndex, roveKeys, safeId, type AdminIconName } from './parts.tsx';
 
 export type TableSwatch = 'avail' | 'dining' | 'bill' | 'off';
 
@@ -29,7 +29,7 @@ export interface FilterChipsProps<V extends string> extends Omit<HTMLAttributes<
 export function FilterChips<V extends string>({ options, value, onChange, label, className, ...rest }: FilterChipsProps<V>) {
   const active = options.findIndex((o) => o.value === value);
   return (
-    <div {...rest} className={cx('fchips', className)} role="group" aria-label={label} onKeyDown={(e) => roveKeys(e)}>
+    <div {...rest} className={cx('fchips', className)} role="group" aria-label={label} onKeyDown={(e) => roveKeys(e)} onBlur={roveBlur}>
       {options.map((o, i) => (
         <button
           key={o.value}

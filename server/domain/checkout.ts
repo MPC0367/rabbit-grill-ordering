@@ -15,6 +15,7 @@ import { AppError, staleVersion } from '../lib/errors.ts';
 import { audit } from '../lib/audit.ts';
 import { emit } from '../lib/events.ts';
 import { cutoffHour } from '../lib/settings.ts';
+import { touchReportData } from '../lib/reportdata.ts';
 import type { StaffContext } from '../lib/auth.ts';
 import { getVisit, type VisitRow } from './guards.ts';
 import {
@@ -23,6 +24,7 @@ import {
 import { closeRequestsForCheckout, openRequestCount } from './service.ts';
 import { cancelPortionsForCheckout, openPortionCount } from './portions.ts';
 import { revokeVisitAccess } from './visits.ts';
+import { resolveUnservedForCheckout } from './fulfillment.ts';
 import { tableTile } from './tables.ts';
 
 /** Codes that stop checkout unless a manager records an exception. */
@@ -161,6 +163,9 @@ export function completeCheckout(visitId: string, input: z.infer<typeof Checkout
     exception = reason;
   }
 
+  // An exception close resolves the dishes that never came: rejected or cancelled with the reason.
+  const resolvedLines = exception && state.unresolved_lines.length ? resolveUnservedForCheckout(visit.id, `Closed by manager exception: ${exception}`, staff) : 0;
+
   const now = nowIso();
   const closeDate = businessDate(now, cutoffHour());
 
@@ -169,6 +174,7 @@ export function completeCheckout(visitId: string, input: z.infer<typeof Checkout
   const zeroBillSettled = state.current?.status === 'payable' && state.current.total_minor === 0;
   if (zeroBillSettled) {
     run(`UPDATE bill_revisions SET status = 'settled' WHERE id = ? AND status = 'payable'`, [state.current!.id]);
+    if (state.current!.business_date !== businessDate(now, cutoffHour())) touchReportData(state.current!.business_date);
     const bill = ensureBill(visit.id);
     if (!updateVersioned('bills', bill.id, bill.version, { status: 'settled', updated_at: now })) staleVersion();
     emit('bill.updated', { audience: 'all', visit_id: visit.id, entity: { type: 'bill', id: bill.id, version: bill.version + 1 }, payload: { paid: true } });
@@ -200,7 +206,7 @@ export function completeCheckout(visitId: string, input: z.infer<typeof Checkout
     before: { status: visit.status },
     after: {
       status: 'closed', close_business_date: closeDate, exception: exception !== null,
-      amount_due_minor: state.amount_due_minor, zero_bill_settled: zeroBillSettled,
+      amount_due_minor: state.amount_due_minor, zero_bill_settled: zeroBillSettled, lines_resolved: resolvedLines,
     },
   });
   if (exception) {

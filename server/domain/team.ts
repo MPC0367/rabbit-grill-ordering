@@ -19,6 +19,7 @@ import { audit } from '../lib/audit.ts';
 import { hashPassword, verifyPassword, type StaffContext, type StaffUserRow } from '../lib/auth.ts';
 import { AppError, staleVersion } from '../lib/errors.ts';
 import { hit, LIMITS } from '../lib/ratelimit.ts';
+import { pokeStreams } from '../lib/events.ts';
 
 export function teamUserDTO(u: StaffUserRow): StaffUserDTO {
   return {
@@ -62,10 +63,13 @@ function checkPasswordQuality(password: string, user: { username: string; displa
 }
 
 export function revokeSessions(userId: string, opts: { keepSessionId?: string } = {}): number {
-  return run(
+  const n = run(
     `UPDATE staff_sessions SET revoked_at = :now WHERE user_id = :id AND revoked_at IS NULL AND id <> :keep`,
     { id: userId, now: nowIso(), keep: opts.keepSessionId ?? '' },
   ).changes;
+  // Open live streams of those sessions end now, not at their next 15-second check.
+  pokeStreams();
+  return n;
 }
 
 function otherActiveOwners(userId: string): number {
@@ -139,7 +143,7 @@ export function setStaffPassword(id: string, input: z.infer<typeof SetPasswordBo
   const user = getUser(id);
   const self = user.id === staff.user.id;
   if (self) {
-    hit(`password-change:${user.id}`, LIMITS.loginPerUser);
+    hit(`password-change:${user.id}`, LIMITS.loginPerUserAddress);
     if (!input.current_password || !verifyPassword(input.current_password, user.password_hash)) {
       throw validationIssue('current_password', 'Your current password is not correct.');
     }

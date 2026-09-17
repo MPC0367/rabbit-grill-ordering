@@ -1,10 +1,12 @@
 // Workspace header (DESIGN.md §8.2, §10.30): Cormorant italic title, routed
 // underline subtabs, Demo data stamp, and a right cluster with slots for the
 // connection pill, the guest-ordering control and the staff identity.
-import { forwardRef, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react';
+import { forwardRef, useRef, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react';
 import { linkHandler } from '../../lib/router.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { Badge } from '../Badge.tsx';
+import { mergeRefs } from '../cx.ts';
+import { usePinnedEdge } from '../hooks.ts';
 import { cx, Ico, initials } from './parts.tsx';
 
 export interface SubTabItem {
@@ -75,8 +77,11 @@ export const WorkspaceHeader = forwardRef<HTMLElement, WorkspaceHeaderProps>(fun
   ref,
 ) {
   const { t } = useI18n();
+  const own = useRef<HTMLElement | null>(null);
+  // Focus moving up a workspace stops below this sticky header.
+  usePinnedEdge(own, 'top');
   return (
-    <header ref={ref} {...rest} className={cx('wshead-cq', className)}>
+    <header ref={mergeRefs(ref, own)} {...rest} className={cx('wshead-cq', className)}>
       {/* The inner row is the styled header; the outer element is sticky and a size container,
           so long texts give way when the workspace is narrow, whatever the viewport. */}
       <div className={cx('wshead', compact && 'wshead--compact')}>

@@ -39,26 +39,24 @@ export function ConnectionIndicator({ variant = 'staff', state, lastSyncAt, stal
       ? (last ? t('conn.synced', { time: clockSeconds(last) }) : null)
       : s === 'ended' ? null
         : last ? t('conn.lastSync', { time: clock(last) }) : t('conn.neverSynced');
+    // Only the state word is a live region: the synced time changes with every
+    // restaurant-wide event and must not be re-announced on each one.
     return (
-      <span role="status" className={cx('conn', tone, className)} data-state={s}>
-        {word}
-        {detail ? <span>{detail}</span> : null}
+      <span className={cx('conn', tone, className)} data-state={s}>
+        <span className="conn__state" role="status">{word}</span>
+        {detail ? <span className="conn__detail">{detail}</span> : null}
       </span>
     );
   }
 
   if (variant === 'track') {
-    if (s === 'live' && !stale) {
-      return (
-        <Pill tone="ok" live role="status" className={className} data-state={s}>
-          {t('conn.liveGuest')}
-          {last ? <span className="pill__soft"> · {t('conn.lastSync', { time: clock(last) })}</span> : null}
-        </Pill>
-      );
-    }
+    const fresh = s === 'live' && !stale;
+    // One persistent status element whose words change only with the state;
+    // the minute of the last update is plain text beside it.
     return (
-      <Pill tone="heat" icon="clock" role="status" className={className} data-state={s}>
-        {last ? t('conn.dataAt', { time: clock(last) }) : t('conn.stale')}
+      <Pill tone={fresh ? 'ok' : 'heat'} live={fresh} icon={fresh ? undefined : 'clock'} className={className} data-state={s}>
+        <span role="status">{fresh ? t('conn.liveGuest') : last ? t('conn.dataAt', { time: clock(last) }) : t('conn.stale')}</span>
+        {fresh && last ? <span className="pill__soft"> · {t('conn.lastSync', { time: clock(last) })}</span> : null}
       </Pill>
     );
   }

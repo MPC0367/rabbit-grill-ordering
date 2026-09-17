@@ -9,13 +9,35 @@ import { useI18n } from '../../../lib/i18n.tsx';
 import {
   Ticket, type BoardStage, type TicketAction, type TicketChip, type TicketFlagSpec, type TicketLineData,
 } from '../../../ui/index.ts';
-import { LATE_AFTER_MINUTES, minutesSince, staffName, sumQty, tn } from '../support.ts';
-import { lastStep, readySince, stageLines, STAGE_ACTION, tableOf, type Placement } from './model.ts';
+import { LATE_AFTER_MINUTES, minutesSince, staffName, sumQty, textLang, tn } from '../support.ts';
+import { lastStep, readyPartOf, readySince, stageLines, STAGE_ACTION, tableOf, type Placement } from './model.ts';
 
 type Pick = ReturnType<typeof useI18n>['pick'];
 type T = ReturnType<typeof useI18n>['t'];
 
 const DONENESS = /doneness|ความสุก/i;
+
+/** Staff-confirmation snapshot on a line, once the server sends it (D-FX-OPS-02). */
+type ConfirmFields = { requires_staff_confirm?: boolean; alcohol?: boolean };
+
+/** The server snapshots the staff-confirmation flag on every line. */
+export function linesCarryConfirm(lines: readonly OrderLineDTO[]): boolean {
+  return lines.every((l) => typeof (l as OrderLineDTO & ConfirmFields).requires_staff_confirm === 'boolean');
+}
+
+/**
+ * How a line shows staff confirmation. With the line snapshot: alcohol lines
+ * that need it get the kit's "Alcohol · staff to confirm" row, other flagged
+ * dishes a "Staff to confirm" chip, and nothing when the owner turned it off.
+ * Older payloads fall back to the live menu's alcohol flag.
+ */
+export function staffConfirmOf(l: OrderLineDTO, alcoholItems: ReadonlySet<string>): { alcohol: boolean; chip: boolean } {
+  const f = l as OrderLineDTO & ConfirmFields;
+  if (typeof f.requires_staff_confirm !== 'boolean') return { alcohol: alcoholItems.has(l.item_id), chip: false };
+  if (!f.requires_staff_confirm) return { alcohol: false, chip: false };
+  const isAlcohol = f.alcohol ?? alcoholItems.has(l.item_id);
+  return { alcohol: isAlcohol, chip: !isAlcohol };
+}
 
 function lineChips(l: OrderLineDTO, pick: Pick, extra: TicketChip[]): TicketChip[] {
   const chips: TicketChip[] = [];
@@ -44,11 +66,12 @@ function lineChips(l: OrderLineDTO, pick: Pick, extra: TicketChip[]): TicketChip
 
 export function toTicketLine(
   l: OrderLineDTO,
-  opts: { t: T; pick: Pick; lang: string; showMoney: boolean; alcohol: boolean; allergyChip: boolean; confirmedAt?: string },
+  opts: { t: T; pick: Pick; lang: string; showMoney: boolean; alcohol: boolean; confirmChip?: boolean; allergyChip: boolean; confirmedAt?: string },
 ): TicketLineData {
   const n = staffName(l.name);
   const last = lastStep(l);
   const extra: TicketChip[] = opts.allergyChip ? [{ label: opts.t('orders.line.allergyChip'), lang: opts.lang }] : [];
+  if (opts.confirmChip) extra.push({ label: opts.t('orders.line.staffConfirm'), lang: opts.lang });
   let weight: TicketLineData['weight'];
   if (l.measured_grams !== null) {
     const g = grams(l.measured_grams, opts.lang === 'th' ? 'th' : 'en');
@@ -67,7 +90,7 @@ export function toTicketLine(
     alcohol: opts.alcohol,
     // The allergy words already lead the ticket in the band; other notes stay on their dish.
     note: l.allergy_flag ? undefined : l.note ?? undefined,
-    noteLang: undefined,
+    noteLang: l.note ? textLang(l.note) : undefined,
     status: l.status,
     statusAt: last ? clock(last.at) : undefined,
     actor: last?.actor ?? undefined,
@@ -105,12 +128,16 @@ function OrderTicketInner({
   const allergyText = [...new Set(allergyLines.map((l) => l.note!.trim()))].join(' · ');
   const activeCount = lines.filter((l) => l.status !== 'rejected' && l.status !== 'cancelled').length;
   const confirmedAt = order.source === 'portion_quote' && !order.staff_name ? clock(order.submitted_at) : undefined;
-  const ticketLines = lines.map((l) => toTicketLine(l, {
-    t, pick, lang, showMoney,
-    alcohol: alcoholItems.has(l.item_id),
-    allergyChip: l.allergy_flag && activeCount > 1,
-    confirmedAt: l.measured_grams !== null ? confirmedAt : undefined,
-  }));
+  const ticketLines = lines.map((l) => {
+    const confirm = staffConfirmOf(l, alcoholItems);
+    return toTicketLine(l, {
+      t, pick, lang, showMoney,
+      alcohol: confirm.alcohol,
+      confirmChip: confirm.chip,
+      allergyChip: l.allergy_flag && activeCount > 1,
+      confirmedAt: l.measured_grams !== null ? confirmedAt : undefined,
+    });
+  });
 
   const stage: LineStatus = placement === 'void'
     ? (lines.every((l) => l.status === 'rejected') ? 'rejected' : 'cancelled')
@@ -118,6 +145,10 @@ function OrderTicketInner({
   const readyAt = placement === 'ready' ? readySince(lines) : null;
   const wait = readyAt ? minutesSince(readyAt, now) : minutesSince(order.submitted_at, now);
   const finished = placement === 'served' || placement === 'void';
+  // The kit's own late flag ("Longer than usual · over 20 min") wraps in a 216 px column: a short one on one line.
+  const lateFlag: TicketFlagSpec | null = !finished && placement !== 'ready' && wait > LATE_AFTER_MINUTES && !flags.some((f) => f.kind === 'late')
+    ? { kind: 'late', label: t('orders.flag.late', { n: LATE_AFTER_MINUTES }) }
+    : null;
 
   let primary: TicketAction | null = null;
   let secondary: TicketAction | null = null;
@@ -126,6 +157,22 @@ function OrderTicketInner({
     const spec = STAGE_ACTION[stageKey];
     const targets = stageLines(lines, stageKey);
     const count = sumQty(targets);
+    // Dishes already at the pass on a round that sits in an earlier column:
+    // serving them is one tap from the card (D-FX-OPS-01).
+    const readyPart = readyPartOf(lines, placement);
+    const readyCount = sumQty(readyPart);
+    const serveReady: TicketAction | null = readyPart.length > 0 && can('orders.serve')
+      ? {
+          label: t('orders.act.serveReady'),
+          count: readyCount,
+          icon: 'check',
+          busy: busy === 'secondary',
+          disabled: busy !== null,
+          ariaLabel: tn({ t, has }, 'orders.act.aria', readyCount, { action: t('orders.act.serveReadyAria'), table: tableOf(order) }),
+          onClick: () => onAdvance(order, readyPart, 'served', 'secondary'),
+        }
+      : null;
+    secondary = serveReady;
     if (can(spec.permission)) {
       primary = {
         label: t(spec.label),
@@ -136,7 +183,8 @@ function OrderTicketInner({
         ariaLabel: tn({ t, has }, 'orders.act.aria', count, { action: t(spec.label), table: tableOf(order) }),
         onClick: () => onAdvance(order, targets, spec.to, 'primary'),
       };
-      if (stageKey === 'preparing') {
+      // Almost done is optional: food waiting at the pass takes its place (the ⋯ panel still has it).
+      if (stageKey === 'preparing' && !serveReady) {
         secondary = {
           label: t('orders.act.almost'),
           count,
@@ -169,15 +217,19 @@ function OrderTicketInner({
       waitMinutes={finished ? null : wait}
       lateAfterMinutes={placement === 'ready' || finished ? null : LATE_AFTER_MINUTES}
       stage={stage}
-      flags={flags}
-      allergy={allergyText ? { text: allergyText } : null}
+      flags={lateFlag ? [lateFlag, ...flags] : flags}
+      allergy={allergyText ? { text: allergyText, lang: textLang(allergyText) } : null}
       lines={ticketLines}
       lineStatus={finished ? 'always' : 'auto'}
       isNew={placement === 'submitted'}
       primary={primary}
       secondary={secondary}
       onMore={() => onMore(order)}
-      moreLabel={placement === 'submitted' ? t('common.ticket.detailsReject') : t('common.ticket.details')}
+      moreLabel={t('orders.ticket.moreAria', {
+        label: placement === 'submitted' ? t('common.ticket.detailsReject') : t('common.ticket.details'),
+        table: tableOf(order),
+        round: order.round_no,
+      })}
       conflict={conflict ? { by: conflict.by, at: clock(conflict.at), onReview: () => onReview(order.id) } : null}
     />
   );

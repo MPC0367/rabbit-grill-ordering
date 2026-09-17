@@ -4,15 +4,16 @@
 // its routed subtabs, the Demo data stamp, the connection pill, the guest
 // ordering control and the staff identity.
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import type { OverviewDTO, StaffMeDTO } from '../../../../shared/dto.ts';
 import type { Locale } from '../../../../shared/settings.ts';
 import { TIMEZONE, todayBusinessDate } from '../../../../shared/time.ts';
-import { dateLabel } from '../../lib/format.ts';
+import { clock, dateLabel } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useLive, type WireEvent } from '../../lib/live.tsx';
 import { useRoute } from '../../lib/router.ts';
 import { useNow } from '../../lib/store.ts';
 import {
-  AdminRail, announce, Banner, ConnectionIndicator, RailFooter, RailNav, SubTabs, useToast, WorkspaceHeader,
+  AdminRail, announce, Banner, Button, ConnectionIndicator, RailFooter, RailNav, SubTabs, useToast, WorkspaceHeader,
   type RailItem, type SubTabItem,
 } from '../../ui/index.ts';
 import { useAttention } from './attention.tsx';
@@ -21,8 +22,27 @@ import { useLayoutMode } from './layout-mode.ts';
 import { HeaderOrderingControl, PausedBanner, useOrderingActions } from './ordering.tsx';
 import { DESTINATIONS, destHref, savedStart, setSavedStart, visibleTabs, type AreaId } from './routes.tsx';
 import { useSessionState, useStaff } from './session.tsx';
-import { useAlertSound, useOrderAlerts, type AlertKind } from './sound.ts';
+import { applySoundDefault, useAlertSound, useOrderAlerts, type AlertKind } from './sound.ts';
 import './shell.css';
+
+/**
+ * Cuts waiting for the scale. Prefers the server's `portions_to_weigh`
+ * (requested ones only: a quoted cut waits on the guest) and falls back to
+ * every open portion request, which is what the Requests tab lists.
+ */
+function portionsToWeigh(d: OverviewDTO | undefined): number {
+  if (!d) return 0;
+  const exact = (d as OverviewDTO & { portions_to_weigh?: number }).portions_to_weigh;
+  return typeof exact === 'number' ? exact : d.open_portion_requests;
+}
+
+/** settings.notifications.sound_default, once /api/staff/auth/me carries it. */
+function soundDefaultOf(me: StaffMeDTO): boolean | null {
+  const m = me as StaffMeDTO & { sound_default?: boolean; notifications?: { sound_default?: boolean } };
+  if (typeof m.sound_default === 'boolean') return m.sound_default;
+  if (typeof m.notifications?.sound_default === 'boolean') return m.notifications.sound_default;
+  return null;
+}
 
 export interface AdminLayoutProps {
   /** Destination the page belongs to (null: not found). */
@@ -52,14 +72,19 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
   const data = attention.data;
 
   // ------------------------------------------------------------ attention counts
-  const handlesRequests = can('service.handle');
+  // The Requests tab lists table requests (service.handle) and cuts to weigh
+  // (portions.quote): its count and the Orders badge include whichever queues
+  // this role works, so a kitchen tablet sees a Prime Rib waiting to be weighed.
   const rounds = data?.unaccepted_rounds ?? 0;
-  const requests = handlesRequests ? (data?.open_requests ?? 0) : 0;
+  const serviceOpen = can('service.handle') ? (data?.open_requests ?? 0) : 0;
+  const cuts = can('portions.quote') ? portionsToWeigh(data) : 0;
+  const requests = serviceOpen + cuts;
   const badge = rounds + requests;
-  const badgeWords = [
-    rounds ? t('admin.badge.rounds', { n: rounds }) : null,
-    requests ? t('admin.badge.requests', { n: requests }) : null,
+  const requestWords = [
+    serviceOpen ? t('admin.badge.requests', { n: serviceOpen }) : null,
+    cuts ? t('admin.badge.cuts', { n: cuts }) : null,
   ].filter(Boolean).join(', ');
+  const badgeWords = [rounds ? t('admin.badge.rounds', { n: rounds }) : null, requestWords || null].filter(Boolean).join(', ');
 
   const navItems = useMemo<RailItem[]>(() => DESTINATIONS.flatMap((d) => {
     const href = destHref(d, canAny);
@@ -84,9 +109,9 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
       href: tb.href,
       current: tb.id === tab,
       count: dest.id === 'orders' && tb.id === 'requests' ? requests : undefined,
-      countLabel: dest.id === 'orders' && tb.id === 'requests' ? t('admin.badge.requests', { n: requests }) : undefined,
+      countLabel: dest.id === 'orders' && tb.id === 'requests' ? requestWords : undefined,
     }));
-  }, [dest, canAny, t, tab, requests]);
+  }, [dest, canAny, t, tab, requests, requestWords]);
   const showTabs = tabs.length > 1;
 
   const title = area === 'overview' ? t('admin.dest.overview') : dest ? t(dest.label) : t('admin.notFound.header');
@@ -116,6 +141,37 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
     announce(words, 'polite');
   }, [onOrdersPage, t]);
   useOrderAlerts({ can, serverTime: data?.server_time, onAlert });
+
+  // The owner's default for devices that never chose (sent with /me once the server provides it).
+  const ownerSoundDefault = soundDefaultOf(me);
+  useEffect(() => { if (ownerSoundDefault !== null) applySoundDefault(ownerSoundDefault); }, [ownerSoundDefault]);
+  // Alerts are on but the browser has not let audio start (a reload nobody touched since).
+  const soundPaused = sound.enabled && sound.supported && !sound.unlocked;
+  const resumeSound = useCallback(() => {
+    void sound.resume().then((ok) => {
+      toast.show(ok ? { message: t('admin.sound.resumed'), tone: 'info' } : { message: t('admin.sound.unavailable'), tone: 'error' });
+    });
+  }, [sound, toast, t]);
+
+  // ------------------------------------------------------------ server unreachable (brief 30)
+  // Trouble starts when the stream drops (it only says "reconnecting" while the
+  // network is up) or when the shell's own overview read fails for want of a
+  // server (a hung server or a proxy can keep the stream looking live; the
+  // overview is re-read every 30 s). After 10 s the server is probed again;
+  // when that fails too, every page says so and gives the paper procedure.
+  const troubled = live.state === 'reconnecting' || live.state === 'offline' || Boolean(attention.error?.ambiguous);
+  const [trouble, setTrouble] = useState<{ since: number; long: boolean } | null>(null);
+  const probe = useRef(attention.refresh);
+  probe.current = attention.refresh;
+  useEffect(() => {
+    if (!troubled) { setTrouble(null); return; }
+    const since = Date.now();
+    setTrouble({ since, long: false });
+    const first = setTimeout(() => { setTrouble({ since, long: true }); void probe.current(); }, 10_000);
+    const every = setInterval(() => { void probe.current(); }, 15_000);
+    return () => { clearTimeout(first); clearInterval(every); };
+  }, [troubled]);
+  const unreachable = Boolean(trouble?.long) && (live.state === 'offline' || Boolean(attention.error?.ambiguous));
 
   const testSound = useCallback(() => {
     void sound.testNow().then((ok) => {
@@ -205,8 +261,31 @@ export function AdminLayout({ area, tab, pageKey, pageTitle, startable, children
           <SubTabs className="subtabs--bar ashell__tabs" items={tabs} label={t('admin.tabsLabel', { title })} />
         ) : null}
         <div className="ashell__banners">
-          {live.state === 'offline' ? (
+          {unreachable && trouble ? (
+            <Banner
+              variant="offline"
+              staff
+              title={t('admin.outage.title')}
+              action={<Button variant="outline" size="staff" icon="refresh" onClick={() => void attention.refresh()}>{t('admin.outage.retry')}</Button>}
+            >
+              {t('admin.outage.since', { time: clock(new Date(trouble.since).toISOString()) })}
+              {' · '}
+              {t('admin.outage.body')}
+            </Banner>
+          ) : live.state === 'offline' ? (
             <Banner variant="offline" staff title={t('admin.offline.title')}>{t('admin.offline.body')}</Banner>
+          ) : null}
+          {soundPaused ? (
+            <Banner
+              variant="warning"
+              staff
+              icon="sound"
+              className="ashell__soundoff"
+              title={t('admin.sound.paused')}
+              action={<Button variant="outline" size="staff" onClick={resumeSound}>{t('admin.sound.resume')}</Button>}
+            >
+              {t('admin.sound.pausedBody')}
+            </Banner>
           ) : null}
           <PausedBanner withAction={!showOrderingControl || !ordering.canChange} />
         </div>

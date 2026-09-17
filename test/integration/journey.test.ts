@@ -205,9 +205,18 @@ test('scenario 1: a T01 guest joins by QR + PIN, orders a customised steak, and 
   assert.equal(ticket.table_label, 'T01');
   assert.equal(ticket.guest_label, 'Guest 1');
   assert.equal(ticket.status, 'received');
-  assert.equal(ticket.subtotal_minor, 204000);
-  assert.deepEqual(ticket.lines.map((l) => l.modifiers), placed.lines.map((l) => l.modifiers));
+  // The kitchen role does not hold orders.view_bill_values: the server sends no amounts (D-S8-17).
+  assert.equal(ticket.money_hidden, true);
+  assert.equal(ticket.subtotal_minor, 0);
+  assert.deepEqual(ticket.lines.map((l) => l.modifiers.map((g) => g.options.map((o) => o.name.en))),
+    placed.lines.map((l) => l.modifiers.map((g) => g.options.map((o) => o.name.en))));
   assert.ok(ticket.oldest_unaccepted_at);
+  // The floor tablet (which may see prices) gets the full snapshot.
+  const floorBoard = await (await srv.staff('floor')).get<{ orders: StaffOrderDTO[] }>('/api/staff/orders?scope=active');
+  const floorTicket = floorBoard.body.orders.find((o) => o.id === placed.id)!;
+  assert.equal(floorTicket.money_hidden, undefined);
+  assert.equal(floorTicket.subtotal_minor, 204000);
+  assert.deepEqual(floorTicket.lines.map((l) => l.modifiers), placed.lines.map((l) => l.modifiers));
 
   // Milestones, each reflected on the guest tracker.
   const expectGuest = async (status: string, lineStatuses: string[]) => {

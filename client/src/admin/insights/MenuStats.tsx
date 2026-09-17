@@ -16,12 +16,13 @@ import {
 import { ErrorPanel, LoadingBlock, PageBar, PeriodBar, useLiveResource, useSticky } from './parts.tsx';
 import {
   MEASURES, periodParams, pushQuery, queryString, readCategory, readDirection, readMeasure, readPeriod, readTop,
-  replaceQuery, contains, elapsedEquivalent, today, type Measure, type TopN,
+  replaceQuery, contains, elapsedEquivalent, resolveRange, today, type Measure, type TopN,
 } from './query.ts';
 import { rangeLabel, share, spanLabel, weightText } from './labels.ts';
 import { ItemDrawer } from './ItemDrawer.tsx';
 
 const TOPICS = ['order.', 'line.', 'menu.', 'portion.', 'report.'];
+const PAST_TOPICS = ['menu.', 'report.'];
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -72,7 +73,9 @@ export default function MenuStats({ includeFixture, headingId }: { includeFixtur
   const fx = includeFixture ? '1' : '0';
   const params = { ...periodParams(ps), category: group || whole ? null : category, direction, measure, include_fixture: fx };
   const path = `/api/staff/stats/menu${queryString(params)}`;
-  const ranking = useSticky<MenuStatsDTO>(path, { topics: TOPICS, debounceMs: 2500 });
+  // A past period only changes through late corrections, which the server announces as report.* events.
+  const current = contains(resolveRange(ps, today()), today());
+  const ranking = useSticky<MenuStatsDTO>(path, { topics: current ? TOPICS : PAST_TOPICS, debounceMs: 2500 });
   const catalog = useLiveResource<AdminCatalogDTO>('/api/staff/menu', { topics: ['menu.'], debounceMs: 1000 });
 
   const maps = useMemo(() => {

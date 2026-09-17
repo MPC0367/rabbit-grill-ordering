@@ -15,7 +15,7 @@ import { money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import {
   AllergyNotice, Button, Checkbox, ChoiceGroup, DishImage, EmptyState, Flag, Icon, Leader, LiveRegion, Price,
-  RadioCard, Sheet, Skeleton, Stepper, Tag, TextArea, textLength, useToast,
+  RadioCard, Sheet, Skeleton, Stepper, Tag, TextArea, prefersReducedMotion, textLength, useToast,
 } from '../../ui/index.ts';
 import { useCatalog } from '../shell/catalog.tsx';
 import { useOverlays } from '../shell/overlays.tsx';
@@ -207,7 +207,7 @@ function ItemSheetBody({ item, line, lineUid, onClose }: { item: MenuItemDTO; li
   const focusProblem = (key: string) => {
     const el = key === 'note' ? document.getElementById(`${titleId}-note`) : legendRefs.current.get(key);
     if (!el) return;
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     el.focus({ preventScroll: true });
   };
 

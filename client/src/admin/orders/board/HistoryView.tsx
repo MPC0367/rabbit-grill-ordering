@@ -17,7 +17,7 @@ import { errorText, tn, todayDate } from '../support.ts';
 import { useBoardActions, type OrdersResponse } from './actions.ts';
 import { matchesQuery, placementOf } from './model.ts';
 import { OrderDetails } from './OrderDetails.tsx';
-import { OrderTicket } from './OrderTicket.tsx';
+import { linesCarryConfirm, OrderTicket } from './OrderTicket.tsx';
 
 type Outcome = 'all' | 'served' | 'open' | 'void';
 
@@ -32,7 +32,8 @@ export default function HistoryView() {
   const raw = query.get('date') ?? '';
   const date = ISO_DATE.test(raw) && raw <= today ? raw : today;
   const res = useResource<OrdersResponse>(`/api/staff/orders${qs({ scope: 'history', date, limit: 500 })}`, { topics: ['order.', 'line.'] });
-  const menu = useResource<CatalogDTO>('/api/public/menu', { topics: ['menu.'] });
+  const needMenu = Boolean(res.data) && !res.data!.orders.every((o) => linesCarryConfirm(o.lines));
+  const menu = useResource<CatalogDTO>(needMenu ? '/api/public/menu' : null, { topics: ['menu.'] });
   const alcoholItems = useMemo(() => new Set((menu.data?.items ?? []).filter((i) => i.alcohol).map((i) => i.id)), [menu.data]);
   const actions = useBoardActions(res);
   const [search, setSearch] = useState('');
@@ -79,6 +80,7 @@ export default function HistoryView() {
       <div className="toolbar-cq">
         <div className="toolbar" role="group" aria-label={t('orders.history.filters')}>
           <FilterChips<Outcome>
+            className="ob-histchips"
             label={t('orders.history.outcome')}
             value={outcome}
             onChange={setOutcome}

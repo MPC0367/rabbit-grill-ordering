@@ -89,6 +89,8 @@ export interface SendResult {
   request: ServiceRequestDTO | null;
   /** The server returned a request that was already waiting. */
   existing: boolean;
+  /** That waiting request had already been seen by staff. */
+  seen: boolean;
 }
 
 export function useServiceRequests(visitId: string | null) {
@@ -127,7 +129,7 @@ export function useServiceRequests(visitId: string | null) {
         await api.post<GuestBillDTO>('/api/guest/bill/request', { idempotency_key: attemptKey(scope) });
         settleUnlessAmbiguous(scope, null);
         await r.refresh();
-        return { request: null, existing: had !== null };
+        return { request: null, existing: had !== null, seen: had?.status === 'acknowledged' };
       }
       const body: Record<string, unknown> = { type, idempotency_key: attemptKey(scope) };
       if (note && note.trim()) body.note = note.trim();
@@ -136,7 +138,8 @@ export function useServiceRequests(visitId: string | null) {
       settleUnlessAmbiguous(scope, null);
       upsert(req);
       void r.refresh();
-      return { request: req, existing: had !== null && had.id === req.id };
+      const existing = had !== null && had.id === req.id;
+      return { request: req, existing, seen: existing && req.status === 'acknowledged' };
     } catch (err) {
       settleUnlessAmbiguous(scope, err);
       failure(err);

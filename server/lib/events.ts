@@ -64,6 +64,15 @@ export function emit(
     payload: JSON.stringify(opts.payload ?? {}),
     created_at: nowIso(),
   });
+  pokeStreams();
+}
+
+/**
+ * Wake every open stream once the current transaction commits, so each
+ * re-checks its access and reads new rows now rather than within 15 s.
+ * emit() does this; session revocation calls it directly.
+ */
+export function pokeStreams(): void {
   afterCommit(() => {
     if (pokeScheduled) return;
     pokeScheduled = true;
@@ -91,8 +100,15 @@ export function latestEventId(): number {
   return one<{ id: number | null }>('SELECT MAX(id) AS id FROM events')?.id ?? 0;
 }
 
+/**
+ * `stillValid` is re-checked before every read: a stream ends (event
+ * `access`, state `ended`) as soon as its session is revoked, the account is
+ * deactivated or - for staff - the permissions the stream was filtered with
+ * change. Staff streams say which: `ended` (sign in again) or `changed`
+ * (reconnect to get the new topic filter).
+ */
 type Filter =
-  | { kind: 'staff'; hiddenTopics: string[] }
+  | { kind: 'staff'; hiddenTopics: string[]; stillValid?: () => boolean; endState?: () => 'ended' | 'changed' }
   | { kind: 'guest'; visitId: string; stillValid: () => boolean };
 
 function fetchSince(filter: Filter, cursor: number, limit = 200): EventRow[] {
@@ -154,8 +170,10 @@ export function sseStream(c: Context, filter: Filter): Response {
 
     let lastBeat = Date.now();
     while (!closed) {
-      if (filter.kind === 'guest' && !filter.stillValid()) {
-        await stream.writeSSE({ event: 'access', data: JSON.stringify({ state: 'ended' }) });
+      if (filter.stillValid && !filter.stillValid()) {
+        // 'changed': still signed in, but with other permissions - reconnect for the new topic filter.
+        const state = filter.kind === 'staff' && filter.endState ? filter.endState() : 'ended';
+        await stream.writeSSE({ event: 'access', data: JSON.stringify({ state }) });
         break;
       }
       let rows = fetchSince(filter, cursor);

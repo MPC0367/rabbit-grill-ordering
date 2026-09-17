@@ -18,7 +18,7 @@ import {
   ErrorPanel, Legend, PageBar, PeriodBar, exactRange, periodPhrase, useLiveResource, useSticky, type Sticky,
 } from './parts.tsx';
 import {
-  METRICS, contains, periodParams, pushQuery, queryString, readMetric, readPeriod, replaceQuery, resolveRange,
+  METRICS, contains, learnBusinessDate, periodParams, pushQuery, queryString, readMetric, readPeriod, replaceQuery, resolveRange,
   today, nowMs, type PeriodState,
 } from './query.ts';
 import { dayMonth, dayShort, durationParts, fullDate, monthShort, monthYear, signed, signedPct, spanLabel, spokenDate, weekdaySpan } from './labels.ts';
@@ -31,6 +31,11 @@ export const METRIC_KEY: Record<OrderMetric, string> = {
 };
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
+
+/** Nothing was recorded in this period: every bucket is before records began or still ahead (brief 37: not a real zero). */
+function hasNoRecords(data: Pick<OrderStatsDTO, 'buckets' | 'first_operating_date'>): boolean {
+  return data.first_operating_date === null || data.buckets.every((b) => b.state === 'missing' || b.state === 'future');
+}
 
 function selectableKey(b: DayBucketDTO): boolean {
   return b.state === 'complete' || b.state === 'partial';
@@ -55,14 +60,17 @@ export default function OrderStats({ includeFixture, headingId }: { includeFixtu
   const ps = readPeriod(query);
   const metric = readMetric(query);
   const mk = METRIC_KEY[metric];
-  const now = today();
-  const range = resolveRange(ps, now);
-  const current = contains(range, now);
   const fx = includeFixture ? '1' : '0';
   const path = `/api/staff/stats/orders${queryString({ metric, ...periodParams(ps), include_fixture: fx })}`;
-  const stats = useSticky<OrderStatsDTO>(path, { topics: TOPICS, debounceMs: 2000, intervalMs: current ? 60_000 : undefined });
+  const polling = contains(resolveRange(ps, today()), today());
+  const stats = useSticky<OrderStatsDTO>(path, { topics: TOPICS, debounceMs: 2000, intervalMs: polling ? 60_000 : undefined });
   const data = stats.shown;
   const fresh = stats.data;
+  // The server marks its own current business day as the partial bucket (its cutoff hour applies).
+  const serverDay = fresh && fresh.period !== 'year' ? fresh.buckets.find((b) => b.state === 'partial')?.date : undefined;
+  if (serverDay) learnBusinessDate(serverDay);
+  const now = today();
+  const range = resolveRange(ps, now);
 
   // Same day / date / month in the previous period, for the prior ticks (full values).
   const priorPs: PeriodState | null = fresh && fresh.previous.total !== null
@@ -85,7 +93,8 @@ export default function OrderStats({ includeFixture, headingId }: { includeFixtu
   useEffect(() => {
     if (!fresh) return;
     if (announced.current !== null && announced.current !== path) {
-      announce(t('insights.announce.view', { metric: t(`insights.metric.${mk}`), period: periodPhrase(ps, range, t, lang), n: num(fresh.total) }));
+      const words = { metric: t(`insights.metric.${mk}`), period: periodPhrase(ps, range, t, lang), n: num(fresh.total) };
+      announce(hasNoRecords(fresh) ? t('insights.announce.viewNone', words) : t('insights.announce.view', words));
     }
     announced.current = path;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -192,7 +201,7 @@ export default function OrderStats({ includeFixture, headingId }: { includeFixtu
               currentLabel={isYear ? monthShort(buckets.find((b) => b.state === 'partial')?.date ?? '2000-01', lang) : undefined}
             />
             {view === 'chart' ? <Legend priorLabel={priorLabel} showPrior={Boolean(priorBuckets)} /> : null}
-            {data.first_operating_date === null || buckets.every((b) => b.state === 'missing' || b.state === 'future') ? (
+            {hasNoRecords(data) ? (
               <p className="insx-chart-note">{t(includeFixture ? 'insights.chart.noneYet' : 'insights.chart.noneReal')}</p>
             ) : null}
           </div>
@@ -230,6 +239,17 @@ export default function OrderStats({ includeFixture, headingId }: { includeFixtu
 function heroProps(data: OrderStatsDTO, ps: PeriodState, t: T, lang: 'th' | 'en', sel: DayBucketDTO | null, metric: OrderMetric): HeroMetricProps & { label: string } {
   const mk = METRIC_KEY[metric];
   const range = { from: data.from, to: data.to };
+  const label = `${t(`insights.metric.${mk}`)} · ${periodPhrase({ ...ps, period: data.period }, range, t, lang)}`;
+  if (hasNoRecords(data)) {
+    // Missing is not zero: no big "0" and no comparison before records exist.
+    return {
+      label,
+      value: '—',
+      unit: t('insights.hero.none', { range: exactRange({ ...ps, period: data.period }, range, lang) }),
+      comparison: null,
+      selected: null,
+    };
+  }
   const partial = data.buckets.find((b) => b.state === 'partial');
   const todayDate = partial ? (data.period === 'year' ? today() : partial.date) : null;
   const time = clock(data.generated_at);
@@ -309,7 +329,7 @@ function heroProps(data: OrderStatsDTO, ps: PeriodState, t: T, lang: 'th' | 'en'
   }
 
   return {
-    label: `${t(`insights.metric.${mk}`)} · ${periodPhrase({ ...ps, period: data.period }, range, t, lang)}`,
+    label,
     value: num(data.total),
     unit: sentence,
     comparison,

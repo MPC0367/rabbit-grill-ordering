@@ -35,6 +35,8 @@ export function errorText(t: T, err: unknown): string {
     return t('recover.err.referenceUsed', { reference: String(d.reference ?? '') });
   }
   if (e.code === 'bill_changed') return t('orders.err.billLocked');
+  // The pause stops staff-assisted rounds too; staff need their way on, not the guest wording.
+  if (e.code === 'ordering_paused') return t('orders.err.orderingPaused');
   if (e.code === 'bad_request' && d?.reason === 'not_measured_weight') return t('assist.err.notMeasured');
   if (e.code === 'item_unavailable' && typeof d?.reason === 'string') return `${base} (${t(`assist.reason.${d.reason}`)})`;
   if (e.code === 'validation_failed') {
@@ -50,6 +52,15 @@ export function staleCurrent<X>(err: unknown): X | null {
   if (e.code !== 'stale_version' && e.code !== 'already_done' && e.code !== 'invalid_transition' && e.code !== 'quote_expired' && e.code !== 'quote_superseded') return null;
   const cur = (e.details as { current?: unknown } | null)?.current;
   return (cur ?? null) as X | null;
+}
+
+/**
+ * Language of words staff or guests typed (notes, allergy text): Thai when
+ * any Thai letter appears, else English. The DTOs carry no locale, and a
+ * screen reader must not read Thai with an English voice (brief 08).
+ */
+export function textLang(s: string | null | undefined): 'th' | 'en' {
+  return s && /[฀-๿]/.test(s) ? 'th' : 'en';
 }
 
 export function sumQty(lines: ReadonlyArray<{ quantity: number }>): number {
@@ -112,8 +123,14 @@ const STATION_KEY = 'rg.orders.station';
 
 export type StationPref = 'all' | 'kitchen' | 'bar';
 
-export function readStation(): StationPref {
-  const v = storage.get<string>(STATION_KEY, 'all');
+/**
+ * The station filter this device last chose. With no choice stored yet, a
+ * kitchen sign-in starts on Kitchen, so one Mark ready never announces bar
+ * drinks the bar has not poured (there is no bar role; others start on All).
+ */
+export function readStation(role?: string): StationPref {
+  const v = storage.get<string | null>(STATION_KEY, null);
+  if (v === null) return role === 'kitchen' ? 'kitchen' : 'all';
   return v === 'kitchen' || v === 'bar' ? v : 'all';
 }
 

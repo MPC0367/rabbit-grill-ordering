@@ -4,7 +4,8 @@
 // already masked) and links to the related table, item, report or settings.
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { AuditEntryDTO, StaffUserDTO } from '../../../../shared/dto.ts';
-import { businessDate, todayBusinessDate } from '../../../../shared/time.ts';
+import { businessDate } from '../../../../shared/time.ts';
+import { businessDateOf, useBusinessToday } from '../insights/query.ts';
 import { api, qs } from '../../lib/api.ts';
 import { clock, dateLabel, money, num } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
@@ -46,13 +47,25 @@ function flatten(v: unknown, prefix = '', depth = 0, out: Record<string, unknown
   return out;
 }
 
+/** Identifier-like numbers (years, revisions, versions, round and sequence numbers) print as plain digits: "2026", never "2,026". */
+const PLAIN_NUMBER = /(^|[._])(year|revision|version|seq|attempts?|pin)$|_no$|_id$|_version$/;
+
+function auditNumberText(field: string, v: number): 'money' | 'plain' | 'grouped' {
+  if (/(_minor|amount|total)$/.test(field) && Number.isInteger(v)) return 'money';
+  if (Number.isInteger(v) && PLAIN_NUMBER.test(field)) return 'plain';
+  return 'grouped';
+}
+
 function useValueText() {
   const { t, lang } = useI18n();
   return (field: string, v: unknown): ReactNode => {
     if (v === undefined || v === null || v === '') return '';
     if (v === MASK) return <Tag tone="neutral" icon="lock">{t('audit.hidden')}</Tag>;
     if (typeof v === 'boolean') return v ? t('common.yes') : t('common.no');
-    if (typeof v === 'number') return /(_minor|amount|total)$/.test(field) && Number.isInteger(v) ? money(v) : num(v);
+    if (typeof v === 'number') {
+      const kind = auditNumberText(field, v);
+      return kind === 'money' ? money(v) : kind === 'plain' ? String(v) : num(v);
+    }
     if (typeof v === 'string') {
       if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return `${dateLabel(businessDate(v), lang, { year: true })}, ${clock(v)}`;
       return <span lang={langOf(v)}>{v.length > 160 ? `${v.slice(0, 157)}…` : v}</span>;
@@ -103,7 +116,8 @@ export default function AuditPage() {
   const { errorText } = useErrorWords();
   const plural = usePlural();
   const allowed = can('audit.view');
-  const today = todayBusinessDate(0);
+  // The server filters dates by business day (its cutoff hour); group and cap the date fields the same way.
+  const today = useBusinessToday();
 
   const applied: Filters = useMemo(() => {
     const f = {} as Filters;
@@ -235,14 +249,20 @@ export default function AuditPage() {
     );
   };
 
-  // group by Bangkok business date
-  const groups: Array<{ date: string; items: AuditEntryDTO[] }> = [];
+  // group by Bangkok business date. Entries arrive in id order, and a record
+  // written with an earlier `at` (seeded history, a late paper order) can sit
+  // between two newer ones: collect each date once, newest date first, or the
+  // same day would appear as two sections with the same key.
+  const byDate = new Map<string, AuditEntryDTO[]>();
   for (const e of entries) {
-    const d = businessDate(e.at);
-    const last = groups[groups.length - 1];
-    if (last && last.date === d) last.items.push(e);
-    else groups.push({ date: d, items: [e] });
+    const d = businessDateOf(e.at);
+    const list = byDate.get(d);
+    if (list) list.push(e);
+    else byDate.set(d, [e]);
   }
+  const groups = [...byDate]
+    .map(([date, items]) => ({ date, items }))
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
   const actorOptions = [
     { value: '', label: t('audit.actor.any') },

@@ -8,11 +8,11 @@ import type { BillLineDTO, GuestBillDTO } from '../../../../shared/dto.ts';
 import type { ChargeLine } from '../../../../shared/money.ts';
 import { clock } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { useLive } from '../../lib/live.tsx';
 import {
   Button, Card, ConnectionIndicator, EmptyState, Icon, Leader, LinkButton, PageHead, Pill, Price, Skeleton, Timeline,
   useToast, type IconName, type PillTone, type TimelineStep,
 } from '../../ui/index.ts';
+import { useGuestLiveState } from '../shell/hooks.ts';
 import { useOverlays } from '../shell/overlays.tsx';
 import { useGuestSession } from '../shell/session.tsx';
 import { FeedbackForm } from './FeedbackForm.tsx';
@@ -80,7 +80,7 @@ function groupByRound(lines: ReadonlyArray<BillLineDTO>): Array<{ ref: string; l
 function BillScreen({ visitId, label, services }: { visitId: string; label: string; services: ReadonlyArray<string> }) {
   const { t, has, lang } = useI18n();
   const toast = useToast();
-  const live = useLive();
+  const liveState = useGuestLiveState();
   const { openService } = useOverlays();
   const flow = useCommitted(['bill.', 'visit.', 'payment.']);
   const bill = useVisitResource<GuestBillDTO>('/api/guest/bill', BILL_TOPICS, { onEvent: flow.onEvent, onResync: flow.onResync });
@@ -119,7 +119,7 @@ function BillScreen({ visitId, label, services }: { visitId: string; label: stri
   const request = async () => {
     try {
       const r = await svc.send('bill');
-      toast.show({ message: r.existing ? t('help.existing') : t('bill.requestedToast') });
+      toast.show({ message: r.existing ? t(r.seen ? 'help.existingSeen' : 'help.existing') : t('bill.requestedToast') });
       void bill.refresh();
     } catch (err) {
       toast.show({ message: `${t('help.failed')} · ${errorWords(t, has, err)}`, tone: 'error' });
@@ -135,7 +135,7 @@ function BillScreen({ visitId, label, services }: { visitId: string; label: stri
         row={(
           <>
             <Pill tone={pill.tone} icon={pill.icon} role="status" data-stage={stage}>{pill.text}</Pill>
-            {live.state !== 'live' || bill.stale ? <ConnectionIndicator variant="track" stale={bill.stale} /> : null}
+            {liveState !== 'live' || bill.stale ? <ConnectionIndicator variant="track" state={liveState} stale={bill.stale} /> : null}
           </>
         )}
         support={t('bill.shared', { label })}
@@ -176,6 +176,7 @@ function BillScreen({ visitId, label, services }: { visitId: string; label: stri
   const nothing = b.lines.length === 0 && b.pending_lines.length === 0 && b.excluded_lines.length === 0;
   const finalAmount = stage === 'final' || stage === 'paid';
   const canRequest = stage === 'open' && services.includes('bill') && !nothing;
+  const feedbackEarly = stage === 'requested' || stage === 'billing' || stage === 'final';
 
   const top = (
     <div className="vpage__top">
@@ -300,6 +301,9 @@ function BillScreen({ visitId, label, services }: { visitId: string; label: stri
           </div>
         ) : null}
       </Card>
+      {/* Checking out: the wait for the bill is the moment to ask, and a
+          checkout that follows payment at once must not leave no window. */}
+      {feedbackEarly ? <div className="vsection"><FeedbackForm visitId={visitId} /></div> : null}
     </div>
   );
 

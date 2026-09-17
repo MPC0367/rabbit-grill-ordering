@@ -233,6 +233,7 @@
 }
 .search input::placeholder { color: var(--text-2); opacity: 1; }
 .search input::-webkit-search-cancel-button, .search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+.search input::-webkit-search-cancel-button { display: none; } /* the kit's own clear button replaces it */
 .search input:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
 .search.has-value input { padding-right: 46px; }
 .search__clear { position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: var(--text-2); }
@@ -312,6 +313,13 @@ dialog.sheet::backdrop { background: var(--scrim); animation: fade var(--dur-she
 @keyframes rise { from { transform: translateY(var(--sheet-travel)); opacity: 0; } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes slide-in { from { transform: translateX(var(--sheet-travel)); opacity: 0; } }
+
+/* Language switch (brief 42): a short opacity change over the whole app and
+   the contents of an open sheet. lib/i18n.tsx sets html[data-lang-switch]
+   for one run; nothing remounts. The dialog itself is not animated, so its
+   own rise does not replay. Reduced motion shortens it to 1ms (tokens). */
+@keyframes lang-fade { from { opacity: 0.35; } }
+[data-lang-switch] :is(#root, dialog[open] > *) { animation: lang-fade var(--dur-base) var(--ease-out); }
 .sheet__grab { width: 40px; height: 4px; border-radius: 2px; background: var(--rule-strong); margin: 8px auto 0; flex: none; }
 .sheet__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 8px 4px var(--gutter); flex: none; min-height: 52px; }
 .sheet__head h2 { font: var(--type-title-th); min-width: 0; }
@@ -584,7 +592,7 @@ button.slip { width: calc(100% - 2 * max(var(--gutter) - 4px, 8px)); }
 .srow { display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 8px 0; border-top: 1px solid var(--rule); width: 100%; color: var(--text); text-align: left; }
 li:first-child > .srow, .srow:first-child { border-top: 0; }
 button.srow:disabled, .srow[aria-disabled="true"] { cursor: default; }
-@media (hover: hover) { a.srow:hover .srow__t, button.srow:not(:disabled):hover .srow__t { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; } }
+@media (hover: hover) { a.srow:hover .srow__t, button.srow:not(:disabled):not([aria-disabled="true"]):hover .srow__t { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; } }
 .srow__ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--edge); flex: none; }
 .srow__txt { flex: 1; min-width: 0; display: grid; }
 .srow__t { font: var(--type-control-th); font-size: var(--fs-16); }
@@ -1127,7 +1135,7 @@ html[data-scope="admin"] .toast-region { bottom: 24px; }
    ===================================================================== */
 .conn { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--ok-tint); color: var(--ok); font: var(--fw-semibold) var(--fs-13)/1 var(--font-ui); white-space: nowrap; }
 .conn::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
-.conn span { color: var(--text-2); font-weight: var(--fw-regular); font-feature-settings: var(--num-features); }
+.conn .conn__detail { color: var(--text-2); font-weight: var(--fw-regular); font-feature-settings: var(--num-features); }
 .conn--stale { background: var(--heat-tint); color: var(--heat-text); }
 .conn--stale::before { border-radius: 1px; width: 8px; height: 3px; } /* a dash, not a dot */
 .conn--offline { background: var(--alert-tint); color: var(--alert); }
@@ -1339,7 +1347,7 @@ html[data-scope="admin"] .toast-region { bottom: 24px; }
   .rail .seg--box > button { min-width: 0; padding: 0 6px; }
   .rail__time { display: none; }
   .wshead { gap: 12px; }
-  .wshead .demo, .who > div, .conn span, .ordering__state { display: none; }
+  .wshead .demo, .who > div, .conn .conn__detail, .ordering__state { display: none; }
   .boardtabs { display: flex; padding: 0 var(--admin-pad) 12px; }
   .strip { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
   .board { grid-template-columns: minmax(0, 1fr); }

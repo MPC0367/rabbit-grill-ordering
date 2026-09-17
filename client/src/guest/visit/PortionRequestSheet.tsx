@@ -5,7 +5,6 @@
 // no presets) and a note. Idempotent per attempt.
 import { useEffect, useId, useRef, useState } from 'react';
 import type { OrderDTO, PortionRequestDTO } from '../../../../shared/dto.ts';
-import type { PortionRequestBody as PortionRequestSchema } from '../../../../shared/schemas.ts';
 import { api, ApiError } from '../../lib/api.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import {
@@ -15,27 +14,14 @@ import { useCatalog } from '../shell/catalog.tsx';
 import { useGuestSession } from '../shell/session.tsx';
 import { useAccessFailure, useVisitResource } from './hooks.ts';
 import { attemptKey, closeThenNavigate, detailOf, errorWords, settleKey, settleUnlessAmbiguous } from './lib.ts';
+import { PREFERRED_GRAMS } from './limits.ts';
 import NoAccessPanel from './NoAccessPanel.tsx';
 import './visit.css';
 
 const NOTE_MAX = 200;
 
 /** The server's own bounds for a preferred weight (validation only, never a suggestion). */
-function gramBounds(schema: typeof PortionRequestSchema): { min: number; max: number } {
-  try {
-    const inner = schema.shape.preferred_grams.unwrap().unwrap() as unknown as { minValue: number | null; maxValue: number | null };
-    return { min: inner.minValue ?? 1, max: inner.maxValue ?? 100_000 };
-  } catch {
-    return { min: 1, max: 100_000 };
-  }
-}
-// The schema module pulls in zod, so it loads beside the menu instead of
-// before it. Until it arrives the check is permissive; the server still
-// validates every request.
-let BOUNDS = { min: 1, max: 100_000 };
-void import('../../../../shared/schemas.ts')
-  .then((m) => { BOUNDS = gramBounds(m.PortionRequestBody); })
-  .catch(() => { /* offline: the server's answer covers it */ });
+const BOUNDS = PREFERRED_GRAMS;
 
 /** The restaurant turned preferred weights off (learned from the server this session). */
 let preferredDisabled = false;

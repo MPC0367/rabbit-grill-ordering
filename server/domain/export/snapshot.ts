@@ -49,11 +49,11 @@ interface EventDb {
   actor_type: string; actor_id: string | null; reason: string | null; created_at: string;
 }
 
-/** Columns of order_lines a report may read. The guest note text is deliberately absent. */
+/** Columns of order_lines a report may read. The guest note text is deliberately absent; a note removed by retention still counts as a note. */
 export const LINE_COLUMNS = `l.id, l.order_id, l.visit_id, l.line_no, l.item_id, l.variant_id, l.category_id,
   l.name_th, l.name_en, l.variant_name_th, l.variant_name_en, l.station, l.pricing_type,
   l.unit_price_minor, l.modifiers_minor, l.modifiers_json, l.quantity, l.measured_grams, l.line_total_minor,
-  (l.note IS NOT NULL AND TRIM(l.note) <> '') AS has_note, l.allergy_flag, l.status, l.status_reason,
+  ((l.note IS NOT NULL AND TRIM(l.note) <> '') OR l.note_removed_at IS NOT NULL) AS has_note, l.allergy_flag, l.status, l.status_reason,
   l.submitted_at, l.accepted_at, l.preparing_at, l.ready_at, l.served_at, l.rejected_at, l.cancelled_at,
   l.prepared_before_entry`;
 
@@ -585,44 +585,51 @@ export async function buildSnapshot(r: SnapshotReader, job: JobInfo): Promise<Re
     const methods = new Map<string, PaymentsSnap['methods'][number]>();
     const monthlyMoney = new Map(months.map((m) => [m, { key: m, finalized_minor: 0, paid_minor: 0 }]));
     const exceptions: PaymentException[] = [...closeExceptions];
-    let finalizedMinor = 0, finalizedBills = 0, settledMinor = 0, settlements = 0, reversalMinor = 0, reversals = 0, refundMinor = 0;
+    let finalizedMinor = 0, finalizedBills = 0, settledMinor = 0, settlements = 0, reversalMinor = 0, reversals = 0, refundMinor = 0, refunds = 0;
+    // Every reversal and refund record, whatever its date, keyed by the settlement it corrects.
+    // A correction counts against its settlement's month (D-S8-03): "paid, net" for any period is
+    // then exactly the settlements of that period still in force, as on the KPI screen, and a
+    // correction is never subtracted twice (once as "marked reversed", once as its own row).
+    const counterRows = r.all<{ sid: string; rev: string; kind: string; amount_minor: number; reason: string | null; confirmed_at: string }>(
+      `SELECT c.reverses_payment_id AS sid, s.bill_revision_id AS rev, c.kind, c.amount_minor, c.reason, c.confirmed_at
+         FROM payments c JOIN payments s ON s.id = c.reverses_payment_id
+        WHERE c.reverses_payment_id IS NOT NULL AND c.kind IN ('reversal', 'refund_record') AND c.status = 'confirmed'
+          AND c.business_date >= :from AND (:fx = 1 OR c.is_fixture = 0)`, base);
+    const counters = new Map(counterRows.map((c) => [c.sid, c]));
+    // Revisions whose settlement was refunded after checkout: not "unpaid" (the refund row explains them).
+    const refundedRevisions = new Set(counterRows.filter((c) => c.kind === 'refund_record').map((c) => c.rev));
     for (const mk of months) {
       const mp = { ...base, mf: `${mk}-01`, mt: monthEnd(mk) };
       const pays = r.all<{ id: string; visit_id: string; bill_revision_id: string; kind: string; method: string; amount_minor: number; status: string; reverses_payment_id: string | null; reason: string | null; confirmed_at: string; business_date: string }>(
         `SELECT id, visit_id, bill_revision_id, kind, method, amount_minor, status, reverses_payment_id, reason, confirmed_at, business_date
-           FROM payments WHERE business_date BETWEEN :mf AND :mt AND (:fx = 1 OR is_fixture = 0) ORDER BY confirmed_at`, mp);
-      const reversedIds = new Set(pays.filter((p) => p.kind === 'reversal').map((p) => p.reverses_payment_id));
+           FROM payments WHERE business_date BETWEEN :mf AND :mt AND kind = 'settlement' AND (:fx = 1 OR is_fixture = 0) ORDER BY confirmed_at`, mp);
       for (const p of pays) {
+        if (p.status !== 'confirmed' && p.status !== 'reversed') continue;
         const m = methods.get(p.method) ?? { method: p.method, label: methodLabels.get(p.method) ?? p.method, count: 0, amount_minor: 0, reversed_count: 0, reversed_minor: 0 };
         methods.set(p.method, m);
         const money = monthlyMoney.get(mk)!;
         const label = tableOfVisit.get(p.visit_id) ?? '';
-        if (p.kind === 'settlement' && (p.status === 'confirmed' || p.status === 'reversed')) {
-          settlements++;
-          settledMinor += p.amount_minor;
-          m.count++;
-          m.amount_minor += p.amount_minor;
-          money.paid_minor += p.amount_minor;
-          if (p.status === 'reversed' && !reversedIds.has(p.id)) {
-            reversals++;
-            reversalMinor += p.amount_minor;
-            m.reversed_count++;
-            m.reversed_minor += p.amount_minor;
-            money.paid_minor -= p.amount_minor;
-            exceptions.push({ kind: 'reversed', at: p.confirmed_at, visit_id: p.visit_id, table_label: label, amount_minor: p.amount_minor, detail: 'Settlement marked reversed' });
-          }
-        } else if (p.kind === 'reversal' && p.status === 'confirmed') {
+        settlements++;
+        settledMinor += p.amount_minor;
+        m.count++;
+        m.amount_minor += p.amount_minor;
+        money.paid_minor += p.amount_minor;
+        if (p.status !== 'reversed') continue;
+        const c = counters.get(p.id);
+        m.reversed_count++;
+        m.reversed_minor += p.amount_minor;
+        money.paid_minor -= p.amount_minor;
+        const late = c ? businessDate(c.confirmed_at, cutoff) > to : false;
+        if (c?.kind === 'refund_record') {
+          refunds++;
+          refundMinor += p.amount_minor;
+          exceptions.push({ kind: 'refund_record', at: c.confirmed_at, visit_id: p.visit_id, table_label: label, amount_minor: p.amount_minor, detail: c.reason ?? 'Refund recorded after checkout' });
+          corrections.push({ at: c.confirmed_at, kind: 'payment_reversal', reference: '', table_label: label, item: '', from: 'paid', to: 'refunded', reason: c.reason ?? '', actor: 'Staff', late });
+        } else {
           reversals++;
           reversalMinor += p.amount_minor;
-          m.reversed_count++;
-          m.reversed_minor += p.amount_minor;
-          money.paid_minor -= p.amount_minor;
-          exceptions.push({ kind: 'reversed', at: p.confirmed_at, visit_id: p.visit_id, table_label: label, amount_minor: p.amount_minor, detail: p.reason ?? 'Reversal' });
-          corrections.push({ at: p.confirmed_at, kind: 'payment_reversal', reference: '', table_label: label, item: '', from: 'paid', to: 'reversed', reason: p.reason ?? '', actor: 'Staff', late: businessDate(p.confirmed_at, cutoff) > to });
-        } else if (p.kind === 'refund_record' && p.status === 'confirmed') {
-          refundMinor += p.amount_minor;
-          money.paid_minor -= p.amount_minor;
-          exceptions.push({ kind: 'refund_record', at: p.confirmed_at, visit_id: p.visit_id, table_label: label, amount_minor: p.amount_minor, detail: p.reason ?? 'Refund recorded' });
+          exceptions.push({ kind: 'reversed', at: c?.confirmed_at ?? p.confirmed_at, visit_id: p.visit_id, table_label: label, amount_minor: p.amount_minor, detail: c ? (c.reason ?? 'Reversal') : 'Settlement marked reversed' });
+          if (c) corrections.push({ at: c.confirmed_at, kind: 'payment_reversal', reference: '', table_label: label, item: '', from: 'paid', to: 'reversed', reason: c.reason ?? '', actor: 'Staff', late });
         }
       }
       const revs = r.all<{ id: string; visit_id: string; revision_no: number; status: string; subtotal_minor: number; adjustments_minor: number; charges_json: string; total_minor: number; finalized_at: string; business_date: string; supersede_reason: string | null; visit_status: string }>(
@@ -659,7 +666,9 @@ export async function buildSnapshot(r: SnapshotReader, job: JobInfo): Promise<Re
           // confirmed settlement once the visit closed or its finalize date passed (valued at the total),
           // or a settlement that differs from the total (valued at the difference).
           // A zero-total revision owes nothing (checkout settles it without a payment row), as in kpi.ts.
-          if (!paid?.count && b.total_minor > 0 && (b.visit_status === 'closed' || b.business_date < today)) {
+          if (!paid?.count && b.total_minor > 0 && refundedRevisions.has(b.id)) {
+            // Settled, then refunded after checkout: listed once, as the refund record.
+          } else if (!paid?.count && b.total_minor > 0 && (b.visit_status === 'closed' || b.business_date < today)) {
             exceptions.push({ kind: 'finalized_unpaid', at: b.finalized_at, visit_id: b.visit_id, table_label: label, amount_minor: b.total_minor, detail: `Revision ${b.revision_no} has no confirmed settlement${b.visit_status === 'closed' ? ' and the visit is closed' : ''}` });
           } else if (paid?.count && paid.minor !== b.total_minor) {
             exceptions.push({ kind: 'amount_mismatch', at: b.finalized_at, visit_id: b.visit_id, table_label: label, amount_minor: Math.abs(paid.minor - b.total_minor), detail: `Settled ${paid.minor >= b.total_minor ? 'more' : 'less'} than revision ${b.revision_no}'s total` });
@@ -692,6 +701,7 @@ export async function buildSnapshot(r: SnapshotReader, job: JobInfo): Promise<Re
       reversal_minor: reversalMinor,
       reversals,
       refund_minor: refundMinor,
+      refunds,
       net_paid_minor: settledMinor - reversalMinor - refundMinor,
       adjustments: { count: adj?.n ?? 0, minor: adj?.minor ?? 0, voided: adj?.voided ?? 0 },
       methods: [...methods.values()].sort((a, b) => b.amount_minor - a.amount_minor),
@@ -895,6 +905,8 @@ export async function buildSnapshot(r: SnapshotReader, job: JobInfo): Promise<Re
       raw_events_days: settings.retention.raw_events_days,
       notes_days: settings.retention.notes_days,
       audit_days: settings.retention.audit_days,
+      feedback_days: settings.retention.feedback_days,
+      retention_last_run: r.get<{ at: string }>("SELECT built_at AS at FROM agg_state WHERE name = 'retention'")?.at ?? null,
     },
     line_status_totals: lineStatusTotals,
   };

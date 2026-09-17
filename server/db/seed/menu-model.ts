@@ -140,7 +140,7 @@ interface ItemQueryRow {
   id: string; key: string; category_id: string; category_key: string; group_key: string;
   name_th: string | null; name_en: string | null; pricing_type: PricingType;
   price_minor: number | null; rate_minor: number | null; rate_basis_grams: number | null;
-  station: Station; alcohol: number; demo_orderable: number;
+  station: Station; alcohol: number; demo_orderable: number; prep_kind: 'cook' | 'prepare' | null; cat_prep_kind: 'cook' | 'prepare' | null;
 }
 
 /** Build the model from the freshly seeded catalog (same connection, inside the seed tx is fine). */
@@ -148,7 +148,7 @@ export function loadMenuModel(): MenuModel {
   const rows = many<ItemQueryRow>(
     `SELECT i.id, i.key, i.category_id, c.key AS category_key, g.key AS group_key,
             i.name_th, i.name_en, i.pricing_type, i.price_minor, i.rate_minor, i.rate_basis_grams,
-            i.station, i.alcohol, i.demo_orderable
+            i.station, i.alcohol, i.demo_orderable, i.prep_kind, c.prep_kind AS cat_prep_kind
        FROM menu_items i JOIN menu_categories c ON c.id = i.category_id JOIN menu_groups g ON g.id = c.group_id
       WHERE i.status = 'published' AND c.status = 'published'
       ORDER BY g.sort, c.sort, i.sort, i.key`);
@@ -187,7 +187,7 @@ export function loadMenuModel(): MenuModel {
       price_minor: row.price_minor, rate_minor: row.rate_minor, rate_basis_grams: row.rate_basis_grams,
       variants: itemVariants, beans: beansByItem.get(row.id) ?? null,
       station: row.station,
-      prep_kind: row.station === 'bar' || drinks || row.category_key === 'dessert' ? 'prepare' : 'cook',
+      prep_kind: row.prep_kind ?? row.cat_prep_kind ?? (row.station === 'bar' || drinks || row.category_key === 'dessert' ? 'prepare' : 'cook'),
       course,
       weight: WEIGHTS[row.key] ?? 2,
       cook: COOK_MINUTES[row.category_key] ?? (drinks ? [3, 8] : [8, 16]),

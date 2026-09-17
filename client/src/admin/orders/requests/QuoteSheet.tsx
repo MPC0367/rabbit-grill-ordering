@@ -27,7 +27,9 @@ export function QuoteSheet({ req, item, onClose, onDone, onStale }: {
   const announce = useAnnounce();
   const active = req.quote && req.quote.status === 'active' ? req.quote : null;
   const previous = req.quote ?? null;
-  const [gramsText, setGramsText] = useState(previous ? String(previous.grams) : '');
+  // Re-quoting a live quote starts from its weight (selected, so a new reading replaces it).
+  // After an expired or withdrawn quote the cut is weighed again from an empty field.
+  const [gramsText, setGramsText] = useState(active ? String(active.grams) : '');
   const [picks, setPicks] = useState<Record<string, string[]>>(() => {
     const init: Record<string, string[]> = {};
     for (const g of item?.modifier_groups ?? []) {
@@ -50,6 +52,7 @@ export function QuoteSheet({ req, item, onClose, onDone, onStale }: {
   const n = staffName(req.item_name);
   const g = /^\d+$/.test(gramsText.trim()) ? Number(gramsText.trim()) : null;
   const gramsOk = g !== null && g >= 1 && g <= MAX_GRAMS;
+  const gramsOut = g !== null && !gramsOk;
 
   const choicesMinor = useMemo(() => (item?.modifier_groups ?? []).reduce((sum, grp) => (
     sum + allocateGroupPicks(grp.options, picks[grp.id] ?? [], grp.included_count).reduce((s, p) => s + p.charged_minor, 0)
@@ -128,6 +131,9 @@ export function QuoteSheet({ req, item, onClose, onDone, onStale }: {
           {req.preferred_grams ? ` · ${t('requests.quote.preferred', { grams: gramsLabel(req.preferred_grams, lang) })}` : ''}
         </p>
         {req.note ? <p className="qsheet__meta">{t('requests.quote.guestNote', { note: req.note })}</p> : null}
+        {previous && !active ? (
+          <p className="qsheet__meta">{t('requests.quote.lastWeighed', { grams: gramsLabel(previous.grams, lang), rev: previous.revision })}</p>
+        ) : null}
         {active ? (
           <p className="qsheet__replace" role="note">
             <Icon name="refresh" size="sm" />
@@ -150,6 +156,7 @@ export function QuoteSheet({ req, item, onClose, onDone, onStale }: {
           suffix={t('requests.quote.unit')}
           value={gramsText}
           error={gramsError ?? undefined}
+          onFocus={(e) => e.currentTarget.select()}
           onChange={(e) => { setGramsText(e.currentTarget.value.replace(/[^\d]/g, '').slice(0, 5)); setGramsError(null); }}
           onKeyDown={(e) => { if (e.key === 'Enter') void submit(); }}
         />
@@ -159,7 +166,9 @@ export function QuoteSheet({ req, item, onClose, onDone, onStale }: {
           <small>
             {measured !== null && rate
               ? t('requests.quote.math', { grams: gramsLabel(g!, lang), rate: money(rate.rate_minor), n: rate.rate_basis_grams })
-              : t('requests.quote.enterGrams')}
+              : gramsOut
+                ? <span className="is-alert">{t('requests.quote.gramsInvalid', { max: MAX_GRAMS.toLocaleString('en-US') })}</span>
+                : t('requests.quote.enterGrams')}
             {choicesMinor > 0 ? ` · ${t('requests.quote.choicesAdd', { amount: money(choicesMinor) })}` : ''}
           </small>
         </output>

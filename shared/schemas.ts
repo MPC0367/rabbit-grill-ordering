@@ -201,7 +201,16 @@ export const AdjustmentBody = z.object({
   amount_minor: minor.refine((v) => v !== 0, 'amount must not be zero'),
   reason: shortText(200).min(3),
   order_line_id: id.nullish(),
+  /**
+   * Retry key: the same key with the same details returns the bill instead of
+   * adding the adjustment again; different details answer idempotency_mismatch.
+   * Clients should always send it (optional only for older clients).
+   */
+  idempotency_key: idempotencyKey.optional(),
+  /** The bill_version the manager was looking at; a newer bill answers stale_version. */
+  bill_version: z.number().int().optional(),
 });
+export const VoidAdjustmentBody = z.object({ bill_version: z.number().int(), reason: shortText(200).min(3) });
 export const PaymentBody = z.object({
   revision_id: id,
   method: z.string().min(1).max(32),
@@ -239,6 +248,8 @@ export const ItemInput = z.object({
   station: z.enum(STATIONS).optional(),
   alcohol: z.boolean().optional(),
   requires_staff_confirm: z.boolean().optional(),
+  /** Tracker wording: 'cook' ("Currently cooking") or 'prepare'; null = follow the category / default. */
+  prep_kind: z.enum(['cook', 'prepare']).nullable().optional(),
   image: z.string().max(80).regex(/^[a-z0-9-]+$/).nullish(),
   // 160, not the usual 125 guideline: the audited photo descriptions in
   // data-src/catalog.json run to ~145 characters and must stay editable.
@@ -269,6 +280,8 @@ export const CategoryInput = z.object({
   station: z.enum(STATIONS).optional(),
   alcohol: z.boolean().optional(),
   ordering_paused: z.boolean().optional(),
+  /** Tracker wording for the category's dishes; null = default (drinks and desserts prepare, the rest cook). */
+  prep_kind: z.enum(['cook', 'prepare']).nullable().optional(),
 });
 export const UpdateCategoryBody = CategoryInput.partial().extend({ version: z.number().int() });
 export const ModifierGroupInput = z.object({

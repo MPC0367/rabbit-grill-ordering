@@ -65,8 +65,10 @@ export default function CheckoutDock({ detail, ctl, onCompleted, refresh }: Prop
   const [dialog, setDialog] = useState<'complete' | 'exception' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lost, setLost] = useState(() => pendingKey(`checkout.${detail.id}`).pending());
-  // Phones: the list folds away so the sheet keeps room for the table itself.
-  const compact = useMedia('(max-width: 767px)');
+  // Phones, and any table already checking out: the list folds into one line
+  // so the bill above the foot stays in view (DESIGN §10.19).
+  const phone = useMedia('(max-width: 767px)');
+  const compact = phone || detail.status === 'billing';
   const { bill, can, next } = ctl;
   const label = detail.table.label;
   const closed = detail.status === 'closed';

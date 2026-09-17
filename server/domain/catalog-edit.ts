@@ -312,6 +312,7 @@ export function createItem(input: CreateItemInput, staff: StaffContext): AdminIt
     station: input.station ?? cat.station,
     alcohol: flag(input.alcohol) ?? 0,
     requires_staff_confirm: flag(input.requires_staff_confirm) ?? 0,
+    prep_kind: input.prep_kind ?? null,
     image: clean(input.image) ?? null,
     image_alt_th: clean(input.image_alt_th) ?? null,
     image_alt_en: clean(input.image_alt_en) ?? null,
@@ -384,6 +385,7 @@ export function updateItem(id: string, input: UpdateItemInput, staff: StaffConte
     set('station', input.station);
     set('alcohol', flag(input.alcohol));
     set('requires_staff_confirm', flag(input.requires_staff_confirm));
+    set('prep_kind', input.prep_kind);
 
     // variants and choice groups
     const reason = clean(input.price_change_reason) ?? null;
@@ -593,6 +595,7 @@ export function createCategory(input: CategoryInputT, staff: StaffContext): Admi
     station: input.station ?? 'kitchen',
     alcohol: flag(input.alcohol) ?? 0,
     ordering_paused: flag(input.ordering_paused) ?? 0,
+    prep_kind: input.prep_kind ?? null,
     created_at: now,
     updated_at: now,
     updated_by: staff.user.id,
@@ -636,6 +639,7 @@ export function updateCategory(id: string, input: UpdateCategoryInput, staff: St
   set('station', input.station);
   set('alcohol', flag(input.alcohol));
   set('ordering_paused', flag(input.ordering_paused));
+  set('prep_kind', input.prep_kind);
   checkDates(
     (input.active_from !== undefined ? input.active_from : cat.active_from) ?? null,
     (input.active_until !== undefined ? input.active_until : cat.active_until) ?? null,

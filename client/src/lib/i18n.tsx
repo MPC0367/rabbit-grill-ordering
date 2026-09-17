@@ -9,7 +9,7 @@
 // Switching language never remounts the app: state, cart, open sheets and
 // scroll position all survive. Missing Thai data falls back VISIBLY to the
 // original language (pick().fallback === true) instead of inventing a translation.
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Bilingual } from '../../../shared/dto.ts';
 import type { Locale } from '../../../shared/settings.ts';
 import { dictionaries } from '../i18n/index.ts';
@@ -39,6 +39,23 @@ interface I18nApi {
 
 const I18nContext = createContext<I18nApi | null>(null);
 
+let fadeTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * The short opacity change on a language switch (brief 42, --dur-base). CSS
+ * animates the app root and any open sheet while <html data-lang-switch> is
+ * set; nothing remounts, so state, scroll and open sheets are kept.
+ */
+function fadeLanguage(): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  delete root.dataset.langSwitch;
+  void root.offsetWidth; // restart the fade on a quick second switch
+  root.dataset.langSwitch = '';
+  clearTimeout(fadeTimer);
+  fadeTimer = setTimeout(() => { delete root.dataset.langSwitch; }, 400);
+}
+
 function interpolate(s: string, vars?: Record<string, string | number>): string {
   if (!vars) return s;
   return s.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
@@ -46,6 +63,8 @@ function interpolate(s: string, vars?: Record<string, string | number>): string 
 
 export function I18nProvider({ children, scope, defaultLang = 'th' }: { children: ReactNode; scope: 'guest' | 'admin'; defaultLang?: Locale }) {
   const [lang, setLangState] = useState<Locale>(() => storedLang() ?? defaultLang);
+  const current = useRef(lang);
+  current.current = lang;
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -53,6 +72,7 @@ export function I18nProvider({ children, scope, defaultLang = 'th' }: { children
   }, [lang, scope]);
 
   const setLang = useCallback((l: Locale) => {
+    if (l !== current.current) fadeLanguage();
     setLangState(l);
     try { window.localStorage.setItem(STORAGE_KEY, l); } catch { /* private mode */ }
   }, []);

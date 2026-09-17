@@ -1,5 +1,8 @@
 /* =====================================================================
    RABBIT GRILL KHAO YAI - staff & data kit additions (client/src/ui/admin)
+   Staff-only: App.tsx loads it with the staff platform (and the /ui-kit
+   gallery), never on guest pages, and before the admin screens' own CSS.
+   Rules guest screens need belong in components.css.
    Loaded after components.css, which carries the final.css port (rail,
    workspace header, floor strip, board, tickets, tables, drawer, insights,
    ranking rows, data table) under the same class names. This file adds only
@@ -121,7 +124,7 @@ button.rail__row { width: 100%; text-align: left; }
 .wshead__right { min-width: 0; }
 @container (max-width: 1180px) {
   .wshead { gap: 14px; }
-  .wshead .demo, .wshead .conn span, .wshead .ordering__state .ordering__k { display: none; }
+  .wshead .demo, .wshead .conn .conn__detail, .wshead .ordering__state .ordering__k { display: none; }
 }
 @container (max-width: 1000px) {
   .wshead .who__text, .wshead .ordering__state { display: none; }
@@ -136,7 +139,7 @@ button.rail__row { width: 100%; text-align: left; }
 .wshead--compact { gap: 12px; }
 .wshead--compact .demo,
 .wshead--compact .who__text,
-.wshead--compact .conn span,
+.wshead--compact .conn .conn__detail,
 .wshead--compact .ordering__state { display: none; }
 .wshead--compact .who { padding-left: 10px; }
 .wshead--compact .subtabs { overflow-x: auto; scrollbar-width: none; }
@@ -186,7 +189,6 @@ button.rail__row { width: 100%; text-align: left; }
 }
 .checkbtn__count { font: var(--fw-medium) var(--fs-16)/1 var(--font-display); font-feature-settings: var(--num-features); }
 
-.search input::-webkit-search-cancel-button { display: none; }
 .search--staff.has-value input { padding-right: 50px; }
 
 .toolbar-cq { container-type: inline-size; min-width: 0; }
@@ -251,6 +253,11 @@ button.rail__row { width: 100%; text-align: left; }
 .floor { container-type: inline-size; }
 .floor__legend { flex-wrap: wrap; row-gap: 4px; min-width: 0; }
 .floor > span:empty { display: none; }
+/* A narrow strip: the legend takes the whole row and "Open Tables" wraps under it. */
+@container (max-width: 520px) {
+  .floor__legend, .floor__link { grid-column: 1 / -1; }
+  .floor__link { justify-self: start; }
+}
 .strip { row-gap: 14px; }   /* room for the word badge that hangs over a wrapped row */
 .strip > li { display: grid; min-width: 0; }
 .ttile { width: 100%; }

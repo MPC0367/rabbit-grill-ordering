@@ -4,7 +4,7 @@
 // "Ploy", "Kitchen 1". ALL NUMBERS AND NAMES OF PEOPLE ARE DEMO FIXTURES.
 // DESIGN PLACEHOLDER: the doneness chips on table 03 only demonstrate the
 // split-by-quantity layout (tagged Example); no doneness options are confirmed.
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import type { StatsPeriod } from '../../../../shared/dto.ts';
 import type { Station, TableState } from '../../../../shared/status.ts';
 import { useI18n } from '../../lib/i18n.tsx';
@@ -13,6 +13,7 @@ import { ConnectionIndicator } from '../ConnectionIndicator.tsx';
 import { Pill } from '../Badge.tsx';
 import { Button, IconButton, TextLink } from '../Button.tsx';
 import { Drawer } from '../Sheet.tsx';
+import { useIsoLayoutEffect } from '../cx.ts';
 import {
   AdminRail, AttnBadge, AuditEntry, AuditList, BOARD_STAGES, BoardColumn, BoardGrid, BoardStatusSwitch, BoardToolbar,
   ChartPanel, CheckButton, CheckoutBlockers, DataTable, DateRangeNav, DrawerSection, FilterChips, GuestAccessPanel,
@@ -49,11 +50,39 @@ function Section({ id, title, note, children }: { id: string; title: string; not
   );
 }
 
-function Frame({ width, label, children }: { width: 1440 | 820 | 390; label: string; children: ReactNode }) {
+/** Narrowest layout width a specimen frame keeps before it is scaled down to fit. */
+const FRAME_MIN: Record<1440 | 820 | 390, number> = { 1440: 1024, 820: 820, 390: 0 };
+
+/**
+ * A screen specimen. Below its minimum width (a phone viewing the kit) the
+ * frame lays its contents out at that minimum and scales them down with
+ * `zoom`, so the specimen shows whole instead of clipped.
+ */
+function Frame({ width, label, children }: { width: 1440 | 820 | 390; label?: string; children: ReactNode }) {
+  const box = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState<number | null>(null);
+  const min = FRAME_MIN[width];
+  useIsoLayoutEffect(() => {
+    const el = box.current;
+    if (!el || !min || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const avail = el.clientWidth;
+      setScale(avail > 0 && avail < min ? Math.floor((avail / min) * 1000) / 1000 : null);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [min]);
   return (
-    <div className={`gk__frame gk__frame--${width}`}>
-      <p className="gk__label" lang="en"><span>{label}</span><span>{width} px</span></p>
-      {children}
+    <div ref={box} className={`gk__frame gk__frame--${width}`}>
+      {label ? (
+        <p className="gk__label" lang="en">
+          <span>{label}</span>
+          <span>{width} px{scale ? ` · shown at ${Math.round(scale * 100)}%` : ''}</span>
+        </p>
+      ) : null}
+      <div className="gk__fit" style={scale ? { width: min, zoom: scale } : undefined}>{children}</div>
     </div>
   );
 }

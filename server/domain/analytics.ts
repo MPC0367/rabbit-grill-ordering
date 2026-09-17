@@ -18,6 +18,7 @@ import { AppError } from '../lib/errors.ts';
 import { hit, LIMITS } from '../lib/ratelimit.ts';
 import { fixtureFlag, getSettings } from '../lib/settings.ts';
 import { bi } from './pricing.ts';
+import { retentionStatus } from './retention.ts';
 import { clockOf, datesBetween, distribution, fixtureSql, resolvePeriod, type StatsParams } from './aggregates.ts';
 
 // ================================================================== ingestion
@@ -298,11 +299,12 @@ export function engagementStats(q: StatsParams): EngagementDTO {
   const telemetrySince = started
     ? businessDate(started, clock.cutoff)
     : one<{ d: string | null }>(`SELECT MIN(e.business_date) AS d FROM analytics_events e WHERE ${fe}`)?.d ?? null;
-  const rawHorizon = addDays(clock.today, -settings.retention.raw_events_days);
+  // Raw detail is gone only where the retention task actually removed it (D-S8-02).
+  const purgedThrough = retentionStatus().raw_events_purged_through;
   const note = !settings.analytics.enabled ? 'analytics_disabled'
     : sessions.length === 0 ? 'no_telemetry'
       : telemetrySince && telemetrySince > from ? 'telemetry_started_in_period'
-        : from < rawHorizon ? 'raw_events_retention'
+        : purgedThrough !== null && from <= purgedThrough ? 'raw_events_retention'
           : null;
 
   // ---- active time (observed foreground time, not attention)
@@ -334,10 +336,17 @@ export function engagementStats(q: StatsParams): EngagementDTO {
   // ---- item table
   // A round is attributed when it names a stored session that has not opted out.
   const attributedJoin = `LEFT JOIN analytics_sessions a ON a.id = o.analytics_session_id AND a.opted_out = 0`;
-  const itemEvents = many<{ item_id: string; impressions: number; detail_opens: number; adds: number }>(
-    `SELECT e.item_id, SUM(e.type = 'item_impression') AS impressions, SUM(e.type = 'item_detail_open') AS detail_opens,
-            SUM(e.type = 'cart_add') AS adds
-       FROM analytics_events e WHERE e.item_id IS NOT NULL AND ${inRange} GROUP BY e.item_id`, range);
+  // Add rate is per session on both sides (D-S8-06): sessions that saw the dish and added it,
+  // over sessions that saw it. Impressions are recorded once per session, adds on every tap.
+  const itemEvents = many<{ item_id: string; impressions: number; detail_opens: number; adds: number; imp_sessions: number; add_sessions: number; converted: number }>(
+    `SELECT item_id, SUM(imp) AS impressions, SUM(det) AS detail_opens, SUM(adds) AS adds,
+            SUM(imp > 0) AS imp_sessions, SUM(adds > 0) AS add_sessions, SUM(imp > 0 AND adds > 0) AS converted
+       FROM (SELECT e.item_id, e.session_id, SUM(e.type = 'item_impression') AS imp,
+                    SUM(e.type = 'item_detail_open') AS det, SUM(e.type = 'cart_add') AS adds
+               FROM analytics_events e
+              WHERE e.item_id IS NOT NULL AND e.type IN ('item_impression', 'item_detail_open', 'cart_add') AND ${inRange}
+              GROUP BY e.item_id, e.session_id)
+      GROUP BY item_id`, range);
   const submitted = new Map(many<{ item_id: string; qty: number }>(
     `SELECT l.item_id, SUM(l.quantity) AS qty FROM order_lines l JOIN orders o ON o.id = l.order_id ${attributedJoin}
       WHERE a.id IS NOT NULL AND o.business_date BETWEEN :from AND :to AND ${fixtureSql('o', include)}
@@ -358,7 +367,9 @@ export function engagementStats(q: StatsParams): EngagementDTO {
       impressions,
       detail_opens: ev?.detail_opens ?? 0,
       adds,
-      add_rate: share(adds, impressions),
+      impression_sessions: ev?.imp_sessions ?? 0,
+      add_sessions: ev?.add_sessions ?? 0,
+      add_rate: share(ev?.converted ?? 0, ev?.imp_sessions ?? 0),
       submitted: submitted.get(id) ?? 0,
       sortKey: `${(n?.name_en ?? '').toLowerCase()}|${n?.name_th ?? ''}|${n?.key ?? id}`,
     };
@@ -378,27 +389,32 @@ export function engagementStats(q: StatsParams): EngagementDTO {
   const submitSessions = new Set(orderRows.filter((o) => o.attributed === 1 && o.session && dining.has(o.session)).map((o) => o.session));
   const attributed = orderRows.filter((o) => o.attributed === 1).length;
 
-  // ---- scroll depth (approximate; depends on layout and content height)
+  // ---- scroll depth (approximate; depends on layout and content height). Menu route only:
+  // depth on the Track or Bill page says nothing about the menu (D-S8-05).
   const depths = many<{ d: number }>(
-    `SELECT MAX(e.depth) AS d FROM analytics_events e WHERE e.type = 'scroll_depth' AND ${inRange} GROUP BY e.session_id`, range)
+    `SELECT MAX(e.depth) AS d FROM analytics_events e
+      WHERE e.type = 'scroll_depth' AND e.route = 'menu' AND ${inRange} GROUP BY e.session_id`, range)
     .map((r) => r.d);
+  const menuSessions = one<{ n: number }>(
+    `SELECT COUNT(DISTINCT e.session_id) AS n FROM analytics_events e WHERE e.route = 'menu' AND ${inRange}`, range)!.n;
 
-  // ---- daily (monthly in the year view), up to today
+  // ---- daily (monthly in the year view), up to today. Active time is menu-route time, like the
+  // headline "active menu time" (the annual export keeps the all-routes total apart).
   const last = to < clock.today ? to : clock.today;
-  const perDay = new Map(many<{ d: string; sessions: number; ms: number }>(
-    `SELECT e.business_date AS d, COUNT(DISTINCT e.session_id) AS sessions,
-            COALESCE(SUM(CASE WHEN e.type = 'active_time_chunk' THEN e.active_ms END), 0) AS ms
-       FROM analytics_events e WHERE ${inRange} GROUP BY e.business_date`, range).map((r) => [r.d, r]));
   let daily: EngagementDTO['daily'];
   if (rp.unit === 'month') {
     const perMonth = new Map(many<{ m: string; sessions: number; ms: number }>(
       `SELECT substr(e.business_date, 1, 7) AS m, COUNT(DISTINCT e.session_id) AS sessions,
-              COALESCE(SUM(CASE WHEN e.type = 'active_time_chunk' THEN e.active_ms END), 0) AS ms
+              COALESCE(SUM(CASE WHEN e.type = 'active_time_chunk' AND e.route = 'menu' THEN e.active_ms END), 0) AS ms
          FROM analytics_events e WHERE ${inRange} GROUP BY m`, range).map((r) => [r.m, r]));
     daily = rp.buckets.filter((bk) => bk.from <= last).map((bk) => ({
       date: bk.key, sessions: perMonth.get(bk.key)?.sessions ?? 0, active_ms: perMonth.get(bk.key)?.ms ?? 0,
     }));
   } else {
+    const perDay = new Map(many<{ d: string; sessions: number; ms: number }>(
+      `SELECT e.business_date AS d, COUNT(DISTINCT e.session_id) AS sessions,
+              COALESCE(SUM(CASE WHEN e.type = 'active_time_chunk' AND e.route = 'menu' THEN e.active_ms END), 0) AS ms
+         FROM analytics_events e WHERE ${inRange} GROUP BY e.business_date`, range).map((r) => [r.d, r]));
     daily = datesBetween(from, last).map((d) => ({ date: d, sessions: perDay.get(d)?.sessions ?? 0, active_ms: perDay.get(d)?.ms ?? 0 }));
   }
 
@@ -428,6 +444,7 @@ export function engagementStats(q: StatsParams): EngagementDTO {
       unattributed_orders: orderRows.length - attributed,
     },
     scroll: SCROLL_THRESHOLDS.map((threshold) => ({ threshold, sessions: depths.filter((d) => d >= threshold).length })),
+    scroll_sessions: menuSessions,
     daily,
     include_fixture: include,
     generated_at: nowIso(),

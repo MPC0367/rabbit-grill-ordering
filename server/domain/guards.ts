@@ -11,7 +11,7 @@ import { getSettings } from '../lib/settings.ts';
 
 export interface VisitRow {
   id: string; table_id: string; status: VisitStatus;
-  join_pin: string | null; pin_rotated_at: string | null; pin_failures: number; pin_locked_until: string | null;
+  join_pin: string | null; pin_rotated_at: string | null; pin_failures: number; pin_locked_until: string | null; pin_lockouts: number;
   covers: number | null; charges_json: string;
   seated_at: string; seated_business_date: string; opened_by: string | null; open_idempotency_key: string | null;
   bill_requested_at: string | null; billing_started_at: string | null; billing_started_by: string | null;

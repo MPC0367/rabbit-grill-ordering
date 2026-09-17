@@ -66,10 +66,13 @@ export function kpis(q: KpiParams): KpiDTO {
         GROUP BY o.id)`, range)!;
 
   // ---- Finalized bills: the current (non-superseded) revision, by its finalize date.
-  const revisions = many<{ id: string; total_minor: number; business_date: string; visit_status: string; settled: number | null }>(
+  const revisions = many<{ id: string; total_minor: number; business_date: string; visit_status: string; settled: number | null; refunded: number | null }>(
     `SELECT r.id, r.total_minor, r.business_date, v.status AS visit_status,
             (SELECT p.amount_minor FROM payments p
-              WHERE p.bill_revision_id = r.id AND p.kind = 'settlement' AND p.status = 'confirmed') AS settled
+              WHERE p.bill_revision_id = r.id AND p.kind = 'settlement' AND p.status = 'confirmed') AS settled,
+            (SELECT rr.amount_minor FROM payments p JOIN payments rr ON rr.reverses_payment_id = p.id
+              WHERE p.bill_revision_id = r.id AND p.kind = 'settlement' AND p.status = 'reversed'
+                AND rr.kind = 'refund_record' AND rr.status = 'confirmed' LIMIT 1) AS refunded
        FROM bills b
        JOIN bill_revisions r ON r.id = b.current_revision_id
        JOIN visits v ON v.id = b.visit_id
@@ -81,10 +84,15 @@ export function kpis(q: KpiParams): KpiDTO {
   // ---- Payment exceptions: finalized bills with no confirmed settlement once
   // the visit closed or the day ended, or a settlement that differs.
   const exceptions = { count: 0, value_minor: 0 };
+  // Settled, then refunded after checkout (D-S8-04): explained, so reported apart, not as an exception.
+  const refunds = { count: 0, value_minor: 0 };
   let paid = 0;
   if (financial) {
     for (const r of revisions) {
-      if (r.settled === null) {
+      if (r.settled === null && r.refunded !== null) {
+        refunds.count++;
+        refunds.value_minor += r.refunded;
+      } else if (r.settled === null) {
         // A zero-total revision owes nothing: checkout records it as settled without a
         // payment row (checkout.ts), and the payments screen does not list it either.
         if (r.total_minor > 0 && (r.visit_status === 'closed' || r.business_date < clock.today)) {
@@ -185,6 +193,7 @@ export function kpis(q: KpiParams): KpiDTO {
       submitted_rounds: submittedRounds,
     },
     payment_exceptions: exceptions,
+    refunds_after_checkout: refunds,
     staff_response: {
       accept_median_s: accept.median, accept_p90_s: accept.p90,
       ack_median_s: ack.median, ack_p90_s: ack.p90,

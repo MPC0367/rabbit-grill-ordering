@@ -1,7 +1,7 @@
 // Insights pieces (DESIGN.md §10.20 StatCard, §10.21 headline column).
 import { forwardRef, useCallback, useEffect, useId, useRef, type HTMLAttributes, type ReactNode } from 'react';
 import { useI18n } from '../../lib/i18n.tsx';
-import { roveIndex, roveKeys, cx, Ico, safeId } from './parts.tsx';
+import { roveBlur, roveIndex, roveKeys, cx, Ico, safeId } from './parts.tsx';
 import { KeyValue, type KeyValueItem } from './KeyValue.tsx';
 import { Pill } from '../Badge.tsx';
 import { Skeleton } from '../Feedback.tsx';
@@ -275,7 +275,7 @@ export function MetricSwitch<V extends string>({ options, value, onChange, onExp
   const active = options.findIndex((o) => o.value === value);
   return (
     <div className={cx('metrics', className)}>
-      <div className="metrics__group" role="group" aria-label={label ?? t('common.stats.metric')} onKeyDown={(e) => roveKeys(e)}>
+      <div className="metrics__group" role="group" aria-label={label ?? t('common.stats.metric')} onKeyDown={(e) => roveKeys(e)} onBlur={roveBlur}>
         {options.map((o, i) => (
           <button
             key={o.value}

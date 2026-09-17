@@ -1,12 +1,13 @@
 // Guest composites (DESIGN §8.1, §10.13, §10.14, §10.30): masthead, page
 // head, list rows and the service menu, allergy notice, order lines, the
 // unsent-draft nudge and the running total. Presentational only.
-import { createElement, forwardRef, type AnchorHTMLAttributes, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react';
+import { createElement, forwardRef, useRef, type AnchorHTMLAttributes, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react';
 import type { AllergenInfoDTO } from '../../../shared/dto.ts';
 import { dateLabel } from '../lib/format.ts';
 import { linkHandler } from '../lib/router.ts';
 import { useI18n } from '../lib/i18n.tsx';
-import { cx } from './cx.ts';
+import { cx, mergeRefs } from './cx.ts';
+import { usePinnedEdge } from './hooks.ts';
 import { Icon, type IconName } from './Icon.tsx';
 import { Button } from './Button.tsx';
 import { Leader, Price } from './Price.tsx';
@@ -32,8 +33,10 @@ export const GuestHeader = forwardRef<HTMLElement, GuestHeaderProps>(function Gu
   { tableLabel, homeHref = '/menu', nav, actions, langControl, className, ...rest },
   ref,
 ) {
+  const own = useRef<HTMLElement | null>(null);
+  usePinnedEdge(own, 'top');
   return (
-    <header ref={ref} className={cx('mast', className)} {...rest}>
+    <header ref={mergeRefs(ref, own)} className={cx('mast', className)} {...rest}>
       <div className="mast__in">
         <TableTag label={tableLabel} />
         <Wordmark href={homeHref} />
@@ -127,8 +130,17 @@ export function ListRow({ icon, title, sub, trailing, onClick, href, disabled, o
     );
   }
   if (onClick) {
+    // aria-disabled, not `disabled`: a row that turns unavailable under the
+    // pointer (a request just sent) keeps focus, so the reader stays in place
+    // and hears the status that follows instead of dropping to <body>.
     return (
-      <button type="button" className={cx('srow', className)} onClick={onClick} disabled={disabled} aria-haspopup={opensDialog ? 'dialog' : undefined}>
+      <button
+        type="button"
+        className={cx('srow', className)}
+        onClick={() => { if (!disabled) onClick(); }}
+        aria-disabled={disabled || undefined}
+        aria-haspopup={opensDialog ? 'dialog' : undefined}
+      >
         {inner}
       </button>
     );

@@ -9,7 +9,7 @@ import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import type { Context, MiddlewareHandler } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { config } from '../config.ts';
-import { insert, one, run } from '../db/index.ts';
+import { insert, one, run, tx } from '../db/index.ts';
 import { newSecret } from '../../shared/ids.ts';
 import { can, permissionsFor, type Permission, type Role } from '../../shared/permissions.ts';
 import type { VisitStatus } from '../../shared/status.ts';
@@ -17,6 +17,7 @@ import { nowIso } from '../../shared/time.ts';
 import { AppError } from './errors.ts';
 import { sha256 } from './http.ts';
 import { getSettings } from './settings.ts';
+import { pokeStreams } from './events.ts';
 import type { Actor } from './audit.ts';
 
 export const STAFF_COOKIE = 'rg_staff';
@@ -90,6 +91,7 @@ export function startStaffSession(c: Context, userId: string): void {
 export function endStaffSession(c: Context): void {
   const token = getCookie(c, STAFF_COOKIE);
   if (token) run('UPDATE staff_sessions SET revoked_at = :now WHERE id = :id AND revoked_at IS NULL', { id: sha256(token), now: nowIso() });
+  pokeStreams();
   deleteCookie(c, STAFF_COOKIE, { path: '/', secure: config.cookieSecure });
 }
 
@@ -104,6 +106,8 @@ export function loadStaff(c: Context): StaffContext | null {
     { id },
   );
   if (!row) return null;
+  // Demo accounts (published passwords) have no access while the restaurant is live.
+  if (row.is_fixture === 1 && getSettings().operating_mode === 'live') return null;
   const now = Date.now();
   if (new Date(row.expires_at).getTime() <= now) return null;
   if (now - new Date(row.last_seen_at).getTime() > 60_000) {
@@ -229,6 +233,21 @@ export function guestOf(c: Context): GuestContext {
   const g = c.get('guest') as GuestContext | undefined;
   if (!g) throw new AppError('visit_access_required');
   return g;
+}
+
+/**
+ * A guest mutation's transaction. requireGuest() checks the cookie before the
+ * body is read; staff may revoke the session while a slow phone is still
+ * uploading, so the session is checked again inside the transaction and a
+ * revoked guest creates nothing.
+ */
+export function guestTx<T>(guestId: string, fn: () => T): T {
+  return tx(() => {
+    const row = one<{ revoked_at: string | null }>('SELECT revoked_at FROM guest_sessions WHERE id = ?', [guestId]);
+    if (!row) throw new AppError('visit_access_required');
+    if (row.revoked_at) throw new AppError('visit_access_revoked');
+    return fn();
+  });
 }
 
 /** Hash a new guest token for storage. */

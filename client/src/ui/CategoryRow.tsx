@@ -3,8 +3,8 @@
 // current tab; it never reveals or hides content.
 import { forwardRef, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useI18n } from '../lib/i18n.tsx';
-import { cx, prefersReducedMotion } from './cx.ts';
-import { scrollIntoViewInline, useGlideMark } from './hooks.ts';
+import { cx, mergeRefs, prefersReducedMotion } from './cx.ts';
+import { scrollIntoViewInline, useGlideMark, usePinnedEdge } from './hooks.ts';
 import { Icon } from './Icon.tsx';
 import { Sheet } from './Sheet.tsx';
 
@@ -37,7 +37,10 @@ export const CategoryRow = forwardRef<HTMLDivElement, CategoryRowProps>(function
   const { t } = useI18n();
   const scroller = useRef<HTMLElement | null>(null);
   const mark = useRef<HTMLSpanElement | null>(null);
+  const row = useRef<HTMLDivElement | null>(null);
   useGlideMark(scroller, mark, '[aria-current="true"]', `${currentId}|${categories.length}`, { inset: 12 });
+  // Focus moving up the menu stops below the masthead and this row.
+  usePinnedEdge(row, 'top');
 
   // The current tab scrolls itself into view (horizontal only).
   useEffect(() => {
@@ -47,7 +50,7 @@ export const CategoryRow = forwardRef<HTMLDivElement, CategoryRowProps>(function
   }, [currentId]);
 
   return (
-    <div ref={ref} className={cx('catrow', className)}>
+    <div ref={mergeRefs(ref, row)} className={cx('catrow', className)}>
       <button type="button" className="catrow__all" aria-haspopup="dialog" onClick={onOpenAll}>
         <Icon name="list" />
         {allLabel ?? t('common.allCategories')}

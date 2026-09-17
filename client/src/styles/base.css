@@ -89,7 +89,24 @@ em { font-weight: var(--fw-semibold); }
   outline-offset: var(--focus-offset);
   border-radius: 2px;
 }
-dialog:focus-visible, [tabindex="-1"]:focus-visible { outline: none; }
+/* No ring on programmatic focus targets (a page's <main>, a step heading, a
+   drawer panel). Controls keep theirs even at tabindex -1: roving groups
+   (chips, metric switch, chart bars, menu items) move focus onto items that
+   are out of the tab order, and keyboard users must still see where they are. */
+dialog:focus-visible,
+[tabindex="-1"]:not(button, a[href], input, select, textarea, summary, [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="tab"], [role="radio"], [role="checkbox"], [role="switch"], [role="gridcell"], [data-rove]):focus-visible { outline: none; }
+
+/* Focus is never hidden under a pinned bar (WCAG 2.4.11). ui/hooks.ts
+   usePinnedEdge publishes the band each bar covers: the guest dock and the
+   staff phone bar at the bottom, the masthead, category row and workspace
+   header at the top. The bottom band is scroll padding (it also serves
+   scrollIntoView and anchors). The top band only moves focused controls,
+   because pages already give their scroll targets a scroll-margin-top
+   that a root padding would double. */
+html[data-pinned-bottom] { scroll-padding-bottom: calc(var(--pinned-bottom) + 8px); }
+:where(html[data-pinned-top] :is(a[href], button, input, select, textarea, summary, [tabindex="0"], [data-rove], [role="menuitem"], [role="menuitemradio"], [role="option"], [role="tab"]):focus-visible) {
+  scroll-margin-top: calc(var(--pinned-top) + 8px);
+}
 
 /* ---------- utilities ---------- */
 .visually-hidden, .sr {

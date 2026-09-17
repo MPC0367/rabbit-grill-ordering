@@ -112,6 +112,7 @@ ul.plain li { margin: 0 0 1.2mm; }
 table { width: 100%; border-collapse: collapse; margin: 0 0 3mm; }
 table.fixed { table-layout: fixed; }
 table.fixed td { overflow-wrap: anywhere; }
+table.fixed.words td { overflow-wrap: break-word; word-break: normal; hyphens: manual; }
 thead { display: table-header-group; }
 tfoot { display: table-row-group; }
 tr { break-inside: avoid; }

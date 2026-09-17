@@ -13,6 +13,7 @@
 .c5-kvline { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font: var(--type-ui); }
 .c5-kvline span { color: var(--text-2); }
 .c5-kvline b { font: var(--fw-medium) var(--fs-20)/1.2 var(--font-display); font-feature-settings: var(--num-features); }
+.c5-kvline b:lang(th) { line-height: var(--lh-thai-min); }
 .c5-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .c5-actions > .btn { flex: 1 1 180px; }
 .c5-callout { margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-ctl); font: var(--fw-semibold) var(--fs-14)/1.5 var(--font-ui); }
@@ -84,8 +85,12 @@
 .c5-due__k:lang(th) { font: var(--fw-semibold) var(--fs-13)/var(--lh-thai-min) var(--font-ui); letter-spacing: 0; text-transform: none; }
 .c5-due__v.price { font-size: var(--fs-40); line-height: 1.1; }
 .c5-due__s { font: var(--type-ui-sm); color: var(--text-2); font-feature-settings: var(--num-features); }
-.c5-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin-top: 10px; }
-.c5-quick .btn { padding-inline: 8px; }
+/* two by two in a narrow dialog, one row of four when there is room; a label never outgrows its box */
+.c5-tender { container-type: inline-size; }
+.c5-quick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+@container (min-width: 520px) { .c5-quick { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.c5-quick .btn { min-width: 0; padding-inline: 12px; white-space: normal; line-height: 1.2; text-align: center; }
+.c5-quick .btn:lang(th) { line-height: var(--lh-thai-min); }
 .c5-quick .btn[aria-pressed="true"] { background: var(--selected); border-color: var(--selected-edge); color: var(--action-text); }
 .c5-change { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 12px 16px; border-radius: var(--radius-card); background: var(--ok-tint); color: var(--ok); }
 .c5-change span { font: var(--fw-semibold) var(--fs-16)/1.4 var(--font-ui); }

@@ -14,7 +14,7 @@ import {
   type LineStatus, type Station, type TransitionKind,
 } from '../../shared/status.ts';
 import { businessRangeUtc, nowIso, todayBusinessDate } from '../../shared/time.ts';
-import { insert, one, run, updateVersioned } from '../db/index.ts';
+import { insert, many, one, run, updateVersioned } from '../db/index.ts';
 import { audit } from '../lib/audit.ts';
 import type { StaffContext } from '../lib/auth.ts';
 import { AppError, staleVersion } from '../lib/errors.ts';
@@ -24,6 +24,7 @@ import { cutoffHour } from '../lib/settings.ts';
 import { getVisit } from './guards.ts';
 import { buildOrderDTOs, getOrder, linesByIds, orderDTO, orderDTOs, orderLines, selectOrders, type LineRow } from './orders.ts';
 import { bi } from './pricing.ts';
+import { voidLineAdjustments } from './billing.ts';
 
 export type FinishOrderInput = z.infer<typeof FinishOrderBody>;
 
@@ -152,6 +153,13 @@ function applyChanges(changes: PlannedChange[], staff: StaffContext, now: string
     const group = changes.filter((ch) => ch.line.order_id === orderId);
     for (const ch of group) applyLine(ch, staff, now);
 
+    // A dish that leaves the bill takes its comps and line discounts with it (brief 23).
+    const leaving = group.filter((ch) => isChargeable(ch.line.status) && !isChargeable(ch.to));
+    if (leaving.length) {
+      const why = leaving[0].reason ?? 'no reason given';
+      voidLineAdjustments(leaving.map((ch) => ch.line.id), `Dish ${leaving[0].kind === 'reject' ? 'rejected' : 'cancelled'}: ${why}`, staff);
+    }
+
     if (bumpOrders) {
       const accepted = group.some((ch) => ch.kind === 'forward' && ch.to === 'accepted');
       // A correction that reopens a served dish un-finishes the order.
@@ -221,6 +229,29 @@ export function transitionLines(input: TransitionBody, staff: StaffContext): str
   checkChanges(changes, staff);
   applyChanges(changes, staff, nowIso(), true);
   return orderIds;
+}
+
+// ------------------------------------------------------------------ exception checkout
+/**
+ * A manager closed the visit by exception while dishes were still open: each
+ * one ends rejected (never accepted) or cancelled, with the exception as the
+ * reason, so nothing stays "accepted" forever or is counted as sold (brief 36
+ * step 3). Called by completeCheckout inside its transaction; the checkout
+ * itself is the authority, so the per-step permission and bill-lock checks of
+ * transitionLines do not apply. A finalized revision keeps what it recorded.
+ */
+export function resolveUnservedForCheckout(visitId: string, reason: string, staff: StaffContext): number {
+  const lines = many<LineRow>(
+    `SELECT * FROM order_lines WHERE visit_id = :visit AND status IN (SELECT value FROM json_each(:open))
+      ORDER BY submitted_at, order_id, line_no`,
+    { visit: visitId, open: ACTIVE_UNSERVED },
+  );
+  const changes: PlannedChange[] = lines.map((line) => {
+    const to: LineStatus = line.status === 'submitted' ? 'rejected' : 'cancelled';
+    return { line, to, kind: transitionKind(line.status, to)!, reason };
+  });
+  if (changes.length) applyChanges(changes, staff, nowIso(), true);
+  return changes.length;
 }
 
 // ------------------------------------------------------------------ finish order
@@ -325,7 +356,9 @@ export function listStaffOrders(f: StaffOrderFilter, staff: StaffContext | null)
   if (f.scope === 'active') {
     params.today_start = businessRangeUtc(today, today, cutoff).start;
     params.unserved = ACTIVE_UNSERVED;
-    where.push(`v.status <> 'closed'`);
+    // Driven from the open visits (partial index) so the board never scans the
+    // whole order history (D-S8-14).
+    where.push(`o.visit_id IN (SELECT va.id FROM visits va WHERE va.status <> 'closed')`);
     where.push(`(EXISTS (SELECT 1 FROM order_lines a WHERE a.order_id = o.id AND a.status IN (SELECT value FROM json_each(:unserved)))
                  OR (o.finished_at IS NULL AND o.updated_at >= :today_start))`);
   } else {

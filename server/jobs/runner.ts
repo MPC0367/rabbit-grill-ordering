@@ -6,11 +6,16 @@
 //   aggregates       every 5 min  (S6 refreshAggregates, last 3 business days)
 //   year rollover    at start and every 10 min: completed years with data get
 //                    a final annual report + data export (nothing is reset)
+//   seasonal log     at start and every 10 min: seasonal dishes that opened or
+//                    closed at the business-day boundary are logged (S8)
+//   retention        shortly after start, then checked hourly; runs once per
+//                    business day (notes, feedback, raw events, audit; S8)
 //
 // On start, report jobs left "generating" by a stopped process are queued
 // again. Timers are unref()'d so they never keep the process alive, and each
 // task catches its own errors so one failure cannot stop the others.
 import { addDays, nowIso, todayBusinessDate } from '../../shared/time.ts';
+import { config } from '../config.ts';
 import { cutoffHour } from '../lib/settings.ts';
 import { ensureFinalReports, requeueInterrupted, runNextReportJob } from '../domain/reports.ts';
 
@@ -18,12 +23,14 @@ const REPORT_POLL_MS = 2_000;
 const QUOTE_EXPIRY_MS = 60_000;
 const AGGREGATES_MS = 5 * 60_000;
 const ROLLOVER_MS = 10 * 60_000;
+const RETENTION_CHECK_MS = 60 * 60_000;
 
 let timers: NodeJS.Timeout[] = [];
 let started = false;
 let stopping = false;
 let reportBusy = false;
 let aggregatesBusy = false;
+let retentionBusy = false;
 
 function log(task: string, message: string): void {
   console.log(`[jobs] ${task}: ${message}`);
@@ -82,6 +89,33 @@ async function refreshAggregatesTask(): Promise<void> {
   }
 }
 
+async function seasonalTask(): Promise<void> {
+  try {
+    const { syncSeasonalAvailability } = await import('../domain/catalog.ts');
+    const { tx } = await import('../db/index.ts');
+    const n = tx(() => syncSeasonalAvailability());
+    if (n) log('availability', `${n} seasonal dish(es) changed orderability`);
+  } catch (err) {
+    console.error('[jobs] seasonal availability failed:', (err as Error)?.message ?? err);
+  }
+}
+
+async function retentionTask(): Promise<void> {
+  if (retentionBusy || stopping || !config.retentionJob) return;
+  retentionBusy = true;
+  try {
+    const { retentionDue, runRetention } = await import('../domain/retention.ts');
+    if (!retentionDue()) return;
+    const r = await runRetention();
+    log('retention', `notes ${r.order_line_notes + r.service_request_notes + r.portion_request_notes + r.portion_quote_notes}, `
+      + `feedback ${r.feedback_comments}, raw events ${r.raw_events}, audit ${r.audit_entries}, outbox ${r.outbox_events}, sessions ${r.staff_sessions}`);
+  } catch (err) {
+    console.error('[jobs] retention failed:', (err as Error)?.message ?? err);
+  } finally {
+    retentionBusy = false;
+  }
+}
+
 function rollover(): void {
   safely('rollover', () => {
     const queued = ensureFinalReports();
@@ -117,10 +151,14 @@ export function startJobs(): void {
   every(QUOTE_EXPIRY_MS, expireQuotesTask);
   every(AGGREGATES_MS, refreshAggregatesTask);
   every(ROLLOVER_MS, rollover);
+  every(ROLLOVER_MS, seasonalTask);
+  every(RETENTION_CHECK_MS, retentionTask);
   soon(1_000, pumpReports);
   soon(3_000, preloadRenderer);
   soon(5_000, expireQuotesTask);
   soon(15_000, refreshAggregatesTask);
+  soon(2_000, seasonalTask);
+  soon(60_000, retentionTask);
 }
 
 async function preloadRenderer(): Promise<void> {

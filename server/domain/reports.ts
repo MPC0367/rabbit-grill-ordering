@@ -10,7 +10,9 @@
 //
 // Labels: the current (or a future) year is always "provisional"; a completed
 // year gets "final" first and "revised" (with a reason) once a ready final
-// exists. Nothing is ever overwritten: a revision is a new job and a new file.
+// exists IN THE SAME SCOPE (financial, raw events, demo data): a manager's
+// first non-financial copy of a year is its own final (D-S8-13). Nothing is
+// ever overwritten: a revision is a new job and a new file.
 import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
@@ -26,7 +28,7 @@ import type { ReportJobDTO, ReportYearDTO } from '../../shared/dto.ts';
 import { newId } from '../../shared/ids.ts';
 import type { Permission } from '../../shared/permissions.ts';
 import type { JobStatus, ReportLabel } from '../../shared/status.ts';
-import { nowIso, todayBusinessDate, yearOf } from '../../shared/time.ts';
+import { businessDate, nowIso, todayBusinessDate, yearOf } from '../../shared/time.ts';
 import { writeCsvBundle } from './export/bundle.ts';
 import { openSnapshotReader } from './export/reader.ts';
 import { buildSnapshot, requesterLabel, summaryOf } from './export/snapshot.ts';
@@ -164,7 +166,8 @@ export function reportYears(viewer?: { can: (p: Permission) => boolean }): Repor
         last_date: o?.last ?? null,
         order_rounds: o?.real ?? 0,
         visits: visits.get(year)?.real ?? 0,
-        telemetry_since: telemetry.get(year) ?? null,
+        // A Bangkok business date (the first session's start is a UTC instant).
+        telemetry_since: telemetry.has(year) && telemetry.get(year) ? businessDate(telemetry.get(year)!, cutoffHour()) : null,
       },
       jobs: yearJobs.map((j) => jobDTO(j, viewer)),
       needs_revision: needsRevision,
@@ -200,9 +203,10 @@ export function enqueueReport(args: {
   if (pending) return jobDTO(pending, req);
 
   const current = currentReportYear();
+  const sameScope = { ...scope, financial, raw };
   const readyFinal = one<{ id: string }>(
     `SELECT id FROM report_jobs WHERE kind = :kind AND year = :year AND include_fixture = :fx AND status = 'ready'
-       AND label IN ('final', 'revised') ORDER BY revision DESC LIMIT 1`, scope);
+       AND financial = :financial AND raw_events = :raw AND label IN ('final', 'revised') ORDER BY revision DESC LIMIT 1`, sameScope);
   const label: ReportLabel = year >= current ? 'provisional' : readyFinal ? 'revised' : 'final';
   const reason = args.reason?.trim() || null;
   if (label === 'revised' && !reason) {
@@ -212,7 +216,7 @@ export function enqueueReport(args: {
   }
   const latestReady = one<{ id: string }>(
     `SELECT id FROM report_jobs WHERE kind = :kind AND year = :year AND include_fixture = :fx AND status = 'ready'
-      ORDER BY revision DESC LIMIT 1`, scope);
+       AND financial = :financial AND raw_events = :raw ORDER BY revision DESC LIMIT 1`, sameScope);
   const revision = (one<{ n: number | null }>(
     'SELECT MAX(revision) AS n FROM report_jobs WHERE kind = :kind AND year = :year AND include_fixture = :fx', scope)?.n ?? 0) + 1;
 

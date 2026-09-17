@@ -14,7 +14,7 @@ import { csvResponseHeaders, toCsv, type CsvColumn } from '../lib/csv.ts';
 import { AppError } from '../lib/errors.ts';
 import { clientIp } from '../lib/http.ts';
 import { ingestAnalytics, engagementStats } from '../domain/analytics.ts';
-import { fixtureSql, resolvePeriod, type StatsParams } from '../domain/aggregates.ts';
+import { datesBetween, fixtureSql, resolvePeriod, type StatsParams } from '../domain/aggregates.ts';
 import { kpis } from '../domain/kpi.ts';
 import { dayDrilldown, itemStats, listRounds, menuStats, orderStats, type RoundRow } from '../domain/stats.ts';
 
@@ -166,17 +166,19 @@ function engagementCsv(e: EngagementDTO): string {
   add('funnel', 'submit_sessions', f.submit_sessions, f.sessions);
   add('orders', 'attributed_orders', f.attributed_orders, f.attributed_orders + f.unattributed_orders);
   add('orders', 'unattributed_orders', f.unattributed_orders, f.attributed_orders + f.unattributed_orders);
-  for (const s of e.scroll) add('scroll_depth', `reached_${s.threshold}`, s.sessions, c.measured_sessions);
+  for (const s of e.scroll) add('scroll_depth', `reached_${s.threshold}`, s.sessions, e.scroll_sessions ?? c.measured_sessions);
   for (const cat of e.categories) add('category_exposure', cat.category_id, cat.sessions_exposed, c.measured_sessions, null, cat.name);
   for (const it of e.items) {
     add('item_impressions', it.item_id, it.impressions, null, null, it.name);
     add('item_detail_opens', it.item_id, it.detail_opens, null, null, it.name);
-    add('item_adds', it.item_id, it.adds, it.impressions, null, it.name);
+    add('item_adds', it.item_id, it.adds, null, null, it.name);
+    add('item_impression_sessions', it.item_id, it.impression_sessions ?? null, null, null, it.name);
+    add('item_add_rate', it.item_id, it.add_rate, it.impression_sessions ?? null, null, it.name);
     add('item_submitted_qty_attributed', it.item_id, it.submitted, null, null, it.name);
   }
   for (const d of e.daily) {
     add('daily_sessions', d.date, d.sessions);
-    add('daily_active_ms', d.date, d.active_ms);
+    add('daily_active_menu_ms', d.date, d.active_ms);
   }
   return toCsv(rows, [
     { key: 'section', header: 'section', value: (r) => r.section },
@@ -196,22 +198,46 @@ interface RawEventRow {
   client_seq: number | null; received_at: string; business_date: string; is_fixture: number;
 }
 
-/** Retained raw events (pseudonymous session ids; no visit ids, no free text). */
-function rawEventsCsv(p: StatsParams): string {
+/**
+ * Retained raw events (pseudonymous session ids; no visit ids, no free text),
+ * streamed one business day at a time with a yield in between: a year of
+ * events is tens of megabytes, and building it in one piece stalled ordering
+ * for over a second (D-S8-14).
+ */
+function rawEventsCsv(p: StatsParams): ReadableStream<Uint8Array> {
   const rp = resolvePeriod(p);
-  const rows = many<RawEventRow>(
-    `SELECT e.event_id, e.session_id, s.kind, e.type, e.route, e.item_id, e.category_id, e.active_ms, e.depth, e.position,
-            e.quantity_delta, e.quick_add, e.layout_version, e.menu_version, e.client_seq, e.received_at, e.business_date, e.is_fixture
-       FROM analytics_events e JOIN analytics_sessions s ON s.id = e.session_id
-      WHERE e.business_date BETWEEN :from AND :to AND ${fixtureSql('e', rp.include_fixture)}
-      ORDER BY e.business_date, e.received_at, e.session_id, e.client_seq`,
-    { from: rp.from, to: rp.to },
-  );
   const keys: Array<keyof RawEventRow> = ['event_id', 'session_id', 'kind', 'type', 'route', 'item_id', 'category_id', 'active_ms', 'depth',
     'position', 'quantity_delta', 'quick_add', 'layout_version', 'menu_version', 'client_seq', 'business_date', 'is_fixture'];
   const cols: CsvColumn<RawEventRow>[] = keys.map((k) => ({ key: k, header: k === 'kind' ? 'session_kind' : k, value: (r) => r[k] }));
   cols.splice(cols.length - 2, 0, { key: 'received_at', header: 'received_at_bangkok', value: (r) => bangkokIso(r.received_at) });
-  return toCsv(rows, cols);
+  const dates = datesBetween(rp.from, rp.to);
+  const encoder = new TextEncoder();
+  let index = -1;
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      if (index === -1) {
+        index = 0;
+        controller.enqueue(encoder.encode(toCsv([], cols)));
+        return;
+      }
+      // Skip empty days in one go; stop after one non-empty day per pull.
+      while (index < dates.length) {
+        const rows = many<RawEventRow>(
+          `SELECT e.event_id, e.session_id, s.kind, e.type, e.route, e.item_id, e.category_id, e.active_ms, e.depth, e.position,
+                  e.quantity_delta, e.quick_add, e.layout_version, e.menu_version, e.client_seq, e.received_at, e.business_date, e.is_fixture
+             FROM analytics_events e JOIN analytics_sessions s ON s.id = e.session_id
+            WHERE e.business_date = :d AND ${fixtureSql('e', rp.include_fixture)}
+            ORDER BY e.received_at, e.session_id, e.client_seq, e.event_id`,
+          { d: dates[index++] },
+        );
+        if (rows.length === 0) continue;
+        controller.enqueue(encoder.encode(toCsv(rows, cols, { bom: false, header: false })));
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        return;
+      }
+      controller.close();
+    },
+  });
 }
 
 function exportName(view: string, p: StatsParams): string {
@@ -249,7 +275,7 @@ export const insightsStaff = new Hono<AppEnv>()
     const q = statsQuery(c, ExportQuery);
     const p = periodParams(q);
     const staff = staffOf(c);
-    let csv: string;
+    let csv: string | ReadableStream<Uint8Array>;
     let name: string;
     switch (q.view) {
       case 'orders':
@@ -291,7 +317,8 @@ export const analyticsRoutes = new Hono<AppEnv>()
     '/batch',
     bodyLimit({
       maxSize: MAX_BATCH_BYTES,
-      onError: (c) => c.json({ error: { code: 'bad_request', message: 'Analytics batch is too large' } }, 413),
+      // Connection: close - the unread body stays on the socket, which must not be reused (D-S8-09).
+      onError: (c) => c.json({ error: { code: 'bad_request', message: 'Analytics batch is too large' } }, 413, { Connection: 'close' }),
     }),
     async (c) => {
       let raw: unknown;

@@ -40,6 +40,19 @@ export function qrUrl(token: string): string {
   return `${config.publicBaseUrl}/q/${encodeURIComponent(token)}`;
 }
 
+/**
+ * The QR base URL can only be opened on this computer (localhost / loopback):
+ * cards printed now would not work on any phone. The print page must warn.
+ */
+export function qrBaseIsLocal(): boolean {
+  try {
+    const host = new URL(config.publicBaseUrl).hostname;
+    return host === 'localhost' || host === '[::1]' || host === '::1' || /^127\./.test(host);
+  } catch {
+    return true;
+  }
+}
+
 export function findToken(token: string): QrTokenRow | undefined {
   return one<QrTokenRow>('SELECT * FROM table_qr_tokens WHERE token = ?', [token]);
 }

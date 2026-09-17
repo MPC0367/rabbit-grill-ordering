@@ -1,18 +1,20 @@
 // Line transitions and Finish order with version checks, stale-conflict
 // handling and polite announcements. Nothing is advanced without a tap.
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OrderLineDTO, StaffOrderDTO } from '../../../../../shared/dto.ts';
 import type { LineStatus } from '../../../../../shared/status.ts';
 import { api } from '../../../lib/api.ts';
 import { useI18n } from '../../../lib/i18n.tsx';
-import type { Resource } from '../../../lib/live.tsx';
+import { useLive, type Resource } from '../../../lib/live.tsx';
 import { useAnnounce, useToast } from '../../../ui/index.ts';
+import { useStaff } from '../../shell/session.tsx';
 import { errorText, staleCurrent, sumQty, tn, toApiError } from '../support.ts';
 import { lastChange, tableOf } from './model.ts';
 
 export interface OrdersResponse { orders: StaffOrderDTO[]; server_time: string }
 
-export type BusyKind = 'primary' | 'secondary' | 'panel';
+/** Which control shows the spinner: the ticket's primary or secondary, the ⋯ panel, or a ready-part slip. */
+export type BusyKind = 'primary' | 'secondary' | 'panel' | 'part';
 
 export interface Resolution { line_id: string; version: number; action: 'served' | 'cancel'; reason?: string | null }
 
@@ -35,6 +37,18 @@ export function useBoardActions(res: Resource<OrdersResponse>) {
   const { t, has } = useI18n();
   const toast = useToast();
   const announce = useAnnounce();
+  const { me } = useStaff();
+  const live = useLive();
+  // A tap whose answer was lost may still have gone through: refetch now and
+  // again as soon as the connection is back (D-FX-OPS-01).
+  const recheck = useRef(false);
+  useEffect(() => {
+    if (!recheck.current) return;
+    const again = () => { if (recheck.current) { recheck.current = false; void res.refresh(); } };
+    if (live.state === 'live') again();
+    window.addEventListener('online', again);
+    return () => window.removeEventListener('online', again);
+  }, [live.state, res.refresh]);
   const [conflicts, setConflicts] = useState<Record<string, { by: string; at: string }>>({});
   const [busy, setBusy] = useState<Record<string, BusyKind>>({});
   const inflight = useRef(new Set<string>());
@@ -53,14 +67,17 @@ export function useBoardActions(res: Resource<OrdersResponse>) {
     const list = cur ? (Array.isArray(cur) ? cur : [cur]) : [];
     merge(list);
     const marks: Record<string, { by: string; at: string }> = {};
+    let mine = false;
     for (const id of orderIds) {
       const change = lastChange(list.find((o) => o.id === id) ?? ({ lines: [] } as unknown as StaffOrderDTO));
+      mine = mine || (Boolean(change?.by) && change?.by === me.user.display_name);
       marks[id] = { by: change?.by || t('orders.conflict.someone'), at: change?.at ?? new Date().toISOString() };
     }
     setConflicts((c) => ({ ...c, ...marks }));
-    toast.show({ message: t('orders.toast.stale'), tone: 'info' });
+    // The newer change can be this person's own earlier tap whose answer was lost.
+    toast.show({ message: t(mine ? 'orders.toast.staleMine' : 'orders.toast.stale'), tone: 'info' });
     void res.refresh();
-  }, [merge, res.refresh, t, toast]);
+  }, [merge, res.refresh, t, toast, me.user.display_name]);
 
   const review = useCallback((orderId: string) => {
     setConflicts((c) => {
@@ -92,12 +109,16 @@ export function useBoardActions(res: Resource<OrdersResponse>) {
         markStale(err, [order.id]);
         return { ok: false, stale: true, message: t('orders.toast.stale') };
       }
-      const message = errorText(t, err);
+      const message = e.ambiguous ? t('orders.err.ambiguous') : errorText(t, err);
       if (e.code === 'unresolved_orders') {
         const lines = (e.details as { lines?: Array<{ id: string; status: LineStatus; quantity: number; version: number }> } | null)?.lines ?? [];
         return { ok: false, stale: false, message, unresolved: lines };
       }
       if (e.code === 'invalid_transition' || e.code === 'already_done' || e.code === 'conflict') void res.refresh();
+      if (e.ambiguous) {
+        recheck.current = true;
+        void res.refresh();
+      }
       return { ok: false, stale: false, message };
     } finally {
       inflight.current.delete(order.id);

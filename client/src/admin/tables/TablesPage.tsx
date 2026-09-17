@@ -38,7 +38,8 @@ export default function TablesPage({ tableId }: { tableId?: string }) {
   const view: 'live' | 'manage' = query.get('view') === 'manage' ? 'manage' : 'live';
   const allowed = can('tables.view');
 
-  const res = useLiveResource<TablesDTO>(allowed ? '/api/staff/tables' : null, TABLE_TOPICS);
+  // The 30 s safety refresh also notices an unreachable server: the grid then says it is out of date.
+  const res = useLiveResource<TablesDTO>(allowed ? '/api/staff/tables' : null, TABLE_TOPICS, null, 30_000);
   const tiles = useMemo(() => res.data?.tables ?? [], [res.data]);
   const refreshTables = useCallback(() => { void res.refresh(); }, [res.refresh]);
   const checkoutIds = useMemo(() => tiles.filter((x) => x.state === 'checking_out' && x.visit).map((x) => x.visit!.id), [tiles]);

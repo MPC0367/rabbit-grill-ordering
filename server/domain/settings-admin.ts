@@ -11,12 +11,15 @@ import { OWNER_ONLY, PERMISSIONS, ROLES, type Permission } from '../../shared/pe
 import { FUTURE_ONLY_SETTINGS, type Settings } from '../../shared/settings.ts';
 import { SERVICE_TYPES } from '../../shared/status.ts';
 import { nowIso } from '../../shared/time.ts';
-import { many } from '../db/index.ts';
+import { many, one, run } from '../db/index.ts';
 import { audit } from '../lib/audit.ts';
 import type { StaffContext } from '../lib/auth.ts';
 import { AppError } from '../lib/errors.ts';
 import { emit } from '../lib/events.ts';
 import { getSettings, putSetting } from '../lib/settings.ts';
+import { revokeSessions } from './team.ts';
+import { trackOrderability } from './catalog-edit.ts';
+import { retentionStatus, type RetentionStatus } from './retention.ts';
 
 type Key = keyof Settings;
 
@@ -151,6 +154,8 @@ export interface SettingsView {
   settings: Settings;
   updated: Partial<Record<Key, string>>;
   future_only: string[];
+  /** The daily clean-up task that applies settings.retention (D-S8-02). */
+  retention_status: RetentionStatus;
 }
 
 export function settingsView(): SettingsView {
@@ -159,17 +164,57 @@ export function settingsView(): SettingsView {
   for (const r of many<{ key: string; updated_at: string }>('SELECT key, updated_at FROM settings')) {
     if (r.key in settings) updated[r.key as Key] = r.updated_at;
   }
-  return { settings, updated, future_only: [...FUTURE_ONLY_SETTINGS] };
+  return { settings, updated, future_only: [...FUTURE_ONLY_SETTINGS], retention_status: retentionStatus() };
 }
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
+/**
+ * Reserved patch field (not a setting): with `operating_mode: 'live'`, also
+ * deactivate every active demo staff account in the same transaction.
+ */
+export const DEACTIVATE_DEMO_STAFF = 'deactivate_demo_staff';
+
+/**
+ * Going live with the demo accounts (published passwords) still active is
+ * refused (D-S8-11). With DEACTIVATE_DEMO_STAFF the accounts are deactivated
+ * and signed out here instead; the acting owner must be a real account and a
+ * real active owner must remain.
+ */
+function retireDemoStaff(deactivate: boolean, staff: StaffContext): void {
+  const demo = many<{ id: string; username: string; role: string }>(
+    'SELECT id, username, role FROM staff_users WHERE is_fixture = 1 AND active = 1 ORDER BY username');
+  if (demo.length === 0) return;
+  const usernames = demo.map((u) => u.username);
+  if (!deactivate) {
+    throw new AppError('demo_accounts_active', 'Deactivate the demo staff accounts before switching to live mode.', { usernames });
+  }
+  if (staff.user.is_fixture === 1) {
+    throw new AppError('demo_accounts_active', 'You are signed in with a demo account. Sign in with your own owner account to go live.', { usernames, self: true });
+  }
+  const realOwners = one<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM staff_users WHERE role = 'owner' AND active = 1 AND is_fixture = 0`)?.n ?? 0;
+  if (realOwners === 0) {
+    throw new AppError('last_owner', 'Create an owner account of your own before going live: the demo owner will be switched off.');
+  }
+  const now = nowIso();
+  for (const u of demo) {
+    run('UPDATE staff_users SET active = 0, updated_at = :now, version = version + 1 WHERE id = :id AND active = 1', { id: u.id, now });
+    const revoked = revokeSessions(u.id);
+    audit(staff.actor, 'team.deactivate', { type: 'staff_user', id: u.id }, {
+      reason: 'Demo account switched off when the restaurant went live',
+      before: { active: true }, after: { active: false, sessions_revoked: revoked },
+    });
+  }
+}
+
 /** Validate and apply a settings patch. Runs inside tx(). All keys succeed or none do. */
-export function patchSettings(patch: Record<string, unknown>, staff: StaffContext): SettingsView {
+export function patchSettings(input: Record<string, unknown>, staff: StaffContext): SettingsView {
   const current = getSettings();
   const issues: Array<{ path: string; message: string; code: string }> = [];
   const next = new Map<Key, unknown>();
+  const { [DEACTIVATE_DEMO_STAFF]: deactivateDemo, ...patch } = input;
 
   for (const [rawKey, value] of Object.entries(patch)) {
     if (!(rawKey in SCHEMAS)) {
@@ -193,8 +238,20 @@ export function patchSettings(patch: Record<string, unknown>, staff: StaffContex
     }
     next.set(key, parsed.data);
   }
+  if (deactivateDemo !== undefined && typeof deactivateDemo !== 'boolean') {
+    issues.push({ path: DEACTIVATE_DEMO_STAFF, message: 'Use true or false.', code: 'invalid_type' });
+  }
   if (issues.length) throw new AppError('validation_failed', 'Some settings are not valid', { issues });
+  if (next.get('operating_mode') === 'live' && current.operating_mode !== 'live') retireDemoStaff(deactivateDemo === true, staff);
 
+  // Mode and alcohol changes make dishes orderable or not: the availability log
+  // must record it, or "least ordered" treats a switched-off dish as unpopular (D-S8-12).
+  const orderability = ['operating_mode', 'alcohol'].some((k) => next.has(k as Key) && !same(current[k as Key], next.get(k as Key)));
+  const itemIds = orderability ? many<{ id: string }>('SELECT id FROM menu_items').map((r) => r.id) : [];
+  return trackOrderability(itemIds, 'settings', staff.actor, () => applyPatch(current, next, staff));
+}
+
+function applyPatch(current: Settings, next: Map<Key, unknown>, staff: StaffContext): SettingsView {
   const changed: Key[] = [];
   for (const [key, value] of next) {
     const before = current[key];

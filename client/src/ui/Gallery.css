@@ -16,7 +16,7 @@
 .kit__brand .wordmark { justify-items: start; }
 .kit__title { font: var(--type-admin-title); font-size: var(--fs-28); letter-spacing: 0.005em; color: var(--text); }
 .kit__controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
-.kit__jump { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; width: 100%; border-top: 1px solid var(--rule); margin: 0 calc(var(--gutter) * -1); padding: 0 var(--gutter); }
+.kit__jump { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; width: calc(100% + 2 * var(--gutter)); border-top: 1px solid var(--rule); margin: 0 calc(var(--gutter) * -1); padding: 0 var(--gutter); }
 .kit__jump::-webkit-scrollbar { display: none; }
 .kit__jump a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 10px; font: var(--type-meta-th); color: var(--text-2); white-space: nowrap; }
 .kit__jump a:hover { color: var(--text); }

@@ -8,6 +8,7 @@ export const ERROR_CODES = {
   not_found: 404,
   internal: 500,
   rate_limited: 429,
+  payload_too_large: 413,
   csrf_rejected: 403,
   // staff auth
   auth_required: 401,
@@ -60,6 +61,8 @@ export const ERROR_CODES = {
   publish_blocked: 409,
   // team (S7): the change would leave no active owner
   last_owner: 409,
+  // settings: live mode is refused while demo staff accounts are active
+  demo_accounts_active: 409,
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

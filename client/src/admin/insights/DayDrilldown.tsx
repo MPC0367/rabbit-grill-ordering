@@ -8,8 +8,9 @@ import type { OrderStatus } from '../../../../shared/status.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { bangkokParts } from '../../../../shared/time.ts';
 import { clock, num } from '../../lib/format.ts';
+import { useMedia } from '../../lib/store.ts';
 import {
-  DataTable, EmptyState, LinkButton, MiniBars, Pill, SectionHeader, StatusPill, type DataColumn, type SortState,
+  DataTable, EmptyState, LinkButton, MiniBars, Pill, SectionHeader, SelectButton, StatusPill, type DataColumn, type SortState,
 } from '../../ui/index.ts';
 import { ErrorPanel, LoadingBlock, useLiveResource } from './parts.tsx';
 import { dayMonth, spokenDate } from './labels.ts';
@@ -47,6 +48,7 @@ export function DayDrilldown({ date, includeFixture, metric, isToday }: {
   const extra = useLiveResource<{ orders: StaffOrderDTO[] }>(`/api/staff/orders${queryString({ scope: 'history', date, limit: 500 })}`, { topics, debounceMs: 1500 });
   const [showAll, setShowAll] = useState(false);
   const [sort, setSort] = useState<SortState>({ key: 'sent', dir: 'asc' });
+  const phone = useMedia('(max-width: 599px)');
   useEffect(() => { setShowAll(false); }, [date]);
 
   const rows = useMemo<Row[]>(() => {
@@ -114,13 +116,14 @@ export function DayDrilldown({ date, includeFixture, metric, isToday }: {
   };
 
   const columns: Array<DataColumn<Row>> = [
+    // Status sits beside the reference so a narrow frame still shows it before scrolling.
     { key: 'ref', header: t('insights.day.col.ref'), code: true, sortable: true, cell: (r) => <span lang="en">{r.reference}</span> },
+    { key: 'status', header: t('insights.day.col.status'), cell: statusCell },
     { key: 'table', header: t('insights.day.col.table'), sortable: true, cell: (r) => r.table },
     { key: 'round', header: t('insights.day.col.round'), numeric: true, sortable: true, cell: (r) => (r.round === null ? '—' : r.round) },
     { key: 'sent', header: t('insights.day.col.sent'), sortable: true, cell: (r) => clock(r.sentAt) },
-    { key: 'source', header: t('insights.day.col.source'), cell: sourceText },
     { key: 'items', header: t('insights.day.col.items'), numeric: true, sortable: true, cell: (r) => num(r.items) },
-    { key: 'status', header: t('insights.day.col.status'), cell: statusCell },
+    { key: 'source', header: t('insights.day.col.source'), cell: sourceText },
   ];
 
   // Hourly: trim the empty hours before the first and after the last round.
@@ -133,6 +136,48 @@ export function DayDrilldown({ date, includeFixture, metric, isToday }: {
   const hours = firstIdx < 0 ? [] : hourly.slice(firstIdx, lastIdx + 1);
   const nowHour = isToday ? bangkokParts(nowMs()).hour : null;
   const unitWord = useItems ? t('insights.day.unitItems') : t('insights.day.unitRounds');
+
+  const footer = rows.length > FIRST_ROWS ? (
+    <button type="button" className="textlink" aria-expanded={showAll} onClick={() => setShowAll(!showAll)}>
+      {showAll ? t('insights.day.showFewer') : t('insights.day.showAll', { n: num(rows.length) })}
+    </button>
+  ) : undefined;
+
+  // Phones: one stacked row per round (reference and status first) instead of a table that hides columns off the card.
+  const roundsList = phone ? (
+    <div className="insx-daylist">
+      <div className="insx-daylist__bar">
+        <SelectButton<'sent' | 'table' | 'items'>
+          label={t('insights.day.sortLabel')}
+          value={sort.key === 'table' || sort.key === 'items' ? sort.key : 'sent'}
+          options={[
+            { value: 'sent', label: t('insights.day.sort.sent') },
+            { value: 'table', label: t('insights.day.sort.table') },
+            { value: 'items', label: t('insights.day.sort.items') },
+          ]}
+          onChange={(key) => setSort({ key, dir: key === 'items' ? 'desc' : 'asc' })}
+        />
+      </div>
+      <ol className="insx-daylist__rows" aria-label={t('insights.day.caption', { date: spokenDate(date, lang) })}>
+        {visible.map((r) => (
+          <li key={r.id} className="insx-dayrow">
+            <div className="insx-dayrow__top">
+              <span className="insx-dayrow__ref" lang="en">{r.reference}</span>
+              {statusCell(r)}
+            </div>
+            <p className="insx-dayrow__meta">
+              <span>{t('insights.day.rowTable', { table: r.table })}</span>
+              {r.round === null ? null : <span>{t('insights.day.rowRound', { n: r.round })}</span>}
+              <span>{t('insights.day.rowSent', { time: clock(r.sentAt) })}</span>
+              <span>{r.items === 1 ? t('insights.day.rowItemsOne') : t('insights.day.rowItems', { n: num(r.items) })}</span>
+            </p>
+            <p className="insx-dayrow__src">{sourceText(r)}</p>
+          </li>
+        ))}
+      </ol>
+      {footer ? <div className="insx-daylist__foot">{footer}</div> : null}
+    </div>
+  ) : null;
 
   let body;
   if (day.loading && !day.data) {
@@ -151,20 +196,18 @@ export function DayDrilldown({ date, includeFixture, metric, isToday }: {
     body = (
       <div className="insx-dayq">
       <div className="insx-day">
-        <DataTable<Row>
-          className="insx-day__table"
-          caption={t('insights.day.caption', { date: spokenDate(date, lang) })}
-          columns={columns}
-          rows={visible}
-          rowKey={(r) => r.id}
-          sort={sort}
-          onSort={(key) => setSort(sort.key === key ? { key, dir: sort.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' })}
-          footer={rows.length > FIRST_ROWS ? (
-            <button type="button" className="textlink" aria-expanded={showAll} onClick={() => setShowAll(!showAll)}>
-              {showAll ? t('insights.day.showFewer') : t('insights.day.showAll', { n: num(rows.length) })}
-            </button>
-          ) : undefined}
-        />
+        {roundsList ?? (
+          <DataTable<Row>
+            className="insx-day__table"
+            caption={t('insights.day.caption', { date: spokenDate(date, lang) })}
+            columns={columns}
+            rows={visible}
+            rowKey={(r) => r.id}
+            sort={sort}
+            onSort={(key) => setSort(sort.key === key ? { key, dir: sort.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' })}
+            footer={footer}
+          />
+        )}
         <div className="insx-card insx-day__hours">
           <MiniBars
             title={t('insights.day.hourly', { what: unitWord, date: dayMonth(date, lang) })}

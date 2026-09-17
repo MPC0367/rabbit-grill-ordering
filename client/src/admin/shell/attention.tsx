@@ -12,11 +12,12 @@ export const OVERVIEW_TOPICS = ['order.', 'line.', 'service.', 'portion.', 'visi
 const AttentionContext = createContext<Resource<OverviewDTO> | null>(null);
 
 export function AttentionProvider({ enabled, children }: { enabled: boolean; children: ReactNode }) {
-  // The 60 s interval also notices a session the server ended while the stream was quiet.
+  // The 30 s interval also notices a session the server ended, or a server that
+  // stopped answering, while the stream was quiet (the shell's outage banner).
   const overview = useLiveResource<OverviewDTO>(enabled ? '/api/staff/overview' : null, {
     topics: OVERVIEW_TOPICS,
     debounceMs: 250,
-    intervalMs: 60_000,
+    intervalMs: 30_000,
   });
   return <AttentionContext.Provider value={overview}>{children}</AttentionContext.Provider>;
 }

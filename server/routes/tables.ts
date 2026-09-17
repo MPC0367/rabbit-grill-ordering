@@ -8,17 +8,18 @@
 // other streams, so every guard is attached to its own route.
 import { Hono, type Context } from 'hono';
 import type { AppEnv } from '../app.ts';
+import { config } from '../config.ts';
 import { tx } from '../db/index.ts';
 import { clearGuestCookie, guestOf, issueGuestCookie, requireGuest, requireStaff, resolveGuest, staffOf, type GuestContext } from '../lib/auth.ts';
 import { AppError } from '../lib/errors.ts';
 import { body, clientIp } from '../lib/http.ts';
-import { hit, LIMITS } from '../lib/ratelimit.ts';
+import { assertUnderLimit, hit, LIMITS } from '../lib/ratelimit.ts';
 import {
   CreateTableBody, IdSchema, OpenVisitBody, RotateQrBody, TransferVisitBody, UpdateTableBody, UpdateVisitBody,
   VersionBody, VersionReasonBody,
 } from '../../shared/schemas.ts';
 import { getTable } from '../domain/guards.ts';
-import { ensureActiveToken, markCardDownloaded, qrSvg, qrUrl } from '../domain/qr.ts';
+import { ensureActiveToken, markCardDownloaded, qrBaseIsLocal, qrSvg, qrUrl } from '../domain/qr.ts';
 import { createTable, listTables, overview, rotateTableQr, updateTable } from '../domain/tables.ts';
 import {
   guestSessionDTO, joinVisit, leaveVisit, openVisit, qrTarget, resolveQr, revokeGuests, rotatePin, transferVisit,
@@ -73,9 +74,24 @@ export const tablesPublic = new Hono<AppEnv>()
     return c.json(resolveQr(target, currentGuest(c)));
   })
   .post('/qr/join', async (c) => {
-    hit(`qr:join:${clientIp(c)}`, LIMITS.join);
+    // Per address, only FAILED joins use up the budget (D-S8-10): a seating wave of
+    // phones behind one restaurant address must not lock each other out. A looser
+    // ceiling counts every attempt; wrong PINs are also limited per visit (visits.ts).
+    const ip = clientIp(c);
+    const failKey = `qr:join:${ip}`;
+    hit(`qr:join:all:${ip}`, LIMITS.joinAll);
+    assertUnderLimit(failKey, LIMITS.join);
+    const failed = () => {
+      try { hit(failKey, LIMITS.join); } catch { /* already at the limit: the next attempt is refused */ }
+    };
     const raw = await looseJson(c);
-    const target = qrTarget(raw.token);
+    let target: ReturnType<typeof qrTarget>;
+    try {
+      target = qrTarget(raw.token);
+    } catch (err) {
+      failed();
+      throw err;
+    }
     hit(`qr:join:table:${target.table.id}`, LIMITS.joinPerTable);
     let pin: string | undefined;
     if (raw.pin !== undefined && raw.pin !== null && raw.pin !== '') {
@@ -85,9 +101,18 @@ export const tablesPublic = new Hono<AppEnv>()
       }
       pin = raw.pin;
     }
-    const outcome = tx(() => joinVisit(target.token.token, pin, currentGuest(c)));
+    let outcome: ReturnType<typeof joinVisit>;
+    try {
+      outcome = tx(() => joinVisit(target.token.token, pin, currentGuest(c)));
+    } catch (err) {
+      failed();
+      throw err;
+    }
     // Failed attempts are committed (counter / lockout) before the error is returned.
-    if (!outcome.ok) throw outcome.error;
+    if (!outcome.ok) {
+      failed();
+      throw outcome.error;
+    }
     // A cookie for another visit is replaced only now, after a successful join.
     if (outcome.token) issueGuestCookie(c, outcome.token);
     return c.json(guestSessionDTO(outcome), outcome.token ? 201 : 200);
@@ -134,7 +159,8 @@ export const tablesStaff = new Hono<AppEnv>()
       });
     });
     const cards = await Promise.all(rows.map(async (r) => ({ ...r, svg: await qrSvg(r.url) })));
-    return c.json({ cards });
+    // qr_base_is_local: PUBLIC_BASE_URL points at this computer, so printed cards would not open on phones.
+    return c.json({ cards, qr_base_url: config.publicBaseUrl, qr_base_is_local: qrBaseIsLocal() });
   })
 
   .patch('/tables/:id', requireStaff(), async (c) => {

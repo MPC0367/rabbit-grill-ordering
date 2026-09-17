@@ -7,7 +7,7 @@ import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useI18n } from '../../lib/i18n.tsx';
 import { num } from '../../lib/format.ts';
 import { DataTable, type DataColumn } from './DataTable.tsx';
-import { cx, Ico, roveIndex, roveKeys, safeId } from './parts.tsx';
+import { cx, Ico, roveBlur, roveIndex, roveKeys, safeId } from './parts.tsx';
 
 export type BucketState = 'complete' | 'partial' | 'future' | 'missing';
 
@@ -292,7 +292,7 @@ export function WeekBarChart({
             }) : null}
           </svg>
 
-          <ul className="wbc__hits" aria-label={listLabel ?? title} onKeyDown={(e) => roveKeys(e)}>
+          <ul className="wbc__hits" aria-label={listLabel ?? title} onKeyDown={(e) => roveKeys(e)} onBlur={roveBlur}>
             {buckets.map((b, i) => {
               const style = { left: x0(i) - gap / 2, width: slot + gap, height: base + 1 };
               if (!interactive(b)) {

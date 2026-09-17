@@ -110,8 +110,40 @@ export function normalizeQuery(text: string | null | undefined): string {
 export interface SearchHit {
   item: MenuItemDTO;
   view: MenuCategoryView;
-  /** 0 name starts with the query · 1 name contains it · 2 every word found · 3 its category matched */
+  /**
+   * 0 name starts with the query · 1 name contains it, or a verified alias
+   * starts with it · 2 every word found, or an alias contains it · 3 its
+   * category matched
+   */
   rank: number;
+}
+
+/**
+ * Owner-verified search aliases of a dish (brief 09, 44E): other spellings and
+ * transliterations such as "ลาเต้" for Latte. The menu API sends only reviewed
+ * ones; the printed Thai and English names are never changed. Accepts
+ * `aliases_th` / `aliases_en` arrays, or `aliases` as an array or {th, en}.
+ */
+export function itemAliases(item: MenuItemDTO): string[] {
+  const x = item as MenuItemDTO & {
+    aliases?: ReadonlyArray<string> | { th?: ReadonlyArray<string> | null; en?: ReadonlyArray<string> | null } | null;
+    aliases_th?: ReadonlyArray<string> | null;
+    aliases_en?: ReadonlyArray<string> | null;
+  };
+  const out: string[] = [];
+  const add = (list: unknown) => {
+    if (!Array.isArray(list)) return;
+    for (const a of list) if (typeof a === 'string' && a.trim()) out.push(a);
+  };
+  add(x.aliases_th);
+  add(x.aliases_en);
+  if (Array.isArray(x.aliases)) add(x.aliases);
+  else if (x.aliases && typeof x.aliases === 'object') {
+    const a = x.aliases as { th?: unknown; en?: unknown };
+    add(a.th);
+    add(a.en);
+  }
+  return out;
 }
 
 export function searchMenu(model: MenuModel, rawQuery: string): SearchHit[] {
@@ -125,11 +157,12 @@ export function searchMenu(model: MenuModel, rawQuery: string): SearchHit[] {
       const catMatch = catNames.some((n) => n && n.includes(q));
       for (const item of view.items) {
         const names = [item.name.th, item.name.en].map(normalizeQuery).filter(Boolean);
+        const aliases = itemAliases(item).map(normalizeQuery).filter(Boolean);
         const key = normalizeQuery(item.key.replace(/-/g, ' '));
         let rank = -1;
         if (names.some((n) => n.startsWith(q))) rank = 0;
-        else if (names.some((n) => n.includes(q))) rank = 1;
-        else if (words.every((w) => names.some((n) => n.includes(w)) || key.includes(w))) rank = 2;
+        else if (names.some((n) => n.includes(q)) || aliases.some((a) => a.startsWith(q))) rank = 1;
+        else if (words.every((w) => names.some((n) => n.includes(w)) || key.includes(w)) || aliases.some((a) => a.includes(q))) rank = 2;
         else if (catMatch) rank = 3;
         if (rank >= 0) hits.push({ item, view, rank });
       }

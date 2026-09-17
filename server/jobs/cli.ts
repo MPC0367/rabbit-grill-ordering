@@ -5,6 +5,7 @@
 //   npm run jobs -- rollover [--run]          queue final reports for completed years (and run them)
 //   npm run jobs -- aggregates [--from YYYY-MM-DD] [--to YYYY-MM-DD]
 //   npm run jobs -- expire-quotes
+//   npm run jobs -- retention [--dry-run]      apply the data-retention settings now
 //   npm run jobs -- backup --out <file.db> [--with-reports]
 //   npm run jobs -- restore                   prints the restore procedure (does not restore)
 //
@@ -104,6 +105,15 @@ async function main(): Promise<void> {
       console.log('aggregates refreshed', JSON.stringify(result));
       break;
     }
+    case 'retention': {
+      const dryRun = flag('dry-run');
+      const { runRetention } = await import('../domain/retention.ts');
+      const r = await runRetention({ dryRun });
+      console.log(`${dryRun ? 'would remove' : 'removed'} (before: notes ${r.horizons.notes_before}, feedback ${r.horizons.feedback_before}, `
+        + `raw events ${r.horizons.raw_events_before}, audit ${r.horizons.audit_before})`);
+      console.log(JSON.stringify({ ...r, horizons: undefined }, null, 2));
+      break;
+    }
     case 'expire-quotes': {
       const { expireQuotes } = await import('../domain/portions.ts');
       console.log(`${expireQuotes(nowIso())} quote(s) expired`);
@@ -156,6 +166,9 @@ Report jobs that were "generating" when the backup was taken are queued again on
   aggregates [--from YYYY-MM-DD] [--to YYYY-MM-DD]
       rebuild daily aggregates (default: the last three business days)
   expire-quotes  expire measured-weight quotes past their deadline
+  retention [--dry-run]
+      remove guest notes, feedback comments, raw engagement events and audit
+      entries older than the retention settings (runs daily in the server)
   backup --out <file> [--with-reports]
       consistent copy of the database (VACUUM INTO), optionally with report files
   restore        print the restore procedure`);

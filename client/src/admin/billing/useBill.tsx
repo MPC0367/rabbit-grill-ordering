@@ -289,6 +289,16 @@ export type BillTone = 'ok' | 'neutral' | 'alert' | 'heat' | 'line' | 'ink';
 
 /** One pill for where the bill stands: never colour alone (icon + words). */
 export function billState(b: StaffBillDTO, t: (k: string, v?: Record<string, string | number>) => string, clockOf: (iso: string) => string): { tone: BillTone; icon: 'check-c' | 'check' | 'receipt' | 'alert' | 'bell' | 'info'; text: string } {
+  // Money given back after checkout: the revision stays settled as history, but the bill is not simply "paid" (D-FX-OPS-01).
+  if (b.payment_state === 'refunded') {
+    return {
+      tone: 'alert',
+      icon: 'alert',
+      text: b.refund
+        ? t('billing.state.refundedAt', { amount: money(b.refund.amount_minor), time: clockOf(b.refund.at) })
+        : t('billing.state.refunded'),
+    };
+  }
   if (b.checkout_complete || b.visit_status === 'closed') return { tone: 'ok', icon: 'check-c', text: t('billing.state.complete') };
   if (b.paid) {
     const at = paidAt(b);

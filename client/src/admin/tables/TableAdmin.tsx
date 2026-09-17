@@ -10,7 +10,7 @@ import {
   Button, CheckButton, Checkbox, DataTable, Dialog, EmptyState, LinkButton, Pill, SectionHeader, Sheet, Skeleton, Switch,
   TableStatePill, Tag, TextField, useToast, type DataColumn,
 } from '../../ui/index.ts';
-import { errorText, isApiError, useStaff } from './shared.ts';
+import { errorText, isApiError, qrDownloadHref, useStaff } from './shared.ts';
 
 // ------------------------------------------------------------------ manage view
 interface ManageProps {
@@ -30,6 +30,8 @@ export function ManageView({ tiles, loading, onAdd, onEdit, onRotate, refresh }:
   const { t, lang } = useI18n();
   const { can } = useStaff();
   const toast = useToast();
+  // A download gives no completion event: re-read the reprint flags shortly after.
+  const afterDownload = () => { setTimeout(refresh, 1500); };
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [pausing, setPausing] = useState<string | null>(null);
   const live = new Set(tiles.map((x) => x.id));
@@ -153,6 +155,18 @@ export function ManageView({ tiles, loading, onAdd, onEdit, onRotate, refresh }:
           rowActions={(row) => (
             <span className="c5-rowacts">
               <LinkButton variant="ghost" size="staff" icon="qr" href={printHref([row.id])} aria-label={t('tables.manage.printOne', { table: row.label })}>{t('tables.manage.print')}</LinkButton>
+              <LinkButton
+                variant="ghost"
+                size="staff"
+                icon="download"
+                external
+                download
+                href={qrDownloadHref(row.id)}
+                aria-label={t('tables.manage.downloadOne', { table: row.label })}
+                onClick={afterDownload}
+              >
+                {t('tables.manage.download')}
+              </LinkButton>
               {can('tables.manage') ? (
                 <Button variant="ghost" size="staff" opensDialog onClick={() => onEdit(row)} aria-label={t('tables.manage.editOne', { table: row.label })}>{t('common.edit')}</Button>
               ) : null}

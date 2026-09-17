@@ -25,6 +25,8 @@ export interface ItemRow {
   source_url: string | null; source_ref: string | null; source_text: string | null; retrieved_at: string | null;
   translation_status: string | null; reviewer: string | null; approved_at: string | null; review_notes: string | null;
   published_version: number | null; created_at: string; updated_at: string; updated_by: string | null; version: number;
+  /** Tracker wording override; null = derived (see prepKind). */
+  prep_kind: PrepKind | null;
 }
 
 export interface CategoryRow {
@@ -32,6 +34,7 @@ export interface CategoryRow {
   name_th: string | null; name_en: string; note_th: string | null; note_en: string | null;
   sort: number; status: ItemStatus; seasonal: number; active_from: string | null; active_until: string | null;
   station: Station; alcohol: number; ordering_paused: number; source_note: string | null; version: number; updated_at: string;
+  prep_kind: PrepKind | null;
 }
 
 export interface VariantRow {
@@ -93,14 +96,25 @@ export function seasonalActive(cat: CategoryRow, today = businessDate(Date.now()
   return true;
 }
 
-/** Why an item cannot be ordered right now (null = orderable). Checked in priority order. */
-export function unavailableReason(item: ItemRow, cat: CategoryRow, variants: VariantRow[]): UnavailableReason | null {
+/** Operational states a recovered paper order may ignore (D-25): they describe now, not when it was taken. */
+export type OperationalReason = Extract<UnavailableReason, 'paused' | 'sold_out'>;
+export const OPERATIONAL_REASONS: ReadonlySet<OperationalReason> = new Set(['paused', 'sold_out']);
+
+/**
+ * Why an item cannot be ordered right now (null = orderable). Checked in
+ * priority order, so only the first reason is returned; `ignore` skips the
+ * listed operational checks so the reasons behind them (not verified, price
+ * pending) are still found.
+ */
+export function unavailableReason(
+  item: ItemRow, cat: CategoryRow, variants: VariantRow[], opts: { ignore?: ReadonlySet<OperationalReason> } = {},
+): UnavailableReason | null {
   const s = getSettings();
   if (item.status !== 'published' || cat.status !== 'published') return 'not_published';
   if (!seasonalActive(cat)) return 'seasonal';
   if ((item.alcohol === 1 || cat.alcohol === 1) && !s.alcohol.enabled) return 'alcohol_disabled';
-  if (cat.ordering_paused === 1) return 'paused';
-  if (item.sold_out === 1) return 'sold_out';
+  if (cat.ordering_paused === 1 && !opts.ignore?.has('paused')) return 'paused';
+  if (item.sold_out === 1 && !opts.ignore?.has('sold_out')) return 'sold_out';
   if (!hasPrice(item, variants)) return 'price_pending';
   const verified = item.review_status === 'verified';
   if (s.operating_mode === 'live' && !verified) return 'not_verified';
@@ -169,8 +183,21 @@ export interface PriceCartResult {
   ok: boolean;
 }
 
-export function prepKind(item: ItemRow, cat: CategoryRow): 'cook' | 'prepare' {
+export type PrepKind = 'cook' | 'prepare';
+
+/** The wording the guest tracker uses before a dish is ready, when nobody chose one. */
+export function derivedPrepKind(item: Pick<ItemRow, 'station'>, cat: Pick<CategoryRow, 'group_key' | 'key'>): PrepKind {
   return item.station === 'bar' || cat.group_key === 'drinks' || cat.key === 'dessert' ? 'prepare' : 'cook';
+}
+
+/**
+ * "Currently cooking" or "Currently preparing" (brief 35). Owners can choose
+ * per dish or per category (a raw salad is prepared, not cooked); otherwise
+ * drinks, bar items and desserts prepare and the rest cook. Snapshotted on
+ * each order line, so a later change never rewrites an order.
+ */
+export function prepKind(item: ItemRow, cat: CategoryRow): PrepKind {
+  return item.prep_kind ?? cat.prep_kind ?? derivedPrepKind(item, cat);
 }
 
 export function priceCart(lines: CartLineInput[], opts: { charges?: ChargeRule[] } = {}): PriceCartResult {

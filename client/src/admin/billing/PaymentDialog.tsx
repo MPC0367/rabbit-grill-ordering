@@ -153,7 +153,7 @@ export default function PaymentDialog({ bill, onClose, onRecorded, onStale }: Pr
       )}
 
       {chosen?.tendered ? (
-        <div className="c5-block">
+        <div className="c5-block c5-tender">
           <TextField
             ref={tenderRef}
             density="staff"

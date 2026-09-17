@@ -14,19 +14,20 @@
 //
 // Every mutation here is synchronous and runs inside tx(); state is re-read
 // inside the transaction.
-import type { AdjustmentBody, FinalizeBillBody } from '../../shared/schemas.ts';
+import type { AdjustmentBody, FinalizeBillBody, VoidAdjustmentBody } from '../../shared/schemas.ts';
 import type { BillLineDTO, BillRevisionDTO, GuestBillDTO, StaffBillDTO } from '../../shared/dto.ts';
 import { computeBill, type BillMath, type ChargeLine, type ChargeRule, type Minor } from '../../shared/money.ts';
-import { ACTIVE_UNSERVED, isChargeable, type BillStatus, type LineStatus, type RevisionStatus } from '../../shared/status.ts';
+import { ACTIVE_UNSERVED, LINE_STATUSES, isChargeable, type BillStatus, type LineStatus, type RevisionStatus } from '../../shared/status.ts';
 import { newId } from '../../shared/ids.ts';
 import { businessDate, nowIso } from '../../shared/time.ts';
 import type { z } from 'zod';
 import { insert, many, one, parseJson, run, updateVersioned } from '../db/index.ts';
 import { AppError, assertFound, staleVersion } from '../lib/errors.ts';
-import { audit } from '../lib/audit.ts';
+import { audit, SYSTEM, type Actor } from '../lib/audit.ts';
 import { emit } from '../lib/events.ts';
 import { cutoffHour, getSettings } from '../lib/settings.ts';
 import { touchReportData } from '../lib/reportdata.ts';
+import { payloadHash } from '../lib/http.ts';
 import type { StaffContext } from '../lib/auth.ts';
 import { bi } from './pricing.ts';
 import { getTable, getVisit, type VisitRow } from './guards.ts';
@@ -80,6 +81,8 @@ export interface AdjustmentRow {
   voided_at: string | null;
   voided_by: string | null;
   void_reason: string | null;
+  idempotency_key: string | null;
+  payload_hash: string | null;
 }
 
 interface BillLineRow {
@@ -164,11 +167,72 @@ function visitBillLines(visitId: string): BillLineDTO[] {
   ).map(toBillLine);
 }
 
+const CHARGEABLE_STATUSES = LINE_STATUSES.filter(isChargeable);
+
+/**
+ * Adjustments that count on the running bill: not voided, and - when linked
+ * to a dish - only while that dish is still chargeable. Cancelling or
+ * rejecting a dish voids its linked adjustments (voidLineAdjustments); the
+ * line check is the backstop for rows written before that rule existed.
+ */
 export function activeAdjustments(visitId: string): AdjustmentRow[] {
   return many<AdjustmentRow>(
-    'SELECT * FROM bill_adjustments WHERE visit_id = ? AND voided_at IS NULL ORDER BY created_at, id',
+    `SELECT a.* FROM bill_adjustments a LEFT JOIN order_lines l ON l.id = a.order_line_id
+      WHERE a.visit_id = :visit AND a.voided_at IS NULL
+        AND (a.order_line_id IS NULL OR l.status IN (SELECT value FROM json_each(:chargeable)))
+      ORDER BY a.created_at, a.id`,
+    { visit: visitId, chargeable: CHARGEABLE_STATUSES },
+  );
+}
+
+/** Voided adjustments of a visit, newest first (staff bill history). */
+function voidedAdjustments(visitId: string): AdjustmentRow[] {
+  return many<AdjustmentRow>(
+    'SELECT * FROM bill_adjustments WHERE visit_id = ? AND voided_at IS NOT NULL ORDER BY voided_at DESC, id',
     [visitId],
   );
+}
+
+// ------------------------------------------------------------------ payment state
+export type PaymentState = 'none' | 'paid' | 'refunded' | 'reversed';
+
+interface RevisionPayments {
+  /** A confirmed settlement for the revision is in force (or the revision owes nothing). */
+  paid: boolean;
+  state: PaymentState;
+  refund: StaffBillDTO['refund'];
+}
+
+/**
+ * What actually happened to the money of a (settled) revision. A settled
+ * revision stays settled as history (D-S8-04), but when its settlement was
+ * refunded after checkout the bill is no longer "paid".
+ */
+function revisionPayments(rev: RevisionRow | undefined): RevisionPayments {
+  if (!rev) return { paid: false, state: 'none', refund: null };
+  const settlement = one<{ id: string; status: string }>(
+    `SELECT id, status FROM payments WHERE bill_revision_id = ? AND kind = 'settlement'
+      ORDER BY (status = 'confirmed') DESC, confirmed_at DESC LIMIT 1`, [rev.id]);
+  if (settlement?.status === 'confirmed') return { paid: true, state: 'paid', refund: null };
+  if (rev.status === 'settled' && !settlement) {
+    // A zero-total bill is settled at checkout without a payment row.
+    return { paid: rev.total_minor === 0, state: rev.total_minor === 0 ? 'paid' : 'none', refund: null };
+  }
+  if (settlement?.status === 'reversed') {
+    const counter = one<{ kind: string; amount_minor: number; reason: string | null; confirmed_at: string; by: string | null }>(
+      `SELECT p.kind, p.amount_minor, p.reason, p.confirmed_at, u.display_name AS by
+         FROM payments p LEFT JOIN staff_users u ON u.id = p.confirmed_by
+        WHERE p.reverses_payment_id = ? LIMIT 1`, [settlement.id]);
+    if (counter?.kind === 'refund_record') {
+      return {
+        paid: false,
+        state: 'refunded',
+        refund: { amount_minor: counter.amount_minor, reason: counter.reason, by: counter.by, at: counter.confirmed_at },
+      };
+    }
+    return { paid: false, state: 'reversed', refund: null };
+  }
+  return { paid: false, state: 'none', refund: null };
 }
 
 export function visitChargeRules(visit: VisitRow): ChargeRule[] {
@@ -182,6 +246,8 @@ export interface RunningBill {
   /** Accepted-but-not-served plus submitted lines (ACTIVE_UNSERVED). */
   unserved_lines: BillLineDTO[];
   adjustments: AdjustmentSummary[];
+  /** The adjustment rows behind `adjustments` (staff views). */
+  adjustment_rows: AdjustmentRow[];
   math: BillMath;
   /** Anything that must be captured in a finalized revision (chargeable lines or adjustments). */
   has_content: boolean;
@@ -191,7 +257,8 @@ export interface RunningBill {
 export function runningBill(visit: VisitRow): RunningBill {
   const all = visitBillLines(visit.id);
   const lines = all.filter((l) => isChargeable(l.status));
-  const adjustments = activeAdjustments(visit.id).map((a) => ({ id: a.id, kind: a.kind, amount_minor: a.amount_minor, reason: a.reason }));
+  const adjustmentRows = activeAdjustments(visit.id);
+  const adjustments = adjustmentRows.map((a) => ({ id: a.id, kind: a.kind, amount_minor: a.amount_minor, reason: a.reason }));
   const math = computeBill({
     lineTotals: lines.map((l) => l.line_total_minor),
     adjustments: adjustments.map((a) => a.amount_minor),
@@ -203,6 +270,7 @@ export function runningBill(visit: VisitRow): RunningBill {
     excluded_lines: all.filter((l) => l.status === 'rejected' || l.status === 'cancelled'),
     unserved_lines: all.filter((l) => ACTIVE_UNSERVED.includes(l.status)),
     adjustments,
+    adjustment_rows: adjustmentRows,
     math,
     has_content: lines.length > 0 || adjustments.length > 0,
   };
@@ -240,6 +308,23 @@ export function revisionDTO(r: RevisionRow): BillRevisionDTO {
   };
 }
 
+type StaffAdjustmentDTO = NonNullable<StaffBillDTO['adjustments']>[number];
+
+function adjustmentDTO(a: AdjustmentRow): StaffAdjustmentDTO {
+  return {
+    id: a.id,
+    kind: a.kind,
+    amount_minor: a.amount_minor,
+    reason: a.reason,
+    order_line_id: a.order_line_id,
+    created_at: a.created_at,
+    created_by: staffName(a.created_by),
+    voided_at: a.voided_at,
+    voided_by: staffName(a.voided_by),
+    void_reason: a.void_reason,
+  };
+}
+
 function staffName(id: string | null): string | null {
   if (!id) return null;
   return one<{ display_name: string }>('SELECT display_name FROM staff_users WHERE id = ?', [id])?.display_name ?? null;
@@ -251,12 +336,14 @@ interface BillSnapshot {
   bill: BillRow | undefined;
   current: RevisionRow | undefined;
   running: RunningBill;
+  money: RevisionPayments;
 }
 
 function snapshot(visitId: string, create: boolean): BillSnapshot {
   const visit = requireVisit(visitId);
   const bill = create ? ensureBill(visitId) : getBill(visitId);
-  return { visit, bill, current: currentRevision(bill), running: runningBill(visit) };
+  const current = currentRevision(bill);
+  return { visit, bill, current, running: runningBill(visit), money: revisionPayments(current) };
 }
 
 /**
@@ -270,7 +357,8 @@ function presentBill(s: BillSnapshot): GuestBillDTO {
     bill_status: s.bill?.status ?? 'open',
     table_label: table?.label ?? '',
     pending_lines: s.running.pending_lines,
-    paid: s.bill?.status === 'settled',
+    // A settled revision whose settlement was refunded after checkout is history, not "paid".
+    paid: s.bill?.status === 'settled' && s.money.paid,
     bill_requested_at: s.visit.bill_requested_at,
     checkout_complete: s.visit.status === 'closed',
   } satisfies Partial<GuestBillDTO>;
@@ -327,6 +415,10 @@ export function staffBill(visitId: string, staff: StaffContext): StaffBillDTO {
     checkout_blockers: [...state.blocking, ...state.informational],
     running_total_minor: s.running.math.total_minor,
     revision_stale: s.current?.status === 'payable' ? !revisionMatchesRunning(s.current, s.running) : false,
+    payment_state: s.bill?.status === 'settled' ? s.money.state : s.money.state === 'reversed' ? 'reversed' : 'none',
+    refund: s.money.refund,
+    adjustments: s.running.adjustment_rows.map((a) => adjustmentDTO(a)),
+    voided_adjustments: voidedAdjustments(visitId).map((a) => adjustmentDTO(a)),
   };
 }
 
@@ -480,20 +572,53 @@ export function reopenBilling(visitId: string, input: { version: number; reason:
 /** Sanity bound for one adjustment (1,000,000 THB): stops typos and keeps totals safe integers. */
 export const MAX_ADJUSTMENT_MINOR = 100_000_000;
 
+/** What an adjustment request asks for; a replayed key must ask for the same thing. */
+function adjustmentHash(visitId: string, input: z.infer<typeof AdjustmentBody>): string {
+  return payloadHash({
+    visit: visitId, kind: input.kind, amount: input.amount_minor, reason: input.reason, line: input.order_line_id ?? null,
+  });
+}
+
+/** Adjustments are refused once a revision is payable (reopen first) or settled (reverse first). */
+function assertBillAdjustable(visitId: string, bill: BillRow, staff: StaffContext, what: string): void {
+  const current = currentRevision(bill);
+  if (current?.status === 'settled') {
+    throw new AppError('already_settled', `This bill is already paid. Reverse the payment before ${what}.`, { bill: staffBill(visitId, staff) });
+  }
+  if (current?.status === 'payable') {
+    throw new AppError('bill_changed', `The bill is finalized. Reopen it before ${what}.`, { bill: staffBill(visitId, staff) });
+  }
+}
+
+/**
+ * Add a discount, comp or correction (manager). Retry-safe: the same
+ * idempotency key with the same details returns the bill as it is now, and
+ * `bill_version` (the bill the manager was looking at) must still be current,
+ * so a second device or a resent request cannot apply one discount twice.
+ */
 export function addAdjustment(visitId: string, input: z.infer<typeof AdjustmentBody>, staff: StaffContext): StaffBillDTO {
+  const hash = adjustmentHash(visitId, input);
+  if (input.idempotency_key) {
+    const prior = one<AdjustmentRow>('SELECT * FROM bill_adjustments WHERE idempotency_key = ?', [input.idempotency_key]);
+    if (prior) {
+      if (prior.visit_id !== visitId || prior.payload_hash !== hash) {
+        throw new AppError('idempotency_mismatch', 'This adjustment attempt was already used for something else.');
+      }
+      return staffBill(visitId, staff);
+    }
+  }
   const visit = requireVisit(visitId);
   assertVisitNotClosed(visit);
   const bill = ensureBill(visit.id);
-  const current = currentRevision(bill);
-  if (current?.status === 'settled') {
-    throw new AppError('already_settled', 'This bill is already paid. Reverse the payment before adjusting it.', { bill: staffBill(visitId, staff) });
-  }
-  if (current?.status === 'payable') {
-    throw new AppError('bill_changed', 'The bill is finalized. Reopen it before adding an adjustment.', { bill: staffBill(visitId, staff) });
-  }
+  assertBillAdjustable(visitId, bill, staff, 'adjusting it');
+  if (input.bill_version !== undefined && input.bill_version !== bill.version) staleVersion(staffBill(visitId, staff));
   if (input.order_line_id) {
-    const line = one<{ visit_id: string }>('SELECT visit_id FROM order_lines WHERE id = ?', [input.order_line_id]);
+    const line = one<{ visit_id: string; status: LineStatus }>('SELECT visit_id, status FROM order_lines WHERE id = ?', [input.order_line_id]);
     if (!line || line.visit_id !== visit.id) throw new AppError('not_found', 'That item is not on this bill.');
+    // A comp for a dish that is not on the bill (waiting, rejected, cancelled) would reduce everything else.
+    if (!isChargeable(line.status)) {
+      throw new AppError('invalid_transition', 'That dish is not on the bill, so it cannot be adjusted.', { line_id: input.order_line_id, status: line.status });
+    }
   }
   if (Math.abs(input.amount_minor) > MAX_ADJUSTMENT_MINOR) {
     throw new AppError('validation_failed', 'That adjustment is larger than any bill this restaurant would issue.', {
@@ -524,6 +649,8 @@ export function addAdjustment(visitId: string, input: z.infer<typeof AdjustmentB
     order_line_id: input.order_line_id ?? null,
     created_by: staff.user.id,
     created_at: now,
+    idempotency_key: input.idempotency_key ?? null,
+    payload_hash: hash,
   });
   const billVersion = touchBill(bill);
   // A late discount can change a period that was already reported.
@@ -535,4 +662,74 @@ export function addAdjustment(visitId: string, input: z.infer<typeof AdjustmentB
   });
   emitBill(visit, bill.id, billVersion, { adjusted: true });
   return staffBill(visitId, staff);
+}
+
+/** Mark one adjustment voided (the row stays; revisions already finalized keep their copy). */
+function markVoided(adj: AdjustmentRow, reason: string, byUserId: string | null, actor: Actor): boolean {
+  const r = run(
+    `UPDATE bill_adjustments SET voided_at = :at, voided_by = :by, void_reason = :reason
+      WHERE id = :id AND voided_at IS NULL`,
+    { id: adj.id, at: nowIso(), by: byUserId, reason },
+  );
+  if (r.changes !== 1) return false;
+  audit(actor, 'bill.adjust_void', { type: 'bill_adjustment', id: adj.id, visit_id: adj.visit_id }, {
+    reason,
+    before: { kind: adj.kind, amount_minor: adj.amount_minor, order_line_id: adj.order_line_id },
+    after: { voided: true },
+  });
+  return true;
+}
+
+/**
+ * Manager action: void an adjustment entered in error. Allowed while the
+ * bill is open (like adding one); `bill_version` must be current. Voiding an
+ * adjustment that is already voided returns the bill unchanged.
+ */
+export function voidAdjustment(visitId: string, adjustmentId: string, input: z.infer<typeof VoidAdjustmentBody>, staff: StaffContext): StaffBillDTO {
+  const visit = requireVisit(visitId);
+  const adj = one<AdjustmentRow>('SELECT * FROM bill_adjustments WHERE id = ? AND visit_id = ?', [adjustmentId, visit.id]);
+  if (!adj) throw new AppError('not_found', 'That adjustment is not on this bill.');
+  if (adj.voided_at) return staffBill(visitId, staff);
+  assertVisitNotClosed(visit);
+  const bill = ensureBill(visit.id);
+  assertBillAdjustable(visitId, bill, staff, 'voiding an adjustment');
+  if (input.bill_version !== bill.version) staleVersion(staffBill(visitId, staff));
+  markVoided(adj, input.reason, staff.user.id, staff.actor);
+  const billVersion = touchBill(bill);
+  touchReportData(today());
+  if (visit.seated_business_date !== today()) touchReportData(visit.seated_business_date);
+  emitBill(visit, bill.id, billVersion, { adjusted: true, voided: adj.id });
+  return staffBill(visitId, staff);
+}
+
+/**
+ * Dishes left the bill (rejected or cancelled): every adjustment linked to
+ * them is voided in the same transaction, so a comp can never reduce what the
+ * rest of the table owes. Returns how many adjustments were voided.
+ */
+export function voidLineAdjustments(lineIds: string[], reason: string, staff: StaffContext | null): number {
+  if (lineIds.length === 0) return 0;
+  const rows = many<AdjustmentRow>(
+    `SELECT * FROM bill_adjustments WHERE voided_at IS NULL
+        AND order_line_id IN (SELECT value FROM json_each(:ids)) ORDER BY visit_id, created_at, id`,
+    { ids: lineIds },
+  );
+  let voided = 0;
+  const visits = new Set<string>();
+  for (const adj of rows) {
+    if (markVoided(adj, reason, staff?.user.id ?? null, staff?.actor ?? SYSTEM)) {
+      voided++;
+      visits.add(adj.visit_id);
+    }
+  }
+  for (const visitId of visits) {
+    const visit = getVisit(visitId);
+    const bill = getBill(visitId);
+    if (!visit || !bill) continue;
+    const billVersion = touchBill(bill);
+    touchReportData(today());
+    if (visit.seated_business_date !== today()) touchReportData(visit.seated_business_date);
+    emitBill(visit, bill.id, billVersion, { adjusted: true, voided_for_line: true });
+  }
+  return voided;
 }

@@ -137,13 +137,14 @@ export interface RankingInput {
   pricedVariantItems: Set<string>;
 }
 
-function orderableInPrinciple(item: CatalogItem, mode: 'demo' | 'live', pricedVariantItems: Set<string>): boolean {
+/** As in stats.ts: with an availability log, today's operating mode is not applied to the past (D-S8-12). */
+function orderableInPrinciple(item: CatalogItem, mode: 'demo' | 'live', pricedVariantItems: Set<string>, logged: boolean): boolean {
   const priced = item.pricing_type === 'fixed' ? item.price_minor !== null
     : item.pricing_type === 'variant' ? pricedVariantItems.has(item.id)
     : item.rate_minor !== null && item.rate_basis_grams !== null;
   if (!priced) return false;
   if (item.review_status === 'verified') return true;
-  return mode === 'demo' && item.demo_orderable === 1;
+  return (logged || mode === 'demo') && item.demo_orderable === 1;
 }
 
 function seasonActive(cat: CatalogCategory | undefined, from: string, to: string): boolean {
@@ -166,7 +167,7 @@ export function buildRanking(input: RankingInput): RankingSnap {
     if (!hasLines) {
       if (item.status === 'archived') { excluded.archived++; continue; }
       if (item.status !== 'published' || !cat || cat.status !== 'published') { excluded.unpublished++; continue; }
-      if (!orderableInPrinciple(item, input.operatingMode, input.pricedVariantItems)) { excluded.not_orderable++; continue; }
+      if (!orderableInPrinciple(item, input.operatingMode, input.pricedVariantItems, avail.days !== null)) { excluded.not_orderable++; continue; }
       if (!seasonActive(cat, input.periodFrom, input.periodTo)) { excluded.out_of_season++; continue; }
       if (!avail.days) { excluded.not_available++; continue; }
     }

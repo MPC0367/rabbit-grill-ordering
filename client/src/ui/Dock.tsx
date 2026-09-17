@@ -5,7 +5,7 @@ import { linkHandler } from '../lib/router.ts';
 import { money } from '../lib/format.ts';
 import { useI18n } from '../lib/i18n.tsx';
 import { cx } from './cx.ts';
-import { useGlideMark } from './hooks.ts';
+import { useGlideMark, usePinnedEdge } from './hooks.ts';
 import { Icon, type IconName } from './Icon.tsx';
 import { Badge } from './Badge.tsx';
 import { Button } from './Button.tsx';
@@ -13,7 +13,10 @@ import { Price } from './Price.tsx';
 
 /** Fixed bottom container for CartBar + BottomNav. `inline` keeps it in the flow (previews). */
 export function Dock({ children, inline, className }: { children: ReactNode; inline?: boolean; className?: string }) {
-  return <div className={cx('dock', inline && 'dock--static', className)}>{children}</div>;
+  const box = useRef<HTMLDivElement | null>(null);
+  // Keyboard focus scrolls clear of the dock (its height follows the slip).
+  usePinnedEdge(box, 'bottom', !inline);
+  return <div ref={box} className={cx('dock', inline && 'dock--static', className)}>{children}</div>;
 }
 
 // ---------------------------------------------------------------- CartBar

@@ -141,6 +141,7 @@ export interface EngagementItem {
   detail_opens: number;
   adds: number;
   add_sessions: number;
+  /** Sessions that saw the dish and added it / sessions that saw it (D-S8-06); raw-event days only. */
   add_rate: number | null;
   attributed_qty: number;
 }
@@ -171,7 +172,10 @@ export interface EngagementSnap {
     quick_add_sessions: number; submit_sessions: number;
     attributed_orders: number; unattributed_orders: number; staff_orders: number;
   };
+  /** Sessions reaching each menu depth (menu route only). */
   scroll: Array<{ threshold: number; sessions: number }>;
+  /** The scroll-depth denominator: measured sessions with a menu-route event (D-S8-05). */
+  scroll_sessions: number;
   monthly: Array<{ key: string; sessions: number; dining_sessions: number; active_ms: number; events: number }>;
   daily: Array<{ date: string; sessions: number; dining_sessions: number; public_sessions: number; opted_out: number; active_ms: number; menu_active_ms: number; events: number; impressions: number; detail_opens: number; adds: number }>;
   event_types: Array<{ type: string; count: number }>;
@@ -227,6 +231,9 @@ export interface PaymentsSnap {
   reversal_minor: number;
   reversals: number;
   refund_minor: number;
+  /** Settlements refunded after checkout (counted in their settlement's month, like reversals). */
+  refunds: number;
+  /** Settlements of the period still in force: settled - reversals - refunds (D-S8-03). */
   net_paid_minor: number;
   adjustments: { count: number; minor: number; voided: number };
   methods: Array<{ method: string; label: string; count: number; amount_minor: number; reversed_count: number; reversed_minor: number }>;
@@ -363,6 +370,9 @@ export interface ReportSnapshot {
     raw_events_days: number;
     notes_days: number;
     audit_days: number;
+    feedback_days: number;
+    /** When the retention clean-up task last ran (null = never). */
+    retention_last_run: string | null;
   };
   line_status_totals: Record<LineStatus, number>;
 }

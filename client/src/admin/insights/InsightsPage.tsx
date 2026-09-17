@@ -3,13 +3,12 @@
 // (C4a) draws the workspace header and its subtabs and moves focus on
 // navigation; this page draws the demo-data notice and the view. Every
 // choice lives in the URL query.
-import { useEffect } from 'react';
 import type { StaffMeDTO } from '../../../../shared/dto.ts';
 import { useConfig } from '../../lib/config.tsx';
 import { useI18n } from '../../lib/i18n.tsx';
 import { useRoute } from '../../lib/router.ts';
 import { ErrorPanel, DemoNotice, LoadingBlock, PermissionPanel, useLiveResource } from './parts.tsx';
-import { readFixture, setServerTime } from './query.ts';
+import { readFixture, useBusinessToday } from './query.ts';
 import OrderStats from './OrderStats.tsx';
 import MenuStats from './MenuStats.tsx';
 import Engagement from './Engagement.tsx';
@@ -24,7 +23,8 @@ export default function InsightsPage({ tab }: { tab: InsightsTab }) {
   const me = useLiveResource<StaffMeDTO>('/api/staff/auth/me', { topics: ['settings.'] });
   const headingId = `insx-h-${tab}`;
 
-  useEffect(() => { setServerTime(config?.server_time); }, [config?.server_time]);
+  // Server clock and business-day cutoff for every view below (and a re-render each minute).
+  useBusinessToday();
 
   if (!me.data) {
     if (me.error) {

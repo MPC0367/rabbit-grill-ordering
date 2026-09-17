@@ -69,8 +69,30 @@ function pinMatches(given: string, expected: string): boolean {
   return timingSafeEqual(a, b);
 }
 
+/**
+ * Join-PIN lockouts escalate within a visit (D-S8-07): the first lasts
+ * lockout_minutes, the second three times as long (capped at an hour or the
+ * setting, whichever is longer), and the third holds until staff rotate the
+ * PIN. Rotation resets the count. A steady guesser therefore gets
+ * 3 x max_failures tries in total instead of max_failures every few minutes.
+ */
+export const TIMED_PIN_LOCKOUTS = 2;
+/** pin_locked_until value meaning "until staff rotate the PIN". */
+export const PIN_LOCKED_FOR_STAFF = '9999-12-31T23:59:59.000Z';
+
 function lockedUntil(visit: VisitRow, now = Date.now()): string | null {
   return visit.pin_locked_until && new Date(visit.pin_locked_until).getTime() > now ? visit.pin_locked_until : null;
+}
+
+function pinLockedError(until: string, retrySeconds: number): AppError {
+  const staffOnly = until === PIN_LOCKED_FOR_STAFF;
+  return new AppError(
+    'pin_locked',
+    staffOnly ? 'Too many wrong PINs. Please ask staff to reset the PIN.' : 'Too many wrong PINs. Please wait or ask staff.',
+    staffOnly
+      ? { until: null, retry_after_seconds: null, staff_unlock_required: true }
+      : { until, retry_after_seconds: retrySeconds, staff_unlock_required: false },
+  );
 }
 
 export function enabledServices(): ServiceType[] {
@@ -225,7 +247,8 @@ export function visitDetail(visitId: string, staff: StaffContext): VisitDetailDT
     history: visitHistory(visitId, staff),
     qr_url: qrUrl(token.token),
     version: visit.version,
-    pin_locked_until: active ? lockedUntil(visit) : null,
+    pin_locked_until: active && lockedUntil(visit) !== PIN_LOCKED_FOR_STAFF ? lockedUntil(visit) : null,
+    pin_lock_requires_rotation: active && lockedUntil(visit) === PIN_LOCKED_FOR_STAFF,
   };
 }
 
@@ -257,11 +280,13 @@ export function rotatePin(visitId: string, input: { version: number }, staff: St
     pin_rotated_at: now,
     pin_failures: 0,
     pin_locked_until: null,
+    pin_lockouts: 0,
     updated_at: now,
   });
   if (!ok) staleVersion(visitDetail(visitId, staff));
   audit(staff.actor, 'visit.pin_rotated', visitEntity(visit), { after: { unlocked: lockedUntil(visit) !== null } });
   emitVisit('visit.updated', visitId, visit.version + 1, 'staff', { pin_rotated: true });
+  emitTable(visit.table_id);
 }
 
 /**
@@ -282,6 +307,7 @@ export function revokeGuests(visitId: string, input: { version: number; reason: 
     pin_rotated_at: now,
     pin_failures: 0,
     pin_locked_until: null,
+    pin_lockouts: 0,
     updated_at: now,
   });
   if (!ok) staleVersion(visitDetail(visitId, staff));
@@ -360,7 +386,7 @@ export function revokeVisitAccess(visitId: string, reason: string, actor: Actor)
     `UPDATE guest_sessions SET revoked_at = :now, revoke_reason = :reason WHERE visit_id = :id AND revoked_at IS NULL`,
     { id: visitId, now, reason },
   ).changes;
-  run('UPDATE visits SET join_pin = NULL, pin_failures = 0, pin_locked_until = NULL WHERE id = ?', [visitId]);
+  run('UPDATE visits SET join_pin = NULL, pin_failures = 0, pin_locked_until = NULL, pin_lockouts = 0 WHERE id = ?', [visitId]);
   audit(actor, 'visit.access_revoked', visitEntity({ id: visitId }), { reason, after: { revoked_sessions: revoked, pin_cleared: true } });
   const visit = getVisit(visitId);
   // A closing visit publishes visit.closed itself; otherwise tell its guests now.
@@ -429,26 +455,23 @@ export function joinVisit(tokenValue: string, pin: string | undefined, current: 
   const join = getSettings().join;
   if (join.pin_required) {
     const until = lockedUntil(visit);
-    if (until) {
-      const retry = Math.ceil((new Date(until).getTime() - Date.now()) / 1000);
-      throw new AppError('pin_locked', 'Too many wrong PINs. Please wait or ask staff.', { until, retry_after_seconds: retry });
-    }
+    if (until) throw pinLockedError(until, Math.ceil((new Date(until).getTime() - Date.now()) / 1000));
     // A visit opened while PINs were off has none: staff rotate the PIN to create one.
     if (!visit.join_pin) throw new AppError('pin_required', 'Ask staff for this table’s PIN.', { reason: 'no_pin_set' });
     if (!pin) throw new AppError('pin_required', 'Enter the PIN staff gave you.');
     if (!pinMatches(pin, visit.join_pin)) {
       const failures = visit.pin_failures + 1;
       if (failures >= join.max_failures) {
-        const lockUntil = new Date(Date.now() + join.lockout_minutes * 60_000).toISOString();
-        run('UPDATE visits SET pin_failures = 0, pin_locked_until = :until WHERE id = :id', { id: visit.id, until: lockUntil });
-        audit(ANONYMOUS, 'visit.pin_locked', visitEntity(visit), { after: { failures, until: lockUntil } });
-        emitVisit('visit.updated', visit.id, visit.version, 'staff', { pin_locked: true });
-        return {
-          ok: false,
-          error: new AppError('pin_locked', 'Too many wrong PINs. Please wait or ask staff.', {
-            until: lockUntil, retry_after_seconds: join.lockout_minutes * 60,
-          }),
-        };
+        const lockouts = visit.pin_lockouts + 1;
+        const minutes = Math.min(join.lockout_minutes * 3 ** (lockouts - 1), Math.max(60, join.lockout_minutes));
+        const lockUntil = lockouts > TIMED_PIN_LOCKOUTS ? PIN_LOCKED_FOR_STAFF : new Date(Date.now() + minutes * 60_000).toISOString();
+        run('UPDATE visits SET pin_failures = 0, pin_locked_until = :until, pin_lockouts = :n WHERE id = :id', { id: visit.id, until: lockUntil, n: lockouts });
+        audit(ANONYMOUS, 'visit.pin_locked', visitEntity(visit), {
+          after: { failures, until: lockUntil === PIN_LOCKED_FOR_STAFF ? null : lockUntil, lockouts, staff_unlock_required: lockUntil === PIN_LOCKED_FOR_STAFF },
+        });
+        emitVisit('visit.updated', visit.id, visit.version, 'staff', { pin_locked: true, staff_unlock_required: lockUntil === PIN_LOCKED_FOR_STAFF });
+        emitTable(table.id);
+        return { ok: false, error: pinLockedError(lockUntil, minutes * 60) };
       }
       run('UPDATE visits SET pin_failures = :f WHERE id = :id', { id: visit.id, f: failures });
       return { ok: false, error: new AppError('pin_invalid', 'That PIN is not right.', { attempts_left: join.max_failures - failures }) };

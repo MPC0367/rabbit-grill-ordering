@@ -1,15 +1,24 @@
-// Four digit boxes drawn over ONE real input: numeric keyboard, one-time-code
+// Digit boxes drawn over ONE real input: numeric keyboard, one-time-code
 // autofill, paste of "8 3 7 1" or "8371", Backspace, screen readers hear a
 // single labelled field. Local to stream C2 (the kit has no code field).
-import { forwardRef, useId, type ClipboardEvent } from 'react';
+//
+// The restaurant sets the code length (4 to 8 digits, Settings > Joining).
+// With a known `length` the boxes match it and the last digit submits. When
+// the length is unknown (`length` null) the field takes up to `maxLength`
+// digits, grows a box per digit past `minLength`, and never submits by itself.
+import { forwardRef, useId, type CSSProperties, type ClipboardEvent } from 'react';
 import { cx } from '../../ui/index.ts';
+
+export const PIN_MIN = 4;
+export const PIN_MAX = 8;
 
 export interface PinInputProps {
   value: string;
   onChange: (digits: string) => void;
-  /** Called once when the last digit arrives. */
+  /** Called once when the last digit arrives (known length only). */
   onComplete?: (digits: string) => void;
-  length?: number;
+  /** Exact code length, or null when the length is not known. */
+  length?: number | null;
   label: string;
   /** id of the element with the error / hint text. */
   describedBy?: string;
@@ -18,23 +27,30 @@ export interface PinInputProps {
 }
 
 export const PinInput = forwardRef<HTMLInputElement, PinInputProps>(function PinInput(
-  { value, onChange, onComplete, length = 4, label, describedBy, error, disabled },
+  { value, onChange, onComplete, length = PIN_MIN, label, describedBy, error, disabled },
   ref,
 ) {
   const id = useId();
-  const digits = value.replace(/\D/g, '').slice(0, length);
-  const active = Math.min(digits.length, length - 1);
+  const fixed = typeof length === 'number' && length > 0 ? length : null;
+  const max = fixed ?? PIN_MAX;
+  const digits = value.replace(/\D/g, '').slice(0, max);
+  const boxes = fixed ?? Math.min(PIN_MAX, Math.max(PIN_MIN, digits.length));
+  const active = Math.min(digits.length, boxes - 1);
 
   const accept = (raw: string) => {
-    const next = raw.replace(/\D/g, '').slice(0, length);
+    const next = raw.replace(/\D/g, '').slice(0, max);
     if (next === digits) return;
     onChange(next);
-    if (next.length === length && digits.length < length) onComplete?.(next);
+    if (fixed && next.length === fixed && digits.length < fixed) onComplete?.(next);
   };
 
   return (
-    <div className={cx('vpin', error && 'is-error', disabled && 'is-disabled')}>
-      {Array.from({ length }, (_, i) => (
+    <div
+      className={cx('vpin', boxes > PIN_MIN && 'vpin--long', error && 'is-error', disabled && 'is-disabled')}
+      style={{ '--pin-n': boxes } as CSSProperties}
+      data-length={fixed ?? 'any'}
+    >
+      {Array.from({ length: boxes }, (_, i) => (
         <span
           key={i}
           aria-hidden="true"
@@ -52,7 +68,7 @@ export const PinInput = forwardRef<HTMLInputElement, PinInputProps>(function Pin
         pattern="[0-9]*"
         autoComplete="one-time-code"
         enterKeyHint="go"
-        maxLength={length}
+        maxLength={max}
         spellCheck={false}
         aria-label={label}
         aria-describedby={describedBy}

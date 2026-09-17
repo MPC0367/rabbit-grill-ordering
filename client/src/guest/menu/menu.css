@@ -56,3 +56,15 @@
   .g-side { max-height: calc(100dvh - var(--header-h) - 5px); overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; scrollbar-width: thin; }
   .mmain .msec { scroll-margin-top: calc(var(--header-h) + var(--safe-top) + 13px); }
 }
+
+/* Text-led rows with nothing under the name (many drinks): the Add button
+   sits at the end of the name ··· price line instead of alone on a second
+   row. Once the dish is in the draft (a state line and a stepper) the row
+   takes the regular two-line layout. */
+.mmain .dish--text .dish__body:not(:has(> :is(.dish__kick, .en, .dish__alt, .dish__unit, .dish__meta, .dish__note))):has(> .dish__foot > span:first-child:empty) {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 14px;
+}
+.mmain .dish--text .dish__body:not(:has(> :is(.dish__kick, .en, .dish__alt, .dish__unit, .dish__meta, .dish__note))) > .dish__foot:has(> span:first-child:empty) {
+  margin: 0; padding: 0; min-height: var(--tap);
+}
+.mmain .dish--text .dish__foot > span:first-child:empty { display: none; }

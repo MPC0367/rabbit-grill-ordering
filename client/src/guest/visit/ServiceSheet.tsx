@@ -10,12 +10,12 @@ import { ApiError } from '../../lib/api.ts';
 import { useConfig } from '../../lib/config.tsx';
 import { clock, money } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
-import { useLive } from '../../lib/live.tsx';
 import {
   Button, Icon, Leader, ListRow, Price, Sheet, Skeleton, StatusPill, TextArea, useToast,
   type IconName, type ListRowProps,
 } from '../../ui/index.ts';
-import { useOnline } from '../shell/hooks.ts';
+import { AnalyticsNotice } from '../shell/AnalyticsNotice.tsx';
+import { useGuestLiveState, useOnline } from '../shell/hooks.ts';
 import { useGuestSession } from '../shell/session.tsx';
 import { useServiceRequests, useVisitResource } from './hooks.ts';
 import { closeThenNavigate, detailOf, errorWords } from './lib.ts';
@@ -53,7 +53,7 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
 }) {
   const { t, has } = useI18n();
   const { config } = useConfig();
-  const live = useLive();
+  const liveState = useGuestLiveState();
   const online = useOnline();
   const toast = useToast();
   const svc = useServiceRequests(visitId);
@@ -68,7 +68,7 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
   const composeId = useId();
 
   const enabled = ORDER.filter((s) => (services.length ? services : config?.services ?? []).includes(s));
-  const offline = !online || live.state === 'offline' || unreachable;
+  const offline = !online || liveState === 'offline' || unreachable;
 
   // Moving between the list and a request: keep focus inside the sheet, on the new view.
   const firstView = useRef(true);
@@ -94,10 +94,10 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
     try {
       const r = await svc.send(type, text);
       if (type === 'bill') {
-        toast.show({ message: r.existing ? t('help.existing') : t('bill.requestedToast') });
+        toast.show({ message: r.existing ? t(r.seen ? 'help.existingSeen' : 'help.existing') : t('bill.requestedToast') });
         void bill.refresh();
       } else {
-        toast.show({ message: r.existing ? t('help.existing') : t('help.sentToast', { name: t(`service.${type}`) }) });
+        toast.show({ message: r.existing ? t(r.seen ? 'help.existingSeen' : 'help.existing') : t('help.sentToast', { name: t(`service.${type}`) }) });
       }
       setUnreachable(false);
       setNote('');
@@ -127,7 +127,9 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
     let sub: string = type === 'call_staff' ? t('help.sub.call_staff', { label }) : t(`help.sub.${type}`);
     let trailing: ListRowProps['trailing'];
     if (active) {
-      sub = active.status === 'acknowledged' ? t('help.acknowledged') : t('help.sent', { time: clock(active.created_at) });
+      sub = active.status === 'acknowledged'
+        ? t(type === 'call_staff' ? 'help.acknowledgedCall' : 'help.acknowledged')
+        : t('help.sent', { time: clock(active.created_at) });
       trailing = <StatusPill kind="service" status={active.status} size="sm" />;
     } else if (doneAt && Date.now() - new Date(doneAt).getTime() < RECENT_MS) {
       sub = t('help.done', { time: clock(doneAt) });
@@ -162,7 +164,7 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
           <span className="vnote__body"><span className="vnote__t">{t('help.offlineTitle')}</span></span>
         </p>
         <p className="handnote"><Icon name="hand" />{t('common.serviceFallback')}</p>
-        {unreachable && online && live.state !== 'offline' ? (
+        {unreachable && online && liveState !== 'offline' ? (
           <Button variant="outline" icon="refresh" onClick={() => { setUnreachable(false); setError(null); void svc.refresh(); }}>
             {t('common.retry')}
           </Button>
@@ -192,6 +194,7 @@ function ServiceSheetBody({ onClose, title, visitId, label, services }: {
           <p className="vnote vnote--alert vsvc__error" role="alert"><Icon name="alert" /><span className="vnote__body">{error}</span></p>
         ) : null}
         <p className="handnote"><Icon name="hand" />{t('common.serviceFallback')}</p>
+        <AnalyticsNotice variant="sheet" />
       </div>
     );
   } else if (view === 'bill') {

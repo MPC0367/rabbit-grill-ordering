@@ -156,12 +156,29 @@ function unusedReference(): string {
   throw new Error('could not allocate an order reference');
 }
 
-function recoveryTime(original: string): string {
+/**
+ * The time a paper order was really taken: not in the future, within the
+ * recovery window, and not before the previous party at this table checked
+ * out - that ticket belongs to them and must not land on the next party's
+ * bill. (It may precede this visit's seated_at: during an outage the party is
+ * often opened in the system only after the paper orders were taken; D-S8-15.)
+ */
+function recoveryTime(original: string, visit: VisitRow): string {
   const t = new Date(original).getTime();
   const now = Date.now();
   if (!Number.isFinite(t)) throw new AppError('validation_failed', 'The original order time is not valid.', { issues: [{ path: 'original_time', message: 'invalid' }] });
   if (t > now + CLOCK_SKEW_MS) throw new AppError('validation_failed', 'The original order time is in the future.', { issues: [{ path: 'original_time', message: 'future' }] });
   if (t < now - RECOVERY_WINDOW_MS) throw new AppError('validation_failed', 'Paper orders must be entered within 24 hours.', { issues: [{ path: 'original_time', message: 'too_old' }] });
+  const previous = one<{ closed_at: string | null }>(
+    `SELECT MAX(closed_at) AS closed_at FROM visits WHERE table_id = :table AND status = 'closed' AND id <> :id`,
+    { table: visit.table_id, id: visit.id },
+  )?.closed_at ?? null;
+  if (previous && t < Date.parse(previous) - CLOCK_SKEW_MS) {
+    throw new AppError('validation_failed', 'That time is before the previous party at this table checked out.', {
+      issues: [{ path: 'original_time', message: 'before_previous_party', code: 'too_small' }],
+      previous_party_closed_at: previous,
+    });
+  }
   return new Date(t).toISOString();
 }
 
@@ -195,7 +212,7 @@ export function createOrder(args: CreateOrderArgs): { orderId: string; replayed:
   if (!table) throw new AppError('not_found', 'Table not found');
 
   const now = nowIso();
-  const submittedAt = manual ? recoveryTime(manual.originalTime) : now;
+  const submittedAt = manual ? recoveryTime(manual.originalTime, visit) : now;
   const bizDate = businessDate(submittedAt, cutoffHour());
   const roundNo = (one<{ n: number | null }>('SELECT MAX(round_no) AS n FROM orders WHERE visit_id = ?', [visit.id])?.n ?? 0) + 1;
   const orderId = newId('ord');
@@ -409,6 +426,27 @@ function lineDTO(l: LineRow, events: EventJoinRow[], view: OrderView): OrderLine
   };
 }
 
+/**
+ * orders.view_bill_values is enforced here, not only in the interface (brief 18):
+ * a staff member without it gets every amount as 0 and `money_hidden: true`.
+ * Dish prices are public on the menu; per-table totals are not.
+ */
+function redactMoney(dto: StaffOrderDTO): StaffOrderDTO {
+  return {
+    ...dto,
+    subtotal_minor: 0,
+    money_hidden: true,
+    lines: dto.lines.map((l) => ({
+      ...l,
+      unit_price_minor: 0,
+      modifiers_minor: 0,
+      line_total_minor: 0,
+      rate_minor: null,
+      modifiers: l.modifiers.map((g) => ({ ...g, options: g.options.map((opt) => ({ ...opt, price_minor: 0 })) })),
+    })),
+  };
+}
+
 function pushTo<T>(map: Map<string, T[]>, key: string, value: T): void {
   const list = map.get(key);
   if (list) list.push(value); else map.set(key, [value]);
@@ -434,6 +472,7 @@ export function buildOrderDTOs(rows: OrderJoinRow[], view: OrderView): Array<Ord
   for (const l of lines) pushTo(linesByOrder, l.order_id, l);
   const eventsByLine = new Map<string, EventJoinRow[]>();
   for (const e of events) pushTo(eventsByLine, e.line_id, e);
+  const hideMoney = view.kind === 'staff' && Boolean(view.staff) && !view.staff!.can('orders.view_bill_values');
 
   return rows.map((o) => {
     const ls = linesByOrder.get(o.id) ?? [];
@@ -472,7 +511,7 @@ export function buildOrderDTOs(rows: OrderJoinRow[], view: OrderView): Array<Ord
       current_table_label: o.current_table_label,
       current_table_id: o.current_table_id,
     };
-    return staffDto;
+    return hideMoney ? redactMoney(staffDto) : staffDto;
   });
 }
 

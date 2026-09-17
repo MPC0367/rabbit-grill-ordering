@@ -132,11 +132,12 @@ const DICTIONARY: Array<[string, string, string]> = [
   ['Available days', 'Business days from the later of 1 January and the first operating day on which the item was logged as available at any moment. Time before an item\'s first log entry counts as not available.', 'Availability log'],
   ['Measured session', 'A pseudonymous browsing session with at least one stored engagement event in the year. Never a person and never linked across visits.', 'Event business date'],
   ['Active menu time', 'Per measured session, the sum of foreground intervals on the menu route while the guest interacted within the idle threshold.', 'Event business date'],
-  ['Add rate', 'Adds divided by impressions; an impression is the dish at least half visible for at least a second.', 'Event business date'],
+  ['Add rate', 'Sessions that saw the dish and added it, divided by sessions that saw it; an impression is the dish at least half visible for at least a second.', 'Event business date'],
+  ['Scroll depth', 'The deepest point a session reached on the menu page, over measured sessions that opened the menu. Approximate.', 'Event business date'],
   ['Acceptance time', 'Round submission to the first accepted line, recorded live. Recovered paper orders are excluded.', 'Submitted business date'],
   ['Submitted / accepted item value', 'Sum of round subtotals as submitted / of accepted, not cancelled line totals. Before charges and adjustments. Not revenue.', 'Submitted business date'],
   ['Finalized bill value', 'Totals of current (not superseded) finalized bill revisions, including owner-configured charges and adjustments.', 'Finalized business date'],
-  ['Recorded payments, net', 'Staff-confirmed settlements less reversals and recorded refunds. Not a bank reconciliation.', 'Confirmed business date'],
+  ['Recorded payments, net', 'Staff-confirmed settlements still in force. A later reversal or refund is subtracted on the date of the settlement it corrects. Not a bank reconciliation.', 'Settlement confirmed date'],
   ['Payment exception', 'A current bill revision with no confirmed settlement once the visit closed or the finalize date passed, or a settlement that differs from the bill total.', 'Finalized business date'],
 ];
 
@@ -165,7 +166,7 @@ export function referenceSection(s: ReportSnapshot): string {
         <li>A business day starts at ${String(s.range.cutoff_hour).padStart(2, '0')}:00; each record's business date was stamped when it was written.</li>
         <li>This report covers business dates ${dateLong(s.range.from)} to ${dateLong(s.range.to)}: the half-open UTC interval
           [${esc(s.range.start_utc)}, ${esc(s.range.end_utc)}).</li>
-        <li>Order rounds count by submission; diners by seating; checkouts by closing; payments by confirmation. A visit seated before New Year
+        <li>Order rounds count by submission; diners by seating; checkouts by closing; payments by confirmation, with any later reversal or refund counted against the payment it corrects. A visit seated before New Year
           and closed after it contributes its diners to the earlier year and its checkout to the later one.</li>
         <li>Weeks run Monday to Sunday. A week that crosses New Year is clipped to this year's days in this report.</li>
         <li>New Year changes the reporting year only. Nothing is deleted, reset or renumbered.</li>
@@ -176,8 +177,10 @@ export function referenceSection(s: ReportSnapshot): string {
         ${s.notes.map((n) => `<li>${esc(n)}</li>`).join('')}
         <li>Engagement measurement started: ${s.engagement.instrumentation_started_at ? dateTime(s.engagement.instrumentation_started_at) : 'not recorded'};
           first event in this year: ${s.engagement.first_event_at ? dateTime(s.engagement.first_event_at) : 'none'}.</li>
-        <li>Retention: guest notes ${num(s.settings.notes_days)} days, raw engagement events ${num(s.settings.raw_events_days)} days,
-          audit log ${num(s.settings.audit_days)} days. Order, visit and payment records are kept so reports stay reproducible.</li>
+        <li>Retention (applied by a daily clean-up task): guest note text ${num(s.settings.notes_days)} days, feedback comments ${num(s.settings.feedback_days)} days,
+          raw engagement events ${num(s.settings.raw_events_days)} days, audit log ${num(s.settings.audit_days)} days.
+          ${s.settings.retention_last_run ? `Last run ${dateTime(s.settings.retention_last_run)}.` : 'The clean-up task has not run yet.'}
+          Order, visit and payment records are kept (only the note text is removed) so reports stay reproducible.</li>
         <li>Line status totals: ${Object.entries(s.line_status_totals).filter(([, v]) => v).map(([k, v]) => `${esc(k.replace('_', ' '))} ${num(v)}`).join(', ') || 'no lines'}.</li>
       </ul>
     </div>

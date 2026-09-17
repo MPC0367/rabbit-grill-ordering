@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { AppEnv } from '../app.ts';
 import {
   AdjustmentBody, BillRequestBody, CheckoutBody, FinalizeBillBody, IdSchema, IsoDateSchema, PaymentBody,
-  ReversePaymentBody, VersionBody, VersionReasonBody,
+  ReversePaymentBody, VersionBody, VersionReasonBody, VoidAdjustmentBody,
 } from '../../shared/schemas.ts';
 import { PAYMENT_STATUSES } from '../../shared/status.ts';
 import { businessDate, nowIso } from '../../shared/time.ts';
@@ -16,10 +16,10 @@ import { audit } from '../lib/audit.ts';
 import { emit } from '../lib/events.ts';
 import { hit, LIMITS } from '../lib/ratelimit.ts';
 import { cutoffHour, isDemo } from '../lib/settings.ts';
-import { guestOf, requireGuest, requireStaff, staffOf } from '../lib/auth.ts';
+import { guestOf, guestTx, requireGuest, requireStaff, staffOf } from '../lib/auth.ts';
 import { getVisit } from '../domain/guards.ts';
 import {
-  addAdjustment, finalizeBill, guestBill, reopenBilling, startBilling, staffBill,
+  addAdjustment, finalizeBill, guestBill, reopenBilling, startBilling, staffBill, voidAdjustment,
 } from '../domain/billing.ts';
 import { confirmPayment, listPayments, reversePayment } from '../domain/payments.ts';
 import { completeCheckout } from '../domain/checkout.ts';
@@ -54,7 +54,7 @@ export const billingGuest = new Hono<AppEnv>()
     const input = await body(c, BillRequestBody);
     const guest = guestOf(c);
     // createServiceRequest applies the per-guest service rate limit itself.
-    const dto = tx(() => {
+    const dto = guestTx(guest.guestId, () => {
       const visit = getVisit(guest.visitId);
       if (!visit || visit.status === 'closed') throw new AppError('visit_closed');
       createServiceRequest({
@@ -113,6 +113,14 @@ export const billingStaff = new Hono<AppEnv>()
     const input = await body(c, AdjustmentBody);
     const staff = staffMutation(c);
     return c.json(tx(() => addAdjustment(id, input, staff)));
+  })
+
+  .post('/visits/:id/adjustments/:adj/void', requireStaff('billing.adjust'), async (c) => {
+    const id = idParam(c);
+    const adj = idParam(c, 'adj');
+    const input = await body(c, VoidAdjustmentBody);
+    const staff = staffMutation(c);
+    return c.json(tx(() => voidAdjustment(id, adj, input, staff)));
   })
 
   .post('/visits/:id/payments', requireStaff('payments.confirm'), async (c) => {

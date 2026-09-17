@@ -11,10 +11,18 @@ import { navigate } from '../../lib/router.ts';
 import { Button, Card, Icon, Skeleton, TextLink, cx, useToast, type IconName } from '../../ui/index.ts';
 import { useGuestSession } from '../shell/session.tsx';
 import { detailOf, errorWords, rememberTable, retryAfterSeconds } from './lib.ts';
-import { PinInput } from './PinInput.tsx';
+import { PIN_MIN, PinInput } from './PinInput.tsx';
 import './visit.css';
 
-const PIN_LENGTH = 4;
+/**
+ * The code length for this visit, when the server says it (QrResolveDTO.pin_digits:
+ * the length of the visit's actual code, 4 to 8). Unknown: the field takes 4 to 8
+ * digits and waits for the Join button.
+ */
+function pinLengthOf(info: QrResolveDTO | null): number | null {
+  const n = (info as (QrResolveDTO & { pin_digits?: number | null }) | null)?.pin_digits;
+  return typeof n === 'number' && Number.isInteger(n) && n >= 4 && n <= 8 ? n : null;
+}
 
 type Phase =
   | { kind: 'checking' }
@@ -68,10 +76,11 @@ export default function JoinPage({ token }: { token: string }) {
 
   const info = phase.kind === 'ready' ? phase.info : null;
   const label = info?.table_label ?? null;
+  const pinLength = pinLengthOf(info);
 
   const join = useCallback(async (digits: string | null) => {
     if (joining || !info) return;
-    if (info.pin_required && (!digits || digits.length < PIN_LENGTH)) {
+    if (info.pin_required && (!digits || digits.length < (pinLengthOf(info) ?? PIN_MIN))) {
       setJoinError(new ApiError('validation_failed', 422, 'pin'));
       inputRef.current?.focus();
       return;
@@ -148,7 +157,8 @@ export default function JoinPage({ token }: { token: string }) {
     <header className="vjoin__stub">
       <p className="vjoin__kick">{t('join.welcomeKicker')}</p>
       {label ? (
-        <p className="vjoin__table" aria-label={t('common.table', { label })}>
+        <p className="vjoin__table">
+          <span className="visually-hidden">{t('common.table', { label })}</span>
           <span className="vjoin__table-k" aria-hidden="true">{t('join.tableWord')}</span>
           <span className="vjoin__table-n" aria-hidden="true">{label}</span>
         </p>
@@ -167,7 +177,7 @@ export default function JoinPage({ token }: { token: string }) {
       <Card as="section" className="vjoin__card" aria-busy="true">
         <p role="status" className="vjoin__lead">{t('join.checking')}</p>
         <div className="vpin" aria-hidden="true">
-          {Array.from({ length: PIN_LENGTH }, (_, i) => <Skeleton key={i} shape="block" height={68} />)}
+          {Array.from({ length: PIN_MIN }, (_, i) => <Skeleton key={i} shape="block" height={68} />)}
         </div>
         <Skeleton shape="block" height={52} />
       </Card>
@@ -204,7 +214,7 @@ export default function JoinPage({ token }: { token: string }) {
         )}
       >
         <p>{t('join.continueBody')}</p>
-        {joinError ? <JoinMessage id={msgId} error={joinError} blockedUntil={blockedUntil} /> : null}
+        {joinError ? <JoinMessage id={msgId} error={joinError} blockedUntil={blockedUntil} pinLength={pinLength} /> : null}
       </StateCard>
     );
   } else if (info && info.state === 'disabled') {
@@ -239,7 +249,7 @@ export default function JoinPage({ token }: { token: string }) {
         )}
       >
         <p>{t('join.openBody')}</p>
-        {joinError ? <JoinMessage id={msgId} error={joinError} blockedUntil={blockedUntil} /> : null}
+        {joinError ? <JoinMessage id={msgId} error={joinError} blockedUntil={blockedUntil} pinLength={pinLength} /> : null}
         {askStaff()}
       </StateCard>
     );
@@ -254,7 +264,7 @@ export default function JoinPage({ token }: { token: string }) {
       <Card as="section" className="vjoin__card" aria-labelledby={`${leadId}-t`}>
         <div>
           <h1 id={`${leadId}-t`} ref={headingRef} tabIndex={-1}>{t('join.pinTitle')}</h1>
-          <p className="vjoin__lead" id={leadId}>{t('join.pinLead')}</p>
+          <p className="vjoin__lead" id={leadId}>{pinLength ? t('join.pinLead', { n: pinLength }) : t('join.pinLeadAny')}</p>
         </div>
         {switching ? (
           <p className="vnote">
@@ -268,14 +278,14 @@ export default function JoinPage({ token }: { token: string }) {
             value={pin}
             onChange={(v) => { setPin(v); if (joinError && joinError.code !== 'pin_locked' && joinError.code !== 'rate_limited') setJoinError(null); }}
             onComplete={(v) => { if (!blocked) void join(v); }}
-            length={PIN_LENGTH}
-            label={t('join.pinLabel')}
+            length={pinLength}
+            label={pinLength ? t('join.pinLabel', { n: pinLength }) : t('join.pinLabelAny')}
             describedBy={`${leadId} ${msgId}`}
             error={Boolean(joinError) && !blocked}
             disabled={blocked || joining}
           />
           <div id={msgId} aria-live="polite" className="vjoin__msg">
-            {joinError ? <JoinMessage error={joinError} blockedUntil={blockedUntil} /> : null}
+            {joinError ? <JoinMessage error={joinError} blockedUntil={blockedUntil} pinLength={pinLength} /> : null}
           </div>
           <Button type="submit" variant="primary" size="lg" block loading={joining} disabled={blocked}>
             {t('join.submit', { label: info!.table_label })}
@@ -327,8 +337,9 @@ function StateCard({
   );
 }
 
-function JoinMessage({ error, blockedUntil, id }: { error: ApiError; blockedUntil: number | null; id?: string }) {
+function JoinMessage({ error, blockedUntil, id, pinLength }: { error: ApiError; blockedUntil: number | null; id?: string; pinLength: number | null }) {
   const { t, has } = useI18n();
+  const format = pinLength ? t('join.pinFormat', { n: pinLength }) : t('join.pinFormatAny');
   let main: string;
   let sub: string | null = null;
   switch (error.code) {
@@ -348,10 +359,10 @@ function JoinMessage({ error, blockedUntil, id }: { error: ApiError; blockedUnti
       break;
     }
     case 'pin_required':
-      main = detailOf<string>(error, 'reason') === 'no_pin_set' ? t('join.noPinSet') : t('join.pinFormat');
+      main = detailOf<string>(error, 'reason') === 'no_pin_set' ? t('join.noPinSet') : format;
       break;
     case 'validation_failed':
-      main = t('join.pinFormat');
+      main = format;
       break;
     case 'network_error':
     case 'timeout':

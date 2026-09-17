@@ -108,6 +108,62 @@ export function rovingKeyDown(
   return next;
 }
 
+// ---------------------------------------------------------------- pinned edges
+// Bars pinned to the viewport (the guest dock, the staff phone bar, sticky
+// mastheads) cover whatever the browser scrolls a focused control to. Each
+// one reports the band it covers; <html> carries the largest band per edge
+// as --pinned-top / --pinned-bottom (px), which base.css turns into
+// scroll-padding (bottom) and a focus scroll-margin (top). WCAG 2.4.11.
+type Edge = 'top' | 'bottom';
+const pinned: Record<Edge, Map<Element, number>> = { top: new Map(), bottom: new Map() };
+
+function publishEdge(edge: Edge): void {
+  const root = document.documentElement;
+  const band = Math.max(0, ...pinned[edge].values());
+  if (band > 0) {
+    root.style.setProperty(`--pinned-${edge}`, `${Math.round(band)}px`);
+    root.dataset[edge === 'top' ? 'pinnedTop' : 'pinnedBottom'] = '';
+  } else {
+    root.style.removeProperty(`--pinned-${edge}`);
+    delete root.dataset[edge === 'top' ? 'pinnedTop' : 'pinnedBottom'];
+  }
+}
+
+function measureEdge(el: HTMLElement, edge: Edge): number {
+  const cs = getComputedStyle(el);
+  if (cs.display === 'none') return 0;
+  const r = el.getBoundingClientRect();
+  if (edge === 'bottom') return cs.position === 'fixed' ? Math.max(0, window.innerHeight - r.top) : 0;
+  if (cs.position !== 'sticky' && cs.position !== 'fixed') return 0;
+  const top = Number.parseFloat(cs.top);
+  return (Number.isFinite(top) ? top : 0) + r.height;
+}
+
+/**
+ * While mounted, report the band `ref` covers at the top (sticky/fixed) or
+ * bottom (fixed) of the viewport so keyboard focus is scrolled clear of it.
+ */
+export function usePinnedEdge(ref: RefObject<HTMLElement | null>, edge: Edge, enabled = true): void {
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !enabled || typeof window === 'undefined') return;
+    const update = () => {
+      pinned[edge].set(el, measureEdge(el, edge));
+      publishEdge(edge);
+    };
+    update();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+    ro?.observe(el);
+    window.addEventListener('resize', update);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', update);
+      pinned[edge].delete(el);
+      publishEdge(edge);
+    };
+  }, [ref, edge, enabled]);
+}
+
 /** Run `fn` on Escape while `active` (non-modal panels). */
 export function useEscape(active: boolean, fn: () => void): void {
   const ref = useRef(fn);

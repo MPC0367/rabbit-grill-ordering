@@ -12,15 +12,24 @@ import { useI18n } from '../../lib/i18n.tsx';
 import { useRoute } from '../../lib/router.ts';
 import { storage } from '../../lib/store.ts';
 import {
-  Banner, Button, EmptyState, LinkButton, PageHeader, SegmentedControl, Skeleton, Wordmark,
+  Banner, Button, EmptyState, Icon, LinkButton, PageHeader, SegmentedControl, Skeleton, Wordmark,
 } from '../../ui/index.ts';
-import { errorText, isApiError, useStaff } from './shared.ts';
+import { errorText, isApiError, qrDownloadHref, useStaff } from './shared.ts';
 import './tables.css';
 
 interface QrCardData { table_id: string; label: string; url: string; svg: string }
 type Layout = 'a4' | 'a6';
 
 const LAYOUT_KEY = 'rg.c5.qrLayout';
+
+/**
+ * The short table token id printed for staff matching (DESIGN §10.28): never
+ * the URL. The full link lives only inside the QR.
+ */
+function shortTokenId(url: string): string {
+  const token = url.slice(url.lastIndexOf('/q/') + 3).replace(/[?#].*$/, '');
+  return token.slice(0, 6);
+}
 
 function QrCard({ card }: { card: QrCardData }) {
   const { t } = useI18n();
@@ -56,7 +65,7 @@ function QrCard({ card }: { card: QrCardData }) {
         <span lang="th">{t('qr.card.fallbackTh')}</span>
         <span lang="en">{t('qr.card.fallbackEn')}</span>
       </p>
-      <footer className="c5-qrcard__url" lang="en">{card.url}</footer>
+      <footer className="c5-qrcard__url" lang="en">{`${card.label} · ${shortTokenId(card.url)}`}</footer>
     </article>
   );
 }
@@ -166,6 +175,25 @@ export default function QrPrintPage() {
           <p className="c5-qrpage__count" role="status">
             {layout === 'a4' ? t('qr.countA4', { n: count, sheets }) : t('qr.countA6', { n: count })}
           </p>
+          <section className="c5-qrdl" aria-labelledby="c5-qrdl-h">
+            <h2 id="c5-qrdl-h" className="c5-qrdl__h">{t('qr.download.title')}</h2>
+            <p className="c5-qrdl__help">{t('qr.download.help')}</p>
+            <ul className="c5-qrdl__list">
+              {cards.map((c) => (
+                <li key={c.table_id}>
+                  <a
+                    className="c5-qrdl__a"
+                    href={qrDownloadHref(c.table_id)}
+                    download
+                    aria-label={t('qr.download.oneAria', { table: c.label })}
+                  >
+                    <Icon name="download" size="sm" />
+                    {t('qr.download.one', { table: c.label })}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
           <section className={`c5-sheetprev c5-sheetprev--${layout}`} aria-label={t('qr.previewLabel')}>
             {cards.map((c) => <QrCard key={c.table_id} card={c} />)}
           </section>

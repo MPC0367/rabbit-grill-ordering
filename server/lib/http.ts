@@ -33,9 +33,17 @@ export function query<S extends z.ZodType>(c: Context, schema: S): z.infer<S> {
   return parsed.data;
 }
 
+let warnedProxy = false;
+
 /** Client IP honouring TRUST_PROXY_HOPS (Nth address from the right of X-Forwarded-For). */
 export function clientIp(c: Context): string {
   const hops = config.trustProxyHops;
+  if (hops === 0 && !warnedProxy && c.req.header('x-forwarded-for')) {
+    // Behind a proxy with TRUST_PROXY_HOPS=0 every client shares the proxy's address,
+    // so one busy table or one guesser can use up everybody's rate limits.
+    warnedProxy = true;
+    console.warn('[server] WARNING: requests arrive through a proxy (X-Forwarded-For) but TRUST_PROXY_HOPS=0: rate limits treat every client as one address. Set TRUST_PROXY_HOPS to the number of proxies.');
+  }
   if (hops > 0) {
     const xff = (c.req.header('x-forwarded-for') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
     const candidate = xff[xff.length - hops];

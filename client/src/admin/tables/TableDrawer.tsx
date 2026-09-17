@@ -458,7 +458,7 @@ export default function TableDrawer({
         className="c5-drawer"
         title={label ? t('common.table', { label }) : t('tables.drawer.title')}
         status={label ? <TableStatePill state={state} /> : undefined}
-        lead={label ? <TableBox label={label} /> : undefined}
+        lead={label ? <TableBox label={label} className="c5-tbox" /> : undefined}
         subtitle={subtitle}
         closeLabel={t('tables.drawer.close', { table: label })}
         footer={footer ?? undefined}

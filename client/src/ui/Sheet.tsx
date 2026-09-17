@@ -15,6 +15,7 @@ import { cx, useIsoLayoutEffect, useLatest } from './cx.ts';
 import { useEscape } from './hooks.ts';
 import { firstFocusable, useFocusReturn, useHistoryDismiss, useScrollLock } from './overlay.ts';
 import { Button, IconButton } from './Button.tsx';
+import { ensureModalRegions } from './Toast.tsx';
 import { LangSwitch } from './Brand.tsx';
 import { TextArea } from './Field.tsx';
 
@@ -106,6 +107,8 @@ function ModalSheet(props: SheetProps) {
     if (!d.open) {
       try { d.showModal(); } catch { d.setAttribute('open', ''); }
     }
+    // The page behind is inert now: status words spoken while this is open go here.
+    ensureModalRegions(d);
     // With a language switch in the head, open on the close button as before
     // rather than on the switch that now comes first.
     const target = initialFocus?.current ?? (props.langSwitch ? d.querySelector<HTMLElement>('[data-overlay-close]') : null);

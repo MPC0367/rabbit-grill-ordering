@@ -24,12 +24,19 @@ export function GuestShell({ route, children }: { route: GuestRouteKey; children
   const { mode, session } = useGuestSession();
   const { openService } = useOverlays();
   const draftCount = useCartCount();
-  const navItems = useGuestNavItems({ draftCount });
+  const allNavItems = useGuestNavItems({ draftCount });
   const toast = useToast();
   const joined = mode === 'joined' && session !== null;
   const tableLabel = joined ? session.visit.table_label : null;
-  const current = NAV_KEY[route] ?? null;
-  const showDock = route !== 'join';
+  // The visit is over (checkout or revoked access): Your order, Track and
+  // Service no longer lead anywhere. The ended page's own "Browse the menu" is
+  // the way forward; the masthead keeps only the Menu link, and nothing is
+  // marked current on the thank-you page.
+  const ended = mode === 'ended';
+  const navItems = ended ? allNavItems.filter((it) => it.key === 'menu') : allNavItems;
+  const current = ended && route !== 'menu' ? null : NAV_KEY[route] ?? null;
+  const showDock = route !== 'join' && !ended;
+  const showService = route !== 'join' && !ended;
 
   // "ยินดีต้อนรับสู่ Rabbit Grill · โต๊ะ 07" once per visit on this device.
   const visitId = joined ? session.visit.id : null;
@@ -61,11 +68,10 @@ export function GuestShell({ route, children }: { route: GuestRouteKey; children
   }, [route]);
 
   // Access ended: an offer to undo a draft change no longer applies.
-  const ended = mode === 'ended';
   useEffect(() => { if (ended) toast.dismiss(); }, [ended, toast]);
 
   return (
-    <div className="g-app">
+    <div className="g-app" data-mode={mode}>
       <a
         className="skip"
         href="#main"
@@ -83,7 +89,7 @@ export function GuestShell({ route, children }: { route: GuestRouteKey; children
       <GuestHeader
         tableLabel={tableLabel}
         nav={<GuestNav items={navItems} current={current} />}
-        actions={showDock ? <ServiceKey variant="header" className="g-desk-only" onClick={openService} /> : null}
+        actions={showService ? <ServiceKey variant="header" className="g-desk-only" onClick={openService} /> : null}
       />
       <GuestBanners route={route} />
       {route === 'menu' ? null : <ReconnectSlot where="page" />}

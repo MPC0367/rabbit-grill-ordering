@@ -59,9 +59,19 @@ client/
   src/admin/     staff interface
 public/media/    processed photographs (npm run assets)
 data-src/        catalog.json - audited seed catalog from the restaurant's own menu
-test/            integration (node:test), e2e (puppeteer), visual (screenshots)
-docs/            this file, API.md, DESIGN.md, DECISIONS.md, CHECKLIST.md, source-audit.md
+scripts/         npm entry points (dev.ts, vite-dev.ts, start.ts, seed.ts), admin-create, db-reset,
+                 assets, i18n-check, browser.ts (shared headless launcher), qa-shoot.ts / shot.ts
+test/            unit/ and integration/ (node:test, `npm test`), e2e/ (browser journeys,
+                 `npm run e2e`), visual/ (screenshots + in-page audit, `npm run shots`)
+docs/            this file, API.md, CLIENT.md, DESIGN.md, UI-KIT.md, DECISIONS.md, TESTING.md,
+                 FEATURE-MATRIX.md (the implementation checklist, brief 32/43), OPERATIONS.md,
+                 OWNER-CHECKLIST.md, source-audit.md
 ```
+
+Runtime processes: `npm start` is one Node process (API + built client from
+`dist/`). `npm run dev` seeds first, then runs the API under `node --watch` on
+127.0.0.1:API_PORT and Vite on HOST:PORT with a file-serving allow-list
+(D-DT-01, D-DT-03). Setup and operations: docs/OPERATIONS.md.
 
 ## Server conventions
 

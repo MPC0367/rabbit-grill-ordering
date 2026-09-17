@@ -8,7 +8,7 @@ import { useConfig } from '../../lib/config.tsx';
 import { dateTime, money, num } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import {
-  Button, CheckButton, Dialog, Icon, LinkButton, StatCard, StatGrid, useToast,
+  Button, CheckButton, Dialog, Icon, LinkButton, StatCard, StatGrid, Tag, useToast,
 } from '../../ui/index.ts';
 import { wouldDisappearInLive } from './attention.ts';
 import { itemHref, useCan, useErrorText, useMenuData } from './model.tsx';
@@ -154,16 +154,25 @@ export default function ReviewTab() {
           </section>
 
           <StatGrid className="rq-stats">
-            {cards.map((c) => (
-              <StatCard
-                key={c.key}
-                className={c.tone === 'attention' && r[c.key] > 0 ? 'rq-stat is-attention' : 'rq-stat'}
-                label={t(`catalog.rq.card.${c.key}`)}
-                value={num(r[c.key])}
-                note={t(`catalog.rq.card.${c.key}Note`, { total: r.imported })}
-                definition={<p>{t(`catalog.rq.card.${c.key}Def`)}</p>}
-              />
-            ))}
+            {cards.map((c) => {
+              // Attention is a heat tag with words (DESIGN §9 keeps the ember mark for "current" only).
+              const attention = c.tone === 'attention' && r[c.key] > 0;
+              return (
+                <StatCard
+                  key={c.key}
+                  className={attention ? 'rq-stat is-attention' : 'rq-stat'}
+                  label={t(`catalog.rq.card.${c.key}`)}
+                  value={(
+                    <>
+                      {num(r[c.key])}
+                      {attention ? <Tag tone="heat" icon="alert" className="rq-stat__tag">{t('catalog.rq.card.needsReview')}</Tag> : null}
+                    </>
+                  )}
+                  note={t(`catalog.rq.card.${c.key}Note`, { total: r.imported })}
+                  definition={<p>{t(`catalog.rq.card.${c.key}Def`)}</p>}
+                />
+              );
+            })}
           </StatGrid>
 
           <div className="rq-lists-head">
