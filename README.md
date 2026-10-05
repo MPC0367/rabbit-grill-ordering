@@ -1,13 +1,85 @@
 # Rabbit Grill Khao Yai: table QR ordering
 
-One application with two interfaces over one SQLite database:
+A guest scans the card on their table, joins with the 4-digit code their server gives them, and orders from their own phone — Thai first, English on one tap, no app and no account. The kitchen sees the dish the moment it is sent. The guest watches it move from sent to served. The cashier checks the table out when nothing is left open.
 
-- **Guest menu** (`/menu`, `/q/<table token>`). A guest scans the table QR, joins the current visit with the PIN staff give at seating, browses Food and Drinks, sends orders, follows each dish live, asks for staff or the bill, and sees the visit end at checkout. Thai by default, English on one tap. No account or app.
-- **Staff platform** (`/admin`). Orders board and requests, live tables with checkout, menu and availability, insights (Order Stats, Menu Stats, Engagement), payments, annual PDF reports, team, settings and audit. Access depends on the role: owner, manager, cashier, floor or kitchen.
+One application, two interfaces, one SQLite database:
 
-Stack: Node 24 (TypeScript runs natively), Hono, `node:sqlite`, React 19 and Vite 8. The product brief is the acceptance standard. [docs/FEATURE-MATRIX.md](docs/FEATURE-MATRIX.md) maps every brief section to its state.
+- **Guest menu** (`/menu`, `/q/<table token>`). Join a table, browse Food and Drinks, customise a dish, send the order, follow each dish live, ask for staff or the bill, and see the visit end at checkout.
+- **Staff platform** (`/admin`). Orders board and requests, live tables with QR cards and checkout, menu and availability, insights (Order Stats, Menu Stats, Engagement), payments, annual PDF reports, team, settings and audit — each role sees only its own part: owner, manager, cashier, floor, kitchen.
 
-> **Status: local build, not a production deployment.** Everything below has been run on one Windows laptop, with browsers on the same machine. No real phone, restaurant network, https proxy or hosting has been tested yet. The menu is an unverified draft of the restaurant's printed menus: no owner has approved a price, translation or allergen, so live ordering needs the owner steps in [docs/OWNER-CHECKLIST.md](docs/OWNER-CHECKLIST.md) first.
+### ▶ See it running, free, in about three minutes
+
+No install and no card: **[docs/TRY-IT-ON-GITHUB.md](docs/TRY-IT-ON-GITHUB.md)** starts the real application in GitHub Codespaces and gives you an https link a phone can open and scan. For a restaurant that wants to take real orders, **[docs/DEPLOY.md](docs/DEPLOY.md)** is the step-by-step hosting guide.
+
+> **Status: local build, not a production deployment.** Everything here has been run on one Windows laptop, with browsers on the same machine. No real phone, restaurant network, https proxy or hosting has been tested yet. The menu is an unverified draft of the restaurant's printed menus: no owner has approved a price, translation or allergen, so live ordering needs the owner steps in [docs/OWNER-CHECKLIST.md](docs/OWNER-CHECKLIST.md) first. Every screen below is demo data, and the application says so on screen.
+
+Stack: Node 24 (TypeScript runs natively, no build step for the server), Hono, `node:sqlite`, React 19 and Vite 8. The product brief is the acceptance standard; [docs/FEATURE-MATRIX.md](docs/FEATURE-MATRIX.md) maps every brief section to its state.
+
+---
+
+## At the table
+
+On the guest's phone. Prime rib is never added like a normal dish: the guest asks staff to weigh it, and only their confirmation of the quoted weight and price creates the order.
+
+<table>
+<tr>
+<td width="25%"><img src="docs/screens/join.webp" alt="Join screen showing table 07 and four empty boxes for the code"><b>Joining</b><br>The QR names the table; the 4-digit code comes from the server and changes with every party.</td>
+<td width="25%"><img src="docs/screens/menu.webp" alt="Menu with Thai dish names, dotted lines to the prices and photographs"><b>The menu</b><br>Dotted leader lines run from each dish to its price, the way the printed menu reads.</td>
+<td width="25%"><img src="docs/screens/item-sheet.webp" alt="Dish detail sheet with options, quantity and a note field"><b>A dish</b><br>Choices, quantity, a note, and a line saying a note is confirmed by staff rather than guaranteed.</td>
+<td width="25%"><img src="docs/screens/cart.webp" alt="Draft order list with quantities and a total"><b>Your order</b><br>Still a draft. The bar says, in Thai, that it has not been sent to the kitchen yet.</td>
+</tr>
+<tr>
+<td width="25%"><img src="docs/screens/cart-review.webp" alt="Review screen listing the table, the dishes and the total before sending"><b>Before sending</b><br>Table, dishes, notes and total, with "received" and "accepted by staff" kept apart.</td>
+<td width="25%"><img src="docs/screens/track.webp" alt="Tracking timeline with completed steps and their times"><b>Tracking</b><br>Each step carries the time it actually happened. A skipped step says so instead of inventing one.</td>
+<td width="25%"><img src="docs/screens/bill.webp" alt="Table bill with lines, charges and total"><b>The bill</b><br>One bill for the table. Dishes not yet accepted are listed apart from the amount due.</td>
+<td width="25%"><img src="docs/screens/service.webp" alt="Service sheet with call staff and request the bill"><b>Asking for help</b><br>Call staff, ask for the bill, ask about allergies. Repeated taps never queue twice.</td>
+</tr>
+</table>
+
+## Behind the pass
+
+Kitchen, floor and cashier. Built for a Friday night: big numbers, one clear action per ticket, and anything that needs attention stated in words as well as colour.
+
+**The orders board** — new, accepted, preparing, almost done, ready. An allergy note is quoted on a full-width band in the guest's own words, and every button carries an exact count.
+
+![Kitchen board with columns from New to Ready and a red allergy band on one ticket](docs/screens/orders-board.webp)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screens/tables.webp" alt="Grid of tables showing available, dining and checking out"><b>The floor</b><br>Which tables are free, which are eating, which are paying, and what needs attention.</td>
+<td width="50%"><img src="docs/screens/tables-drawer.webp" alt="Table drawer showing the guest PIN, rounds and checkout blockers"><b>One table</b><br>The joining code, every round, the bill, and exactly what still blocks checkout. QR cards print from here, one per table.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screens/requests.webp" alt="Queue of guest requests and prime rib portions waiting to be weighed"><b>Requests</b><br>Guests calling for staff, and the cuts waiting to be weighed and quoted.</td>
+<td width="50%"><img src="docs/screens/overview.webp" alt="Overview with cards for rounds to accept, dishes ready and open requests"><b>What needs doing now</b><br>Rounds to accept, dishes ready to run, requests open, bills asked for.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screens/menu-availability.webp" alt="List of dishes with sold-out switches"><b>Sold out tonight</b><br>One tap takes a dish off every phone. It stays off until somebody puts it back.</td>
+<td width="50%"><img src="docs/screens/review-queue.webp" alt="Review queue counting unverified items, missing Thai names and ambiguous prices"><b>What the owner must confirm</b><br>Every record came from the restaurant's printed menus. None is approved yet, and the queue says so plainly.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screens/item-editor.webp" alt="Item editor with names, price, photo and source evidence"><b>Editing a dish</b><br>Thai and English, price with its history, the photo, and the printed source it came from.</td>
+<td width="50%"><img src="docs/screens/payments.webp" alt="Payments for the day with exceptions listed"><b>Payments</b><br>What was taken today, by whom, and anything that does not reconcile.</td>
+</tr>
+</table>
+
+## What the owner sees
+
+Every figure says what it counts. Devices are called devices, not people. A dish that was sold out all week is marked as such instead of being called unpopular, and a day with no data looks different from a day with none sold.
+
+<table>
+<tr>
+<td width="33%"><img src="docs/screens/order-stats.webp" alt="Weekly bar chart of order rounds with today marked partial and upcoming days hatched"><b>Orders by day</b><br>Seven bars, Monday to Sunday. Today is marked partial, days still to come are not drawn as zero, and the comparison refuses to invent growth from nothing.</td>
+<td width="33%"><img src="docs/screens/menu-stats.webp" alt="Ranked dishes with servings, share and availability context"><b>What sells</b><br>Most and least ordered, with how many days each dish was actually available beside it.</td>
+<td width="33%"><img src="docs/screens/engagement.webp" alt="Engagement page with coverage, active time and the ordering funnel"><b>How guests browse</b><br>Active time only counts a screen someone is actually using, and the page states what it cannot know.</td>
+</tr>
+</table>
+
+Twelve months of service also print as one PDF archive — 520 pages, Thai and English, generated by the application itself (`npm run report:annual`).
+
+---
+
+The rest of this page is for whoever runs the code.
 
 ## Requirements
 
@@ -75,6 +147,8 @@ A phone cannot open `localhost` on your laptop. `npm run dev` prints the LAN add
 If the printed address is wrong (VPN, several adapters), set `PUBLIC_BASE_URL=http://<address>:<PORT>` and reprint the cards. [docs/OPERATIONS.md](docs/OPERATIONS.md#multi-device-qr-testing-on-a-lan) has the full procedure and troubleshooting.
 
 ## Going live
+
+**Showing it to someone first, without hosting it: [docs/TRY-IT-ON-GITHUB.md](docs/TRY-IT-ON-GITHUB.md).** GitHub Codespaces runs this exact repository in the cloud and gives you an https link a phone can scan, inside the free monthly allowance.
 
 **Putting it on a cloud server with https: [docs/DEPLOY.md](docs/DEPLOY.md).** A
 step-by-step guide for a non-developer — costs, Render (`render.yaml`), the domain, the
@@ -150,6 +224,7 @@ All of these are local checks on one computer. They are not a production, real-p
 
 | File | Contents |
 | --- | --- |
+| [docs/TRY-IT-ON-GITHUB.md](docs/TRY-IT-ON-GITHUB.md) | Running the real application in GitHub Codespaces for a demo: the https link, making it openable on a phone, what it costs, what it cannot be used for |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Deploying to a cloud server with https, written for a non-developer: cost, Render blueprint, domain and DNS, owner account, QR cards, daily running, backups, updates, Fly.io, go-live checklist |
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | First admin, LAN QR testing, backup and restore, deployment preparation, environment variables, PDF browser context |
 | [docs/OWNER-CHECKLIST.md](docs/OWNER-CHECKLIST.md) | What the restaurant must verify or supply before live ordering (menu, translations, prices, allergens, photos, charges, tables, services, payments, hours, alcohol, 21 open questions) |
