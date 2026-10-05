@@ -42,12 +42,26 @@ export const forwardClientAddress: Plugin = {
   },
 };
 
+/**
+ * Vite refuses requests whose Host header it does not recognise (it allows
+ * localhost and bare IP addresses, which covers LAN phone testing). A hosted
+ * development environment serves the app on a real hostname, so that hostname
+ * has to be named: DEV_ALLOWED_HOSTS=".example.dev,host.example" adds them, and
+ * a GitHub codespace's forwarding domain is added automatically.
+ */
+export function devAllowedHosts(env = process.env): string[] {
+  const listed = (env.DEV_ALLOWED_HOSTS ?? '').split(',').map((h) => h.trim()).filter(Boolean);
+  const codespace = env.CODESPACE_NAME ? [`.${env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN ?? 'app.github.dev'}`] : [];
+  return [...new Set([...listed, ...codespace])];
+}
+
 if (import.meta.main) {
   const port = Number(process.env.PORT ?? 8344);
+  const allowedHosts = devAllowedHosts();
   const server = await createServer({
     configFile: resolve(root, 'vite.config.ts'),
     plugins: [forwardClientAddress],
-    server: { port, strictPort: true, fs: DEV_FS },
+    server: { port, strictPort: true, fs: DEV_FS, ...(allowedHosts.length ? { allowedHosts } : {}) },
   });
   await server.listen();
   server.printUrls();

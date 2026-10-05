@@ -84,8 +84,10 @@ start('api', ['--watch-path=server', '--watch-path=shared', '--watch-preserve-ou
   SEED_DEMO: '0',
   // The Vite proxy is the only client and appends the phone's address to
   // X-Forwarded-For (scripts/vite-dev.ts). A higher value would let a phone
-  // choose its own address by sending the header itself.
-  TRUST_PROXY_HOPS: '1',
+  // choose its own address by sending the header itself - raise it only when
+  // another proxy you trust sits in front (a codespace sets 2: GitHub's port
+  // forwarding, then Vite).
+  TRUST_PROXY_HOPS: envValue('TRUST_PROXY_HOPS', dotenv) ?? '1',
 });
 start('web', [resolve(ROOT, 'scripts/vite-dev.ts')], { PORT, API_PORT, HOST });
 

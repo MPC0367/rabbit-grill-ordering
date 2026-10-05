@@ -1,0 +1,44 @@
+{
+  // Run the whole ordering platform in GitHub Codespaces: open the repository
+  // on github.com, Code -> Codespaces -> Create codespace on main. GitHub builds
+  // this container, installs the packages, seeds the demo restaurant and starts
+  // the app on port 8344. See docs/TRY-IT-ON-GITHUB.md.
+  "name": "Rabbit Grill ordering",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    // Node 24: the server runs TypeScript directly through Node's type
+    // stripping and uses the built-in node:sqlite module.
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" }
+  },
+
+  // Chromium prints the annual PDF reports (puppeteer-core drives it).
+  // Without it, report jobs fail with browser_unavailable; everything else works.
+  "onCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends chromium fonts-thai-tlwg && sudo rm -rf /var/lib/apt/lists/*",
+  "postCreateCommand": "npm ci",
+  // Starts the app when you attach, so the port appears by itself.
+  "postAttachCommand": { "app": "npm run dev" },
+  "waitFor": "postCreateCommand",
+
+  "forwardPorts": [8344],
+  "portsAttributes": {
+    "8344": { "label": "Rabbit Grill (guest menu + staff)", "onAutoForward": "openPreview" },
+    "8345": { "label": "API (internal)", "onAutoForward": "silent" }
+  },
+
+  "remoteEnv": {
+    // The QR cards and the join links must carry the address a phone can open:
+    // the codespace's forwarded URL, not localhost.
+    "PUBLIC_BASE_URL": "https://${containerEnv:CODESPACE_NAME}-8344.${containerEnv:GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+    // Two proxies sit in front of the API here: GitHub's port forwarding and
+    // the dev server. Without this, every guest would share one rate-limit
+    // bucket for joining and signing in.
+    "TRUST_PROXY_HOPS": "2",
+    "BROWSER_PATH": "/usr/bin/chromium"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+    }
+  }
+}
