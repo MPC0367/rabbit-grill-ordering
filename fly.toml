@@ -1,0 +1,184 @@
+# Fly.io: the alternative to Render, if Render does not suit.
+#
+# Pick ONE of the two. Running both would give you two restaurants with two
+# separate sets of orders.
+#
+# How it differs from Render (render.yaml):
+#   - Fly is driven from a command line. You install flyctl on your computer
+#     and type the commands below; Render needs nothing installed.
+#   - Fly builds the image on its own builder, so you still never need Docker.
+#   - Singapore ("sin") is the nearest region; Fly has no Thailand region.
+#   - It is usually cheaper: about USD 6.70 a month for the machine below
+#     (shared-cpu-1x with 1 GB) plus USD 0.15 per GB for the volume, so about
+#     USD 7.50 in all with the 5 GB volume. Check fly.io/docs/about/pricing;
+#     docs/DEPLOY.md section 11 has the side-by-side comparison with Render.
+#   - A volume lives on ONE physical server. If that server's disk fails, the
+#     data is gone, and the automatic snapshots below are a fallback, not a
+#     backup. Fly's own advice is to run two volumes, which this application
+#     cannot do: one SQLite file, one process. So on Fly the scheduled backup
+#     off the machine matters more, not less.
+#
+# THE COMMANDS, in order, from this folder:
+#
+#   fly auth login
+#   fly launch --no-deploy --copy-config --name rabbit-grill-ordering --region sin
+#       # answers "no" to Postgres, Redis and any other add-on it offers.
+#       # If the name is taken (app names are global on Fly), pick another and
+#       # change `app` below to match.
+#   fly volumes create rabbit_grill_data --region sin --size 5
+#   fly secrets set PUBLIC_BASE_URL=https://rabbit-grill-ordering.fly.dev
+#       # or your own domain once it is attached; see PUBLIC_BASE_URL below
+#   fly deploy
+#   fly ssh console
+#       # an INTERACTIVE shell on the machine, as root. Then, inside it:
+#       #   cd /app
+#       #   npm run jobs -- restore        # prints the paths: they must say /var/data
+#       #   npm run admin:create -- --username owner --name 'Owner'
+#       # It asks for the password in that terminal and does not echo it. The
+#       # password is never written to a file and never leaves that window.
+#       #
+#       # Do NOT use `fly ssh console --command "...admin-create..."`: --command
+#       # runs without an interactive terminal, so the password prompt has
+#       # nothing to read from and the command just hangs.
+#
+# Afterwards: `fly logs` shows what the server says at start, and
+# `fly status` shows the one machine and its health check.
+
+app = "rabbit-grill-ordering"
+primary_region = "sin"
+
+# Fly sends this when it stops the machine, and waits this long before killing
+# it. server/main.ts handles both SIGTERM and SIGINT: it stops the background
+# job timers and closes the SQLite database. Fly's defaults are SIGINT and five
+# seconds, which is tight if a report happens to be printing.
+kill_signal = "SIGTERM"
+kill_timeout = "15s"
+
+# A little swap, so that a memory spike while the annual PDF prints slows the
+# machine down instead of killing it.
+swap_size_mb = 512
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # A real restaurant install: the server refuses to seed demo data and
+  # refuses to reset the database.
+  NODE_ENV = "production"
+
+  # The port inside the machine. It must match internal_port below. Fly does
+  # not inject a PORT of its own, unlike Render.
+  PORT = "8344"
+  # Fly Proxy only reaches services listening on IPv4, so 0.0.0.0 it is.
+  HOST = "0.0.0.0"
+
+  # Both on the volume mounted below. Nothing else on the machine is worth
+  # keeping: the code comes from this repository on every deploy.
+  DATABASE_PATH = "/var/data/rabbit-grill.db"
+  REPORTS_DIR = "/var/data/reports"
+
+  # How many proxies sit between a guest's phone and this app. The server reads
+  # the guest's real address that many places from the end of X-Forwarded-For
+  # and keys its rate limits on it, so a phone guessing table PINs uses up its
+  # own allowance and not everybody's.
+  #
+  # 1 is right for Fly Proxy on its own. Make it 2 if you later put another
+  # proxy (Cloudflare's orange cloud, say) in front of the Fly address:
+  # leaving it at 1 there makes every guest look like one address, and one
+  # person typing the wrong PIN uses up the whole restaurant's allowance.
+  # Never set it higher than the number of proxies really there, or a guest
+  # could put any address they liked in the header.
+  TRUST_PROXY_HOPS = "1"
+
+  # No demo data, ever, on the real server. The demo staff accounts have
+  # passwords printed in the README. The server already refuses to seed under
+  # NODE_ENV=production; these say so a second time, in writing.
+  SEED_DEMO = "0"
+  SEED_HISTORY = "0"
+
+  # PUBLIC_BASE_URL is NOT set here. Set it with `fly secrets set` (see the
+  # commands at the top), which keeps one editable value out of a file that is
+  # committed to a public repository. It is the full https address, with no
+  # slash at the end: https://<your app>.fly.dev, or your own domain after
+  # `fly certs add order.example.com`.
+  #
+  # Two things follow from it, so it has to be right:
+  #   - staff and guest cookies are marked Secure because it starts with https;
+  #   - every printed table card encodes this address, so print the cards from
+  #     More -> Tables -> Manage tables & QR only after it is final. Changing
+  #     it stops the old cards working.
+  # Until it is set the server starts anyway and warns in the log that the QR
+  # cards would point at localhost.
+
+[http_service]
+  internal_port = 8344
+  # Guests must not be able to reach the app over plain http: cookies are
+  # marked Secure and would be dropped.
+  force_https = true
+
+  # ONE machine, always on. This application is one process with one SQLite
+  # file: a second machine would be a second restaurant with its own orders,
+  # and Fly cannot attach one volume to two machines anyway. Do not run
+  # `fly scale count 2`.
+  auto_stop_machines = "off"
+  auto_start_machines = false
+  min_machines_running = 1
+
+  # Live updates are Server-Sent Events on /api/guest/events and
+  # /api/staff/events: one connection per open phone and per staff screen,
+  # held open for hours, with a heartbeat every 15 seconds. Fly Proxy streams
+  # responses rather than buffering them, which is what these need. If they
+  # ever stop arriving the app falls back to polling every 5 seconds, so the
+  # restaurant keeps working either way.
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/api/health"
+    interval = "30s"
+    timeout = "5s"
+    # Long enough for the database to open, the migrations to run and the
+    # entrypoint to check that Chromium can start.
+    grace_period = "45s"
+
+# The volume. THIS IS THE RESTAURANT'S DATA: the menu, the tables, every visit,
+# order, bill, payment, staff account, setting, and the generated annual PDFs.
+#
+# It must be created first, in the same region, with:
+#   fly volumes create rabbit_grill_data --region sin --size 5
+# 5 GB holds years of orders, the annual PDFs and room for a backup file
+# written next to the database before it is downloaded; a volume that fills up
+# stops the restaurant taking orders. The same 5 GB as render.yaml, so the
+# disk-space advice in docs/DEPLOY.md is true on either platform.
+# `initial_size` only applies to volumes Fly creates for you on a later
+# deploy; it does not resize an existing one (use `fly volumes extend`).
+# Volumes grow but never shrink.
+[mounts]
+  source = "rabbit_grill_data"
+  destination = "/var/data"
+  initial_size = "5gb"
+  # Fly keeps daily snapshots of the volume. Useful, but not a backup: see
+  # docs/OPERATIONS.md, "Backup and restore", and keep copies off the machine.
+  snapshot_retention = 14
+
+# 1 shared CPU with 1 GB of memory, about USD 6.70 a month. Not the 256 MB
+# default: that is too little for the server, let alone the headless Chromium
+# that prints the annual PDF.
+#
+# ONE JOB MAY NEED MORE. The annual report runs Chromium next to the server,
+# and how much memory that really takes has only ever been measured on a
+# laptop. The 512 MB of swap set at the top of this file is the first line of
+# defence. If a report still fails, give it more for the hour it takes:
+#   fly scale memory 2048     # then: fly scale memory 1024
+# Fly bills by the second, so that costs a few cents.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+
+# Fly offers rolling, immediate, canary and bluegreen; canary and bluegreen are
+# NOT available to an app with volumes, because both need a second machine, and
+# a volume attaches to exactly one. Of the two that are left, rolling is the
+# right one here: Fly stops the single machine before starting the new one, so
+# two processes never hold the same SQLite file. The cost is a gap of a few
+# seconds to a minute per deploy, so deploy between services.
+[deploy]
+  strategy = "rolling"

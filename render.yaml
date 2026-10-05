@@ -1,0 +1,166 @@
+# Render Blueprint: the recommended way to put this on a cloud server.
+#
+# You do not run anything from your laptop. You create a Render account, point
+# it at this repository, and Render reads this file: it builds the Dockerfile,
+# attaches a disk that survives deploys, sets the settings below and gives the
+# restaurant an https address. Every later `git push` to main redeploys.
+#
+# WHAT YOU MUST CHANGE: one setting, PUBLIC_BASE_URL, right at the bottom.
+# Render asks you for it while it creates the service. Everything else is
+# already correct for this application.
+#
+# WHAT IT COSTS, per month: about USD 8.25 - the Starter server below (USD 7)
+# plus a 5 GB disk (USD 1.25 at USD 0.25 per GB). docs/DEPLOY.md section 1 has
+# the full bill. The disk is 5 GB and not 2 because Render only accepts a disk
+# size of 1 GB or a multiple of 5 ("This value must be either 1 or a multiple
+# of 5" - render.com/docs/blueprint-spec), and 1 GB leaves no room for a
+# backup file next to the database.
+# Render's free plan CANNOT be used: free services get no persistent disk, so
+# the database would be deleted on every deploy. Check the current prices at
+# render.com/pricing before you commit to it.
+#
+# WHY IT IS SHAPED THIS WAY: this application is one process with one SQLite
+# file. It cannot be split across two servers, and two copies must never run
+# against the same disk. Render enforces exactly that by itself: a service with
+# a disk attached cannot be scaled past one instance, and its deploys stop the
+# old instance before starting the new one ("Adding a disk to a service
+# prevents zero-downtime deploys" - render.com/docs/disks). The cost of that is
+# a gap of a few seconds to a minute during a deploy and after a settings
+# change, so deploy between services, not during one.
+
+services:
+  - type: web
+    name: rabbit-grill-ordering
+    runtime: docker
+
+    # The Dockerfile and the build context are both at the root of this
+    # repository, which is what Render defaults to. Written out so it is
+    # obvious what gets built.
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    # Singapore is Render's closest region to Khao Yai: about 50 ms away.
+    # Render's other regions are oregon, ohio, virginia and frankfurt, all of
+    # which would add a quarter of a second to every tap on a guest's phone.
+    # The region cannot be changed later without recreating the service.
+    region: singapore
+
+    # Half a CPU and 512 MB of memory: Render's Starter, USD 7 a month. Plenty
+    # for taking orders, serving the menu and running checkout.
+    #
+    # ONE JOB NEEDS MORE: the annual PDF report runs a headless Chromium next
+    # to the server, and 512 MB has NOT been shown to be enough for it (it has
+    # only ever been measured on a laptop). Once a year, before generating the
+    # report, change this to 1c-2g (USD 25 a month) in Render's dashboard, let
+    # the report finish, then change it back. Render bills compute by the
+    # second, so that hour costs a few cents. docs/DEPLOY.md explains it in the
+    # same words. Render's plan names are the shape of the machine:
+    # 0.5c-512mb, 1c-2g, 2c-4g and upwards.
+    plan: 0.5c-512mb
+
+    # One instance, always. See the note at the top of this file.
+    numInstances: 1
+
+    # Render asks the running server this every few seconds. The app answers
+    # {"ok":true,...} once the database is open and migrated, so a deploy that
+    # cannot open its database is never put in front of guests.
+    healthCheckPath: /api/health
+
+    # Redeploy on every push to this repository's main branch. Set it to `off`
+    # if you would rather press the button in Render yourself.
+    autoDeployTrigger: commit
+
+    # The persistent disk. THIS IS THE RESTAURANT'S DATA: the menu, the tables,
+    # every visit, order, bill, payment, staff account, setting, and the
+    # generated annual PDFs. It survives deploys, restarts and crashes. Without
+    # it, all of that is deleted the next time the service restarts.
+    #
+    # SIZE: Render accepts only 1 GB or a multiple of 5 ("This value must be
+    # either 1 or a multiple of 5" - render.com/docs/blueprint-spec), so the
+    # choice is 1 or 5. 5 it is: the database, the annual PDFs AND a backup
+    # file written next to them before it is downloaded all share this disk,
+    # and a disk that fills up stops the restaurant taking orders. At USD 0.25
+    # per GB that is USD 1.25 a month. sizeGB can be raised later but NEVER
+    # lowered, so raising it is the only mistake here that is cheap to fix.
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 5
+
+    envVars:
+      # A real restaurant install. It makes the server refuse to seed demo data
+      # and refuse to reset the database, whatever else is set.
+      - key: NODE_ENV
+        value: production
+
+      # The server must listen on 0.0.0.0 for Render's router to reach it.
+      #
+      # PORT is deliberately NOT set here: Render supplies it (10000 unless you
+      # change it in the dashboard) and the app listens on whatever it is
+      # given, so there is nothing to keep in step. The 8344 in the Dockerfile
+      # is only the default for running the image on a laptop.
+      - key: HOST
+        value: 0.0.0.0
+
+      # Both of these are on the disk above. Nothing else on the server is
+      # worth keeping: the code comes from this repository every deploy.
+      - key: DATABASE_PATH
+        value: /var/data/rabbit-grill.db
+      - key: REPORTS_DIR
+        value: /var/data/reports
+
+      # How many proxies sit between a guest's phone and this app. The server
+      # reads the guest's real address that many places from the end of the
+      # X-Forwarded-For header, and keys its rate limits on it, so that one
+      # phone guessing table PINs uses up its own allowance instead of
+      # everybody's.
+      #
+      # 1 is right for Render on its own: Render's router is the only proxy.
+      #
+      # CHANGE IT TO 2 if you later turn Cloudflare's orange-cloud proxy on
+      # for the domain (Cloudflare + Render = two proxies). Leaving it at 1
+      # there makes every guest in the restaurant look like the same address,
+      # and one person typing the wrong PIN uses up the whole restaurant's
+      # join and sign-in allowance. docs/DEPLOY.md section 4 covers this.
+      #
+      # Never set it HIGHER than the number of proxies that are really there:
+      # a guest could then put any address they liked in the header.
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+
+      # No demo data, ever, on the real server. The demo staff accounts have
+      # passwords printed in the README. The server already refuses to seed
+      # under NODE_ENV=production; these say so a second time, in writing.
+      - key: SEED_DEMO
+        value: "0"
+      - key: SEED_HISTORY
+        value: "0"
+
+      # The address the table QR codes point at. Render asks you for this while
+      # it creates the service (that is what `sync: false` means).
+      #
+      # Type the full https address, with no slash at the end:
+      #   https://rabbit-grill-ordering.onrender.com   <- Render's own address,
+      #       shown on the service page as soon as it exists. Render adds a few
+      #       random characters if that name is already taken, so copy it from
+      #       the page rather than typing it from here.
+      #   https://order.rabbitgrillkhaoyai.com         <- later, if you attach
+      #       your own domain in Render's Settings -> Custom Domains
+      #
+      # Two things follow from this setting, so it has to be right:
+      #   - staff and guest cookies are marked Secure because it starts with
+      #     https, which is what makes sign-in safe over the internet;
+      #   - every printed table card encodes this address. Change it and the
+      #     old cards stop working: print the cards from More -> Tables ->
+      #     Manage tables & QR only after this is final.
+      # Until it is set the server starts anyway and warns in the log that the
+      # QR cards would point at localhost.
+      - key: PUBLIC_BASE_URL
+        sync: false
+
+      # Deliberately NOT set here:
+      #   COOKIE_SECURE   it follows PUBLIC_BASE_URL on its own (https = Secure).
+      #                   Forcing it is how installs lock everybody out.
+      #   BROWSER_PATH    the image sets it to the Chromium it installed.
+      #   RG_ADMIN_PASSWORD  the first owner's password is typed into Render's
+      #                   Shell once (see the deployment guide), never stored.

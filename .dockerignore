@@ -1,0 +1,48 @@
+# What must never enter the build context. Two reasons appear below: some of
+# this would be wrong inside the image, and some of it would only make the
+# upload slow.
+
+# --- wrong inside the image -------------------------------------------------
+
+# Runtime data: the SQLite database, its -wal and -shm files, generated report
+# PDFs, QA output. A development database carries the demo staff accounts,
+# whose passwords are published in the README, and a synthetic year of invented
+# orders. It must never be baked into a restaurant's image.
+var/
+
+# Local configuration, which can hold real settings or a password.
+.env
+.env.*
+
+# Built on the host for Windows; the image installs Linux packages with
+# `npm ci`, and a Windows node_modules would break the build.
+node_modules/
+
+# Built inside the build stage from the source that is copied in.
+dist/
+
+# --- only makes the upload slow ---------------------------------------------
+
+# Tests and visual QA: not needed to build the client or to run the server.
+test/
+
+# Reference mocks for the design system (17 MB of PNGs); documentation only.
+design-lab/
+
+# Dev-container definition: for editing this project, not for running it.
+.devcontainer/
+
+# Git metadata and editor noise.
+.git/
+.gitignore
+.gitattributes
+.github/
+*.log
+Thumbs.db
+.DS_Store
+
+# The deployment files themselves. Docker reads them from outside the context.
+Dockerfile
+.dockerignore
+render.yaml
+fly.toml

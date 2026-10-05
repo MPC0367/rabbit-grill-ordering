@@ -2,6 +2,8 @@
 
 How to set up, run, test on phones, back up and prepare a deployment of the ordering platform. [README.md](../README.md) has the quick start; this file has the details.
 
+**Deploying to a cloud server with https: [DEPLOY.md](DEPLOY.md).** It walks a non-developer through Render (`render.yaml`) or Fly.io (`fly.toml`) click by click, with costs, the domain, the owner account, the QR cards and a go-live checklist. This file stays the reference for *what* each setting, job and procedure does; DEPLOY.md is the *how*, on a host.
+
 **What has been verified.** Everything here was run on one Windows 11 laptop with Node 24, Microsoft Edge, and browsers on that laptop or reaching its LAN address. The following have **not** been tested:
 
 - a real phone on a restaurant network
@@ -204,6 +206,8 @@ What a restore means during service:
 ## Deployment preparation
 
 These notes prepare a deployment. **None of these steps has been exercised on a real host.**
+
+For a hosted install, the step-by-step version of this section is [DEPLOY.md](DEPLOY.md) (Render or Fly.io, written for a non-developer). Read on for the underlying requirements and for installs you run yourself.
 
 ### Target
 

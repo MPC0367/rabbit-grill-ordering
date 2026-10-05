@@ -76,7 +76,12 @@ If the printed address is wrong (VPN, several adapters), set `PUBLIC_BASE_URL=ht
 
 ## Going live
 
-A condensed checklist. The details are in [docs/OPERATIONS.md](docs/OPERATIONS.md).
+**Putting it on a cloud server with https: [docs/DEPLOY.md](docs/DEPLOY.md).** A
+step-by-step guide for a non-developer — costs, Render (`render.yaml`), the domain, the
+owner account, QR cards, backups and a go-live checklist. Fly.io (`fly.toml`) is covered
+there too.
+
+A condensed checklist for running it yourself. The details are in [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ```powershell
 npm ci
@@ -145,6 +150,7 @@ All of these are local checks on one computer. They are not a production, real-p
 
 | File | Contents |
 | --- | --- |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Deploying to a cloud server with https, written for a non-developer: cost, Render blueprint, domain and DNS, owner account, QR cards, daily running, backups, updates, Fly.io, go-live checklist |
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | First admin, LAN QR testing, backup and restore, deployment preparation, environment variables, PDF browser context |
 | [docs/OWNER-CHECKLIST.md](docs/OWNER-CHECKLIST.md) | What the restaurant must verify or supply before live ordering (menu, translations, prices, allergens, photos, charges, tables, services, payments, hours, alcohol, 21 open questions) |
 | [docs/FEATURE-MATRIX.md](docs/FEATURE-MATRIX.md) | Every brief requirement: Implemented, Verified (with evidence), Needs owner content, or Deferred |
