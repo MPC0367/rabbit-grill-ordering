@@ -14,6 +14,9 @@ when nobody uses it, and its data disappears when you delete it.
 
 ## Start it
 
+Either press the **Open in GitHub Codespaces** button at the top of the
+repository page, or do it by hand:
+
 1. Open **https://github.com/MPC0367/rabbit-grill-ordering**.
 2. Press the green **Code** button → **Codespaces** tab → **Create codespace on main**.
 3. Wait. The first start takes about three to five minutes: GitHub builds the
