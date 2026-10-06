@@ -26,6 +26,13 @@ export interface PublicConfigDTO {
   /** How long a guest waits before the same request can be sent again (0 = no wait; D-S8-23). */
   service_cooldown_seconds?: number;
   analytics: { enabled: boolean; idle_threshold_seconds: number; heartbeat_seconds: number };
+  /**
+   * Whether joining a table needs the staff code. Guest screens that explain
+   * how to join read this, so they never tell a guest to ask for a code that
+   * this restaurant does not use. Absent on an older server: treat as true,
+   * which is the wording that was correct before the switch existed.
+   */
+  join_pin_required?: boolean;
   notes_max_length: number;
   sold_out_display: 'show_disabled' | 'hide';
   server_time: string;

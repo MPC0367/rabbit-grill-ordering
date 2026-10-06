@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 import type { GuestSessionDTO, QrResolveDTO } from '../../../../shared/dto.ts';
 import { api, ApiError } from '../../lib/api.ts';
+import { useConfig } from '../../lib/config.tsx';
 import { clock } from '../../lib/format.ts';
 import { useI18n } from '../../lib/i18n.tsx';
 import { navigate } from '../../lib/router.ts';
@@ -36,6 +37,11 @@ function asApiError(err: unknown): ApiError {
 
 export default function JoinPage({ token }: { token: string }) {
   const { t, has } = useI18n();
+  const { config } = useConfig();
+  // Whether this restaurant uses a join code at all. The resolve DTO says
+  // nothing useful here when the table has no open visit yet, so the public
+  // config is the source. Absent on an older server: assume a code is needed.
+  const pinInUse = config?.join_pin_required ?? true;
   const { session, mode, setSession } = useGuestSession();
   const toast = useToast();
   const [phase, setPhase] = useState<Phase>({ kind: 'checking' });
@@ -236,8 +242,8 @@ export default function JoinPage({ token }: { token: string }) {
         headingRef={headingRef}
         action={<Button variant="primary" size="lg" block icon="refresh" onClick={() => void resolve()}>{t('join.retry')}</Button>}
       >
-        <p>{t('join.notOpenBody')}</p>
-        {askStaff('join.notOpenAsk')}
+        <p>{t(pinInUse ? 'join.notOpenBody' : 'join.notOpenBodyNoPin')}</p>
+        {askStaff(pinInUse ? 'join.notOpenAsk' : 'join.notOpenAskNoPin')}
       </StateCard>
     );
   } else if (info && !info.pin_required) {
@@ -348,6 +354,9 @@ function staffUnlock(error: ApiError): boolean {
 
 function JoinMessage({ error, blockedUntil, id, pinLength }: { error: ApiError; blockedUntil: number | null; id?: string; pinLength: number | null }) {
   const { t, has } = useI18n();
+  const { config } = useConfig();
+  // With no code in use, a staff-held lock is a closed table, not a wrong code.
+  const pinInUse = config?.join_pin_required ?? true;
   const format = pinLength ? t('join.pinFormat', { n: pinLength }) : t('join.pinFormatAny');
   let main: string;
   let sub: string | null = null;
@@ -360,8 +369,8 @@ function JoinMessage({ error, blockedUntil, id, pinLength }: { error: ApiError; 
     }
     case 'pin_locked':
       if (staffUnlock(error)) {
-        main = t('join.lockedStaffTitle');
-        sub = t('join.lockedStaffBody');
+        main = t(pinInUse ? 'join.lockedStaffTitle' : 'join.lockedStaffTitleNoPin');
+        sub = t(pinInUse ? 'join.lockedStaffBody' : 'join.lockedStaffBodyNoPin');
         break;
       }
       main = t('join.lockedTitle');

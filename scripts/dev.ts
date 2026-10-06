@@ -51,7 +51,7 @@ function portFree(port: number, host: string): Promise<boolean> {
  * Development only, and never allowed to stop a start: an unreadable database
  * just means no banner.
  */
-function openTablePins(): Array<{ label: string; pin: string; status: string }> {
+function openTablePins(): Array<{ label: string; pin: string | null; status: string }> {
   try {
     const file = resolve(ROOT, envValue('DATABASE_PATH', dotenv) ?? 'var/rabbit-grill.db');
     const db = new DatabaseSync(file, { readOnly: true });
@@ -59,9 +59,9 @@ function openTablePins(): Array<{ label: string; pin: string; status: string }> 
       return db.prepare(
         `SELECT t.label AS label, v.join_pin AS pin, v.status AS status
            FROM visits v JOIN dining_tables t ON t.id = v.table_id
-          WHERE v.closed_at IS NULL AND v.join_pin IS NOT NULL
+          WHERE v.closed_at IS NULL
           ORDER BY t.sort, t.label`,
-      ).all() as Array<{ label: string; pin: string; status: string }>;
+      ).all() as Array<{ label: string; pin: string | null; status: string }>;
     } finally {
       db.close();
     }
@@ -167,11 +167,14 @@ if (fileHops !== undefined && fileHops !== '' && fileHops !== devHops) {
 if (seedDemo) {
   const pins = openTablePins();
   if (pins.length) {
+    const coded = pins.some((p) => p.pin);
     console.log([
       '',
-      '  ======== DEVELOPMENT ONLY - tables open right now (fixture PINs) ========',
-      ...pins.map((p) => `    table ${p.label}  PIN ${p.pin}${p.status === 'billing' ? '  (checking out: joins, cannot order)' : ''}`),
-      '  Show a table\'s QR from Admin > Tables > Manage tables & QR, scan it, enter the PIN.',
+      `  ======== DEVELOPMENT ONLY - tables open right now${coded ? ' (fixture PINs)' : ''} ========`,
+      ...pins.map((p) => `    table ${p.label}${p.pin ? `  PIN ${p.pin}` : ''}${p.status === 'billing' ? '  (checking out: joins, cannot order)' : ''}`),
+      coded
+        ? '  Show a table\'s QR from Admin > Tables > Manage tables & QR, scan it, enter the PIN.'
+        : '  Show a table\'s QR from Admin > Tables > Manage tables & QR and scan it: no code needed.',
       '  =========================================================================',
       '',
     ].join('\n'));

@@ -27,9 +27,12 @@ export const T = {
 export function seedTestFixtures(opts: { mode?: 'live' | 'demo'; pinRequired?: boolean } = {}): void {
   const now = nowIso();
   run(`INSERT INTO settings (key, value, updated_at) VALUES ('operating_mode', :v, :at)`, { v: JSON.stringify(opts.mode ?? 'live'), at: now });
-  if (opts.pinRequired === false) {
-    run(`INSERT INTO settings (key, value, updated_at) VALUES ('join', :v, :at)`, { v: JSON.stringify({ pin_required: false }), at: now });
-  }
+  // Written in BOTH directions on purpose. Leaving it out when PINs are wanted
+  // made every join test inherit the product default, so flipping that default
+  // broke seven tests that were not about defaults at all.
+  run(`INSERT INTO settings (key, value, updated_at) VALUES ('join', :v, :at)`, {
+    v: JSON.stringify({ pin_required: opts.pinRequired !== false }), at: now,
+  });
   // Tests must not be slowed by the anti-spam cooldown.
   run(`INSERT INTO settings (key, value, updated_at) VALUES ('services', :v, :at)`, {
     v: JSON.stringify({ call_staff: true, bill: true, order_change: true, allergy_help: true, water: true, utensils: false }), at: now,

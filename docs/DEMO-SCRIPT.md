@@ -9,15 +9,16 @@ same https link for a Codespaces one).
 
 ## Before they arrive
 
-1. Start the system. The terminal prints the open tables and their PINs:
+1. Start the system. The terminal lists the tables that are open:
 
    ```
-   ======== DEVELOPMENT ONLY - tables open right now (fixture PINs) ========
-       table 01  PIN 7352
+   ======== DEVELOPMENT ONLY - tables open right now ========
+       table 01
+       table 03
        ...
    ```
 
-   Leave that window open. It is the only place the PINs are all visible at once.
+   Leave that window open. If the restaurant has switched the join code on, the codes appear here too, and nowhere else all at once.
 
 2. On the laptop, sign in at `/admin` as `demo-owner` / `rabbit-owner-demo`.
 3. On the phone, open the table card for the table you picked and join it, so
@@ -28,7 +29,7 @@ same https link for a Codespaces one).
 ## The path
 
 **1. Start at the table, not the admin.** Scan the QR card with the phone.
-Show the join screen naming the table, type the PIN, and you are on the menu.
+The screen names the table, you tap once to confirm it, and you are on the menu. There is no code to type: that step is off by default.
 That is the whole guest onboarding: no app, no account, no typing a table
 number.
 
@@ -57,7 +58,7 @@ to accept. Only their acceptance creates the order.
    refuses to pretend it does.
 
 **6. Show the floor.** **Tables** — who is free, who is eating, who is paying.
-Open table 07's drawer: the join PIN under **Guest access** (press **Show PIN**), every round, the bill,
+Open table 07's drawer: who is attached under **Guest access**, every round, the bill,
 and what still blocks checkout.
 
 **7. Show the numbers.** **Insights → Order Stats**. Point at today's bar being
@@ -119,4 +120,4 @@ and sign-off on the 95 items.
 | QR card opens nothing | The cards encode the address printed as `QR cards` at startup. If the laptop changed network since you printed them, reprint. |
 | Sign-in screen keeps returning (Codespaces) | You are in the VS Code preview panel. Open the Forwarded Address in a real browser tab. |
 | Orders board not updating | It falls back to polling by itself within a few seconds. Reload only if it is still stale after that. |
-| You need a clean restaurant | `npm run db:reset` then start again — new PINs, no history. Takes about 20 seconds, and the terminal prints the new PINs. |
+| You need a clean restaurant | `npm run db:reset` then start again — fresh tables, no history. Takes about 20 seconds. |

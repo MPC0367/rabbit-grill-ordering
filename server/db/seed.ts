@@ -125,10 +125,12 @@ async function seedAll(opts: { history: boolean }): Promise<void> {
   const pinLines = live.pins.map((p) => `    table ${p.table}  PIN ${p.pin}${p.status === 'billing' ? '  (checking out)' : ''}`);
   console.log([
     '',
-    '  ======== DEVELOPMENT ONLY - demo visits open right now (fixture PINs) ========',
+    `  ======== DEVELOPMENT ONLY - demo visits open right now${pinLines.length ? ' (fixture PINs)' : ''} ========`,
     ...pinLines,
     `    table ${live.disabledTable}  disabled`,
-    '  Show a table\'s QR from Admin > Tables, scan it, and enter the PIN to join.',
+    pinLines.length
+      ? '  Show a table\'s QR from Admin > Tables, scan it, and enter the PIN to join.'
+      : '  Show a table\'s QR from Admin > Tables and scan it to join: this restaurant uses no code.',
     '  ===============================================================================',
     '',
   ].join('\n'));

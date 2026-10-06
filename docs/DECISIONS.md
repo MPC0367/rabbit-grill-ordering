@@ -1109,6 +1109,46 @@ banner on the menu, order and Track pages. Nothing is shown when it is empty
   instead of importing `shared/schemas.ts` (all of zod) at start-up;
   `test/unit/guest-limits.test.ts` fails if they drift from the schema.
 
+**D-G-08 · The join code is off by default: scanning the table card is the
+whole journey (overrides the default in D-04, which stands as the description
+of the code itself).** The owner asked for the code step to go: a guest scans
+the card on their table and is in. `join.pin_required` already existed and was
+already honoured everywhere on the server; this changes its default to `false`
+and makes the guest copy follow it, so no screen tells a guest to ask for a
+code this restaurant does not use.
+
+The honest cost, in the owner's words:
+
+> With the join code off, the QR card on the table is the whole key. Anyone who
+> can read that card — a guest at the next table, someone who photographed it on
+> a previous visit, a diner who kept the link in their browser history — can
+> join whichever party is currently seated at that table, see that party's
+> orders and bill, and add items to their tab. Before, they also needed the four
+> digits staff spoke only to the seated party, so a photographed card was
+> useless on its own.
+
+What still limits it: nobody can join a table staff have not seated
+(`no_open_visit`, and `visits_one_active_per_table` means at most one joinable
+visit per table); the exposure ends when the visit closes at checkout; no round
+reaches the kitchen or the bill until staff accept it; and staff can revoke
+every phone on a table at any time. The code can be switched back on for the
+whole restaurant in **Settings → Joining a table**, effective immediately,
+including for parties already seated.
+
+One consequence had to be fixed rather than accepted. **Revoking guests used to
+work by rotating the PIN** — with no code there is nothing to rotate, so a
+kicked phone could rescan the same card and be readmitted in seconds. The
+lockout check in `joinVisit` therefore moved *outside* the `pin_required`
+branch: with codes off, `revokeGuests` closes joining for that visit
+(`pin_locked_until = PIN_LOCKED_FOR_STAFF`) and staff re-open it with the same
+button that rotates a code when codes are on. Covered by the second half of
+"the shipped default is no join code" in `test/integration/access.test.ts`.
+
+Also: `test/helpers/fixtures.ts` now writes the `join` setting in both
+directions. It previously wrote it only when PINs were off, so seven tests that
+were not about defaults silently inherited the product default and broke when
+it changed.
+
 ## Review fixes: UI kit, styles and client lib
 
 **D-K-01 · The live client follows the server after a database restore.**

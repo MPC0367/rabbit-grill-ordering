@@ -105,7 +105,9 @@ export function GuestBanners({ route }: { route: GuestRouteKey }) {
         variant: 'info',
         icon: revoked ? 'lock' : undefined,
         title: t(revoked ? 'shell.banner.revoked.title' : 'shell.banner.closed.title'),
-        body: t(revoked ? 'shell.banner.revoked.body' : 'shell.banner.closed.body'),
+        body: t(revoked
+          ? (config?.join_pin_required ?? true) ? 'shell.banner.revoked.body' : 'shell.banner.revoked.bodyNoPin'
+          : 'shell.banner.closed.body'),
       });
     }
   }

@@ -56,7 +56,7 @@ By default the link only works for you, signed in to GitHub.
 | Who | Where | How to get in |
 | --- | --- | --- |
 | Staff | `<your link>/admin` | `demo-owner` with password `rabbit-owner-demo` (also `demo-manager`, `demo-cashier`, `demo-floor`, `demo-kitchen`, each `rabbit-<role>-demo`) |
-| A guest at a table | **Admin → Tables → Manage tables & QR**, print or show a card, scan it | The 4-digit PIN: it prints in the terminal when the app starts, and is in the table's drawer under **Guest access** (press **Show**) |
+| A guest at a table | **Admin → Tables → Manage tables & QR**, print or show a card, scan it | Nothing to type: scanning the card joins that table |
 | Anyone, browse only | `<your link>/menu` | Nothing: public visitors can read the menu but not order |
 
 A rehearsed path through the system, with the dishes and tables that are safe
@@ -92,7 +92,7 @@ The app starts by itself. If you stop it, or want it back after a restart:
 npm run dev
 ```
 
-To wipe the demo data and start the restaurant fresh (new PINs, no history):
+To wipe the demo data and start the restaurant fresh (no history):
 
 ```bash
 npm run db:reset && npm run dev

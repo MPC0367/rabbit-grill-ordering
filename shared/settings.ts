@@ -83,7 +83,10 @@ export const DEFAULT_SETTINGS: Settings = {
     { id: 'transfer', label_th: 'โอนเงิน / พร้อมเพย์', label_en: 'Bank transfer / PromptPay', enabled: false, tendered: false, payment_qr_image: null },
     { id: 'card', label_th: 'บัตร (เครื่องรูดของร้าน)', label_en: 'Card (restaurant terminal)', enabled: false, tendered: false },
   ],
-  join: { pin_required: true, pin_digits: 4, max_failures: 5, lockout_minutes: 5 },
+  // Off by default: a guest scans the card on their table and is in, with no
+  // code to type (D-G-08). The PIN is still here, one switch away, for a
+  // restaurant that wants a scanned-from-across-the-room card to be useless.
+  join: { pin_required: false, pin_digits: 4, max_failures: 5, lockout_minutes: 5 },
   menu: { sold_out_display: 'show_disabled', note_max_length: 140 },
   portions: { quote_expiry_minutes: 10, allow_preferred_weight: true },
   checkout: { after_checkout: 'available' },

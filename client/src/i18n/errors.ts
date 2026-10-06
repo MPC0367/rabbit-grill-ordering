@@ -22,7 +22,9 @@ const dict: AreaDict = {
     'error.pin_invalid': 'รหัสไม่ถูกต้อง ลองอีกครั้ง',
     'error.pin_locked': 'กรอกรหัสผิดหลายครั้ง รอสักครู่หรือขอให้พนักงานช่วย',
     'error.visit_access_required': 'สแกน QR ที่โต๊ะเพื่อเริ่มสั่งอาหาร',
-    'error.visit_access_revoked': 'เครื่องนี้สั่งอาหารต่อไม่ได้แล้ว ขอรหัสใหม่จากพนักงาน',
+    // Neutral on purpose: this dictionary is looked up by error code, with no
+    // place to branch on whether this restaurant uses a join code.
+    'error.visit_access_revoked': 'เครื่องนี้สั่งอาหารต่อไม่ได้แล้ว ขอให้พนักงานช่วยได้เลย',
     'error.visit_closed': 'การใช้บริการโต๊ะนี้จบแล้ว ขอบคุณที่มาทานกันนะ',
     'error.ordering_paused': 'ครัวพักรับออร์เดอร์ใหม่ชั่วคราว',
     'error.table_paused': 'โต๊ะนี้พักรับออร์เดอร์ชั่วคราว',
@@ -76,7 +78,9 @@ const dict: AreaDict = {
     'error.pin_invalid': 'That code is not right. Please try again.',
     'error.pin_locked': 'Too many wrong codes. Wait a moment or ask staff for help.',
     'error.visit_access_required': 'Scan the QR code on your table to start ordering.',
-    'error.visit_access_revoked': 'Ordering from this phone was turned off. Ask staff for a new code.',
+    // Neutral on purpose: this dictionary is looked up by error code, with no
+    // place to branch on whether this restaurant uses a join code.
+    'error.visit_access_revoked': 'Ordering from this phone was turned off. Ask a member of staff.',
     'error.visit_closed': 'This table’s visit has ended. Thank you for dining with us.',
     'error.ordering_paused': 'The kitchen has paused new orders for a moment.',
     'error.table_paused': 'Ordering is paused for this table.',

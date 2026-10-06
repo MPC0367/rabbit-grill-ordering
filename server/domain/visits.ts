@@ -275,8 +275,11 @@ export function rotatePin(visitId: string, input: { version: number }, staff: St
   assertActive(visit);
   if (visit.version !== input.version) staleVersion(visitDetail(visitId, staff));
   const now = nowIso();
+  // With codes off this button means "let people join this table again": it
+  // clears the lock a revoke left behind and mints no code nobody would use.
+  const pins = getSettings().join.pin_required;
   const ok = updateVersioned('visits', visitId, input.version, {
-    join_pin: freshPin(visit.join_pin),
+    join_pin: pins ? freshPin(visit.join_pin) : null,
     pin_rotated_at: now,
     pin_failures: 0,
     pin_locked_until: null,
@@ -284,7 +287,7 @@ export function rotatePin(visitId: string, input: { version: number }, staff: St
     updated_at: now,
   });
   if (!ok) staleVersion(visitDetail(visitId, staff));
-  audit(staff.actor, 'visit.pin_rotated', visitEntity(visit), { after: { unlocked: lockedUntil(visit) !== null } });
+  audit(staff.actor, 'visit.pin_rotated', visitEntity(visit), { after: { unlocked: lockedUntil(visit) !== null, pin_minted: pins } });
   emitVisit('visit.updated', visitId, visit.version + 1, 'staff', { pin_rotated: true });
   emitTable(visit.table_id);
 }
@@ -302,16 +305,22 @@ export function revokeGuests(visitId: string, input: { version: number; reason: 
     `UPDATE guest_sessions SET revoked_at = :now, revoke_reason = :reason WHERE visit_id = :id AND revoked_at IS NULL`,
     { id: visitId, now, reason: input.reason },
   ).changes;
+  const pins = getSettings().join.pin_required;
   const ok = updateVersioned('visits', visitId, input.version, {
-    join_pin: freshPin(visit.join_pin),
+    // With codes on, the new code is what shuts the old phones out. With codes
+    // off there is nothing to rotate, so joining closes until staff re-open it.
+    join_pin: pins ? freshPin(visit.join_pin) : null,
     pin_rotated_at: now,
     pin_failures: 0,
-    pin_locked_until: null,
+    pin_locked_until: pins ? null : PIN_LOCKED_FOR_STAFF,
     pin_lockouts: 0,
     updated_at: now,
   });
   if (!ok) staleVersion(visitDetail(visitId, staff));
-  audit(staff.actor, 'visit.guests_revoked', visitEntity(visit), { reason: input.reason, after: { revoked_sessions: revoked, pin_rotated: true } });
+  audit(staff.actor, 'visit.guests_revoked', visitEntity(visit), {
+    reason: input.reason,
+    after: { revoked_sessions: revoked, pin_rotated: pins, joining_closed: !pins },
+  });
   emitVisit('visit.updated', visitId, visit.version + 1, 'all', { access: 'revoked' });
   emitTable(visit.table_id);
 }
@@ -458,9 +467,14 @@ export function joinVisit(tokenValue: string, pin: string | undefined, current: 
   if (!visit) throw new AppError('no_open_visit', 'This table has not been opened yet. Staff will open it when you are seated.');
 
   const join = getSettings().join;
+  // Joining can be closed for this visit whether or not a code is in use. With
+  // codes on it is the wrong-guess lockout. With codes off it is what makes
+  // "Revoke access" mean anything: there is no secret to rotate, so a revoked
+  // phone would otherwise rescan the same card and walk straight back in.
+  const until = lockedUntil(visit);
+  if (until) throw pinLockedError(until, Math.ceil((new Date(until).getTime() - Date.now()) / 1000));
+
   if (join.pin_required) {
-    const until = lockedUntil(visit);
-    if (until) throw pinLockedError(until, Math.ceil((new Date(until).getTime() - Date.now()) / 1000));
     // A visit opened while PINs were off has none: staff rotate the PIN to create one.
     if (!visit.join_pin) throw new AppError('pin_required', 'Ask staff for this table’s PIN.', { reason: 'no_pin_set' });
     if (!pin) throw new AppError('pin_required', 'Enter the PIN staff gave you.');

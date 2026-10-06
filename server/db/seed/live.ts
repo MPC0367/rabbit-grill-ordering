@@ -109,7 +109,10 @@ export function seedLive(input: LiveInput): LiveResult {
     const t = table(label);
     const visit: SimVisit = {
       id: r.id('vis'), table: t, status: spec.status ?? 'open', seated: ago(spec.seatedAgo), covers: spec.covers,
-      opened_by: staff.floor.id, join_pin: newJoinPin(4),
+      // A seeded table gets a code only if this restaurant uses one, the same
+      // rule openVisit() follows; otherwise the seed would hand out codes that
+      // joinVisit() ignores and the start-up banner would print them.
+      opened_by: staff.floor.id, join_pin: getSettings().join.pin_required ? newJoinPin(4) : null,
       bill_requested_at: null, billing_started_at: null, billing_started_by: null,
       closed_at: null, closed_by: null, close_exception: null, version: 2,
     };
@@ -287,7 +290,7 @@ export function seedLive(input: LiveInput): LiveResult {
     for (const g of vs.guests) {
       if (g.analytics_id) writeDiningSession(analytics, vs, g, g.analytics_id, false, now);
     }
-    result.pins.push({ table: v.table!.label, pin: v.join_pin!, status: v.status });
+    if (v.join_pin) result.pins.push({ table: v.table!.label, pin: v.join_pin, status: v.status });
     result.visits++;
     result.orders += vs.orders.length;
   }

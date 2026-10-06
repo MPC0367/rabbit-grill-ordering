@@ -2,6 +2,7 @@
 // "รายการของฉัน · ร่างในเครื่องนี้", the draft lines, the food total, the
 // unsent warning and one primary action that opens the review-and-send page
 // (the submission flow itself lives on /menu/cart).
+import { useConfig } from '../../lib/config.tsx';
 import { useI18n } from '../../lib/i18n.tsx';
 import { Card, Icon, LinkButton, OrderLine, RunningTotal, Tag } from '../../ui/index.ts';
 import { useCart } from '../cart/store.ts';
@@ -13,6 +14,9 @@ const MAX_LINES = 5;
 export function DeskOrderPanel() {
   const { t } = useI18n();
   const { mode } = useGuestSession();
+  const { config } = useConfig();
+  // Absent on an older server: assume a code is needed (the older wording).
+  const pin = config?.join_pin_required ?? true;
 
   if (mode === 'loading') return null;
   if (mode !== 'joined') {
@@ -21,7 +25,7 @@ export function DeskOrderPanel() {
         <Card padded className="mpanel mpanel--quiet">
           <h2 className="cartpanel__t">{t('menu.panel.public.title')}</h2>
           <p className="support mpanel__body">
-            {t(mode === 'ended' ? 'menu.panel.ended.body' : 'menu.panel.public.body')}
+            {t(mode === 'ended' ? 'menu.panel.ended.body' : pin ? 'menu.panel.public.body' : 'menu.panel.public.bodyNoPin')}
           </p>
         </Card>
       </div>

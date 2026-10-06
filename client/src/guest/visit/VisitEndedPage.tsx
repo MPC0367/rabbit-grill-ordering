@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FeedbackEligibilityDTO } from '../../../../shared/dto.ts';
 import { api, ApiError } from '../../lib/api.ts';
+import { useConfig } from '../../lib/config.tsx';
 import { useI18n } from '../../lib/i18n.tsx';
 import { navigate } from '../../lib/router.ts';
 import { endVisit } from '../../lib/tracker.ts';
@@ -44,6 +45,9 @@ const RECHECK_MIN_MS = 15_000;
 
 export default function VisitEndedPage() {
   const { t, lang } = useI18n();
+  const { config } = useConfig();
+  // Absent on an older server: assume a code is needed (the older wording).
+  const pinRequired = config?.join_pin_required ?? true;
   const { endedReason, session } = useGuestSession();
   const revoked = endedReason === 'visit_access_revoked';
   const [label] = useState(() => session?.visit.table_label ?? rememberedTable());
@@ -130,7 +134,9 @@ export default function VisitEndedPage() {
           <h1 ref={headingRef} tabIndex={-1}>{t(revoked ? 'visit.revokedTitle' : 'visit.endedTitle')}</h1>
           {!revoked && lang === 'th' ? <p className="vend__en" lang="en">{t('visit.endedTitleEn')}</p> : null}
           <p>{t(revoked ? 'visit.revokedBody' : 'visit.endedBody')}</p>
-          <p>{t(revoked ? 'visit.revokedNext' : 'visit.endedNext')}</p>
+          <p>{t(pinRequired
+            ? (revoked ? 'visit.revokedNext' : 'visit.endedNext')
+            : (revoked ? 'visit.revokedNextNoPin' : 'visit.endedNextNoPin'))}</p>
         </header>
 
         {feedback === 'open' && visitId ? (

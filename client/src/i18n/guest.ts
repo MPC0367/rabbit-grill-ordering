@@ -47,6 +47,7 @@ const dict: AreaDict = {
     'shell.banner.closed.body': 'ขอบคุณที่มาทานกันนะ ดูเมนูต่อได้ตามสบาย',
     'shell.banner.revoked.title': 'เครื่องนี้สั่งอาหารไม่ได้แล้ว',
     'shell.banner.revoked.body': 'ขอรหัสใหม่จากพนักงาน แล้วสแกน QR บนโต๊ะอีกครั้ง',
+    'shell.banner.revoked.bodyNoPin': 'ขอให้พนักงานเปิดการสั่งอาหารจากเครื่องนี้ให้ใหม่',
     'shell.callStaff': 'เรียกพนักงาน',
 
     // ---------------------------------------------------------------- sheets and pages
@@ -116,6 +117,7 @@ const dict: AreaDict = {
     'menu.panel.more': 'และอีก {n} รายการ',
     'menu.panel.public.title': 'สั่งอาหารจากโต๊ะ',
     'menu.panel.public.body': 'สแกน QR บนโต๊ะ แล้วกรอกรหัสที่พนักงานให้ รายการที่เลือกจะแสดงตรงนี้',
+    'menu.panel.public.bodyNoPin': 'สแกน QR บนโต๊ะเพื่อเริ่มสั่ง รายการที่เลือกจะแสดงตรงนี้',
     'menu.panel.ended.body': 'การใช้บริการโต๊ะนี้จบแล้ว สแกน QR อีกครั้งเมื่อพนักงานเปิดโต๊ะให้',
   },
   en: {
@@ -160,6 +162,7 @@ const dict: AreaDict = {
     'shell.banner.closed.body': 'Thank you for dining with us. You are welcome to keep browsing the menu.',
     'shell.banner.revoked.title': 'This device can no longer order',
     'shell.banner.revoked.body': 'Ask staff for a new code, then scan the table QR code again.',
+    'shell.banner.revoked.bodyNoPin': 'Ask staff to turn ordering back on for this phone.',
     'shell.callStaff': 'Call staff',
 
     // ---------------------------------------------------------------- sheets and pages
@@ -229,6 +232,7 @@ const dict: AreaDict = {
     'menu.panel.more': 'and {n} more',
     'menu.panel.public.title': 'Ordering at your table',
     'menu.panel.public.body': 'Scan the QR code on your table and enter the code from staff. Your picks will show here.',
+    'menu.panel.public.bodyNoPin': 'Scan the QR code on your table to start ordering. Your picks will show here.',
     'menu.panel.ended.body': 'This table’s visit has ended. Scan the QR code again once staff open a table for you.',
   },
 };

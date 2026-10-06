@@ -430,6 +430,7 @@ export function publicConfig(): PublicConfigDTO {
       idle_threshold_seconds: s.analytics.idle_threshold_seconds,
       heartbeat_seconds: s.analytics.heartbeat_seconds,
     },
+    join_pin_required: s.join.pin_required,
     notes_max_length: s.menu.note_max_length,
     sold_out_display: s.menu.sold_out_display,
     server_time: nowIso(),

@@ -22,8 +22,15 @@ npm run db:reset     # wipe the development database; the next start reseeds
 ```
 
 Demo staff: `demo-owner`, `demo-manager`, `demo-cashier`, `demo-floor`,
-`demo-kitchen`, each with password `rabbit-<role>-demo`. Open-table PINs print
-in the seed log. Demo accounts stop working once `operating_mode` is `live`.
+`demo-kitchen`, each with password `rabbit-<role>-demo`. Demo accounts stop
+working once `operating_mode` is `live`.
+
+Joining a table needs **no code by default** (`join.pin_required` is false;
+D-G-08). Scanning the table QR is the whole journey. The PIN machinery is
+intact behind that setting, so anything touching joining must work both ways,
+and guest copy must branch on `PublicConfigDTO.join_pin_required` rather than
+assume a code exists. `scripts/dev.ts` lists the open tables at every start,
+with their codes when codes are on.
 
 ## Environment (Windows, this machine)
 

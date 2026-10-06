@@ -8,6 +8,7 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Client, key, startServer, type HttpResult, type TestServer } from '../helpers/harness.ts';
 import { T } from '../helpers/fixtures.ts';
+import { DEFAULT_SETTINGS } from '../../shared/settings.ts';
 import type {
   CheckoutResultDTO, GuestBillDTO, OrderDTO, PortionRequestDTO, QrResolveDTO, ServiceRequestDTO, StaffBillDTO,
   StaffOrderDTO, TableTileDTO, TablesDTO, VisitDetailDTO,
@@ -534,6 +535,58 @@ test('PINs switched off then on again: a PIN-less visit admits nobody new until 
   assert.equal(rot.status, 200, JSON.stringify(rot.body));
   assert.match(rot.body.join_pin ?? '', /^\d{4}$/);
   assert.equal((await joinQr(newcomer, t.token, rot.body.join_pin!)).status, 201);
+});
+
+test('the shipped default is no join code: a scan alone seats the phone, and that is the deliberate trade', async () => {
+  // Guards the product decision in shared/settings.ts (D-G-08), which the rest
+  // of this file deliberately overrides to PINs-on via the fixture. A
+  // restaurant that never touches the setting gets this behaviour.
+  assert.equal(DEFAULT_SETTINGS.join.pin_required, false, 'joining must not need a code out of the box');
+
+  const owner = await srv.staff('owner');
+  const t = await newTable('Default');
+  const r = await owner.patch('/api/staff/settings', { join: { pin_required: false } });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  try {
+    const visit: VisitDetailDTO = await srv.openVisit(t.id);
+    assert.equal(visit.join_pin, null, 'seating a table mints no code');
+
+    // The whole journey the owner asked for: scan, and you are in.
+    const phone = device();
+    assert.deepEqual((await resolveQr(phone, t.token)).body,
+      { table_label: 'Default', state: 'ready', pin_required: false, already_joined: false, pin_digits: null });
+    assert.equal((await joinQr(phone, t.token)).status, 201, 'the token alone joins');
+    assert.equal(phone.cookies.has('rg_guest'), true);
+
+    // The honest cost: anyone holding that token joins the same visit. This is
+    // asserted so nobody can later believe the token is still a secret.
+    const stranger = device();
+    assert.equal((await joinQr(stranger, t.token)).status, 201, 'a copied QR joins too - this is the accepted trade');
+
+    // What still holds the line: a table nobody has seated admits no one.
+    const empty = await newTable('Default Empty');
+    expectError(await joinQr(device(), empty.token), 409, 'no_open_visit');
+
+    // And the control that REPLACES the code must survive a rescan. Without a
+    // code there is no secret to rotate, so revoking has to close joining -
+    // otherwise the kicked phone just scans the same card again.
+    const floor = await srv.staff('floor');
+    const detail = await visitDetail(floor, visit.id);
+    const rev = await floor.post(`/api/staff/visits/${visit.id}/revoke-guests`, { version: detail.version, reason: 'test' });
+    assert.equal(rev.status, 200, JSON.stringify(rev.body));
+    expectError(await stranger.get('/api/guest/session'), 401, 'visit_access_revoked');
+    expectError(await joinQr(stranger, t.token), 423, 'pin_locked', 'a revoked phone cannot rescan its way back in');
+    expectError(await joinQr(device(), t.token), 423, 'pin_locked', 'and neither can a fresh one');
+
+    // Staff let the table back in, and no pointless code is minted doing it.
+    const after = await visitDetail(floor, visit.id);
+    const reopen = await floor.post<VisitDetailDTO>(`/api/staff/visits/${visit.id}/rotate-pin`, { version: after.version });
+    assert.equal(reopen.status, 200, JSON.stringify(reopen.body));
+    assert.equal(reopen.body.join_pin, null, 'no code is created while codes are off');
+    assert.equal((await joinQr(device(), t.token)).status, 201, 'joining works again');
+  } finally {
+    await owner.patch('/api/staff/settings', { join: { pin_required: true } });
+  }
 });
 
 test('leaving ends only this browser\'s membership; the other guests at the table keep theirs', async () => {

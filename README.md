@@ -1,6 +1,6 @@
 # Rabbit Grill Khao Yai: table QR ordering
 
-A guest scans the card on their table, joins with the 4-digit code their server gives them, and orders from their own phone — Thai first, English on one tap, no app and no account. The kitchen sees the dish the moment it is sent. The guest watches it move from sent to served. The cashier checks the table out when nothing is left open.
+A guest scans the card on their table and orders from their own phone — Thai first, English on one tap, no app and no account. The kitchen sees the dish the moment it is sent. The guest watches it move from sent to served. The cashier checks the table out when nothing is left open.
 
 One application, two interfaces, one SQLite database:
 
@@ -29,7 +29,7 @@ On the guest's phone. Prime rib is never added like a normal dish: the guest ask
 
 <table>
 <tr>
-<td width="25%"><img src="docs/screens/join.webp" alt="Join screen showing table 07 and four empty boxes for the code"><b>Joining</b><br>The QR names the table; the 4-digit code comes from the server and changes with every party.</td>
+<td width="25%"><img src="docs/screens/join.webp" alt="Join screen showing table 07 and four empty boxes for the code"><b>Joining</b><br>The QR names the table. Out of the box there is no code to type: scanning is the whole journey. A restaurant that wants one turns it on in Settings.</td>
 <td width="25%"><img src="docs/screens/menu.webp" alt="Menu with Thai dish names, dotted lines to the prices and photographs"><b>The menu</b><br>Dotted leader lines run from each dish to its price, the way the printed menu reads.</td>
 <td width="25%"><img src="docs/screens/item-sheet.webp" alt="Dish detail sheet with options, quantity and a note field"><b>A dish</b><br>Choices, quantity, a note, and a line saying a note is confirmed by staff rather than guaranteed.</td>
 <td width="25%"><img src="docs/screens/cart.webp" alt="Draft order list with quantities and a total"><b>Your order</b><br>Still a draft. The bar says, in Thai, that it has not been sent to the kitchen yet.</td>
@@ -53,7 +53,7 @@ Kitchen, floor and cashier. Built for a Friday night: big numbers, one clear act
 <table>
 <tr>
 <td width="50%"><img src="docs/screens/tables.webp" alt="Grid of tables showing available, dining and checking out"><b>The floor</b><br>Which tables are free, which are eating, which are paying, and what needs attention.</td>
-<td width="50%"><img src="docs/screens/tables-drawer.webp" alt="Table drawer showing the guest PIN, rounds and checkout blockers"><b>One table</b><br>The joining code, every round, the bill, and exactly what still blocks checkout. QR cards print from here, one per table.</td>
+<td width="50%"><img src="docs/screens/tables-drawer.webp" alt="Table drawer showing the guest PIN, rounds and checkout blockers"><b>One table</b><br>Who is attached, every round, the bill, and exactly what still blocks checkout. QR cards print from here, one per table.</td>
 </tr>
 <tr>
 <td width="50%"><img src="docs/screens/requests.webp" alt="Queue of guest requests and prime rib portions waiting to be weighed"><b>Requests</b><br>Guests calling for staff, and the cuts waiting to be weighed and quoted.</td>
@@ -110,7 +110,7 @@ Open **http://localhost:8344**. Guests start at `/menu` and staff at `/admin`.
 On the first start, `npm run dev` seeds `var/rabbit-grill.db`. This takes about 10–20 s and happens before any server starts. The seed contains:
 
 - the draft catalog (95 items from the restaurant's printed menus)
-- 12 demo tables, six of them "dining right now". Their PINs are printed in the console.
+- 12 demo tables, six of them "dining right now". The console lists them at every start.
 - demo staff accounts, listed below
 - a synthetic, fixture-flagged history from 2025-01-01 to yesterday, so the Insights screens have data
 
@@ -150,8 +150,8 @@ A phone cannot open `localhost` on your laptop. `npm run dev` prints the LAN add
 
 1. Connect the phones to the same Wi-Fi as the laptop. Guest or "isolated" networks block this.
 2. When Windows asks, allow Node.js on **private** networks. Otherwise allow inbound TCP on `PORT`.
-3. Sign in on the laptop as `demo-manager`. Seat a free table in **Tables** and note the PIN.
-4. In **Tables → Manage tables & QR**, print or open that table's card and scan it with a phone. Enter the PIN. A second phone can join the same table with the same PIN.
+3. Sign in on the laptop as `demo-manager`. Seat a free table in **Tables**.
+4. In **Tables → Manage tables & QR**, print or open that table's card and scan it with a phone. You are in: there is no code to type unless the restaurant has switched one on. A second phone joins the same way.
 
 If the printed address is wrong (VPN, several adapters), set `PUBLIC_BASE_URL=http://<address>:<PORT>` and reprint the cards. [docs/OPERATIONS.md](docs/OPERATIONS.md#multi-device-qr-testing-on-a-lan) has the full procedure and troubleshooting.
 
