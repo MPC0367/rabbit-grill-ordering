@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Rabbit Grill Khao Yai table-QR ordering: guests order from their own phone, the kitchen sees it live, staff run the floor.">
+<meta name="color-scheme" content="light dark">
+<title>Rabbit Grill ordering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Sans+Thai:wght@400;500;600&family=Oswald:wght@400;500;600&display=swap">
+<style>
+  /* Layout: a printed menu card read top to bottom - paper ground, hairline
+     rules, numbered sections, screens set like plates on the page. Tokens are
+     the product's own design system (docs/DESIGN.md). */
+  :root {
+    --paper: #F3ECDD;
+    --card: #F8F4EA;
+    --ink: #17150F;
+    --ink-soft: #554e41;
+    --forest: #1E4230;
+    --ember: #A8441E;
+    --rule: #cfc5ae;
+    --shadow: 0 1px 2px rgba(23, 21, 15, .08), 0 10px 24px rgba(23, 21, 15, .07);
+    --display: "Oswald", "Noto Sans Thai", system-ui, sans-serif;
+    --serif: "Cormorant Garamond", "Noto Sans Thai", Georgia, serif;
+    --ui: "Noto Sans Thai", system-ui, -apple-system, Segoe UI, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #17150F;
+      --card: #221E16;
+      --ink: #F3ECDD;
+      --ink-soft: #b3a894;
+      --forest: #7FB08F;
+      --ember: #E08B5F;
+      --rule: #3a342a;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 24px rgba(0, 0, 0, .45);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #17150F;
+    --card: #221E16;
+    --ink: #F3ECDD;
+    --ink-soft: #b3a894;
+    --forest: #7FB08F;
+    --ember: #E08B5F;
+    --rule: #3a342a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 24px rgba(0, 0, 0, .45);
+    color-scheme: dark;
+  }
+
+  body { background: var(--paper); color: var(--ink); font-family: var(--ui); line-height: 1.6; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 48px 72px; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+  /* masthead */
+  .mast { border-bottom: 1px solid var(--rule); padding-bottom: 28px; }
+  .wordmark { font-family: var(--serif); font-size: clamp(20px, 3vw, 26px); letter-spacing: .34em; text-transform: uppercase; }
+  .wordmark span { display: block; font-family: var(--display); font-size: 11px; letter-spacing: .3em; color: var(--ink-soft); margin-top: 6px; }
+  h1 { font-family: var(--display); font-weight: 600; font-size: clamp(32px, 6vw, 52px); line-height: 1.08; letter-spacing: -.01em; margin-top: 26px; }
+  .lede { font-size: 17px; max-width: 62ch; margin-top: 14px; color: var(--ink-soft); }
+  .facts { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 24px; font-family: var(--display); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+  .facts b { color: var(--ink); font-weight: 500; }
+
+  /* sections */
+  section { margin-top: 56px; }
+  .shead { display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid var(--rule); padding-bottom: 10px; }
+  .num { font-family: var(--display); font-size: 12px; letter-spacing: .18em; color: var(--ember); }
+  h2 { font-family: var(--display); font-weight: 500; font-size: clamp(22px, 3.4vw, 30px); }
+  .shead em { margin-left: auto; font-family: var(--serif); font-style: italic; font-size: 18px; color: var(--ink-soft); }
+  .intro { max-width: 68ch; margin-top: 16px; color: var(--ink-soft); }
+
+  /* screens */
+  .phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 28px 22px; margin-top: 30px; }
+  .wides { display: grid; gap: 34px; margin-top: 30px; }
+  @media (min-width: 900px) { .wides { grid-template-columns: 1fr 1fr; } .wides .full { grid-column: 1 / -1; } }
+  figure { margin: 0; min-width: 0; }
+  .shot { display: block; width: 100%; border: 0; padding: 0; background: var(--card); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; cursor: zoom-in; }
+  .shot img { display: block; width: 100%; height: auto; max-width: 100%; }
+  figcaption { margin-top: 10px; font-size: 14px; color: var(--ink-soft); }
+  figcaption b { display: block; color: var(--ink); font-family: var(--display); font-weight: 500; font-size: 14.5px; letter-spacing: .02em; }
+  .tall img { object-fit: cover; object-position: top; max-height: 560px; }
+
+  /* notes */
+  .note { margin-top: 56px; border: 1px solid var(--rule); border-radius: 12px; background: var(--card); padding: 24px 26px; }
+  .note h3 { font-family: var(--display); font-weight: 500; font-size: 18px; }
+  .note ul { margin: 12px 0 0; padding-left: 20px; }
+  .note li { margin-bottom: 8px; }
+  .note li:last-child { margin-bottom: 0; }
+  a { color: var(--forest); text-underline-offset: 3px; }
+  :root[data-theme="dark"] a, :root:not([data-theme="light"]) a { }
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 13.5px; color: var(--ink-soft); }
+
+  /* zoom */
+  dialog { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 96vh; }
+  dialog::backdrop { background: rgba(14, 12, 8, .86); }
+  dialog img { display: block; max-width: 96vw; max-height: 92vh; width: auto; height: auto; border-radius: 8px; }
+  .zoomclose { display: block; margin: 10px auto 0; font-family: var(--display); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #F3ECDD; background: transparent; border: 1px solid rgba(243, 236, 221, .5); border-radius: 999px; padding: 7px 16px; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
+  @media (prefers-reduced-motion: no-preference) { .shot { transition: transform .18s ease, box-shadow .18s ease; } .shot:hover { transform: translateY(-2px); } }
+
+  /* the one thing this page is for: getting to the running system */
+  .cta { margin-top: 34px; border: 1px solid var(--rule); border-radius: 12px; background: var(--card); padding: 24px 26px; }
+  .cta h3 { font-family: var(--display); font-weight: 500; font-size: 18px; }
+  .cta p { margin: 10px 0 0; color: var(--ink-soft); max-width: 70ch; }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; border-radius: 999px; padding: 11px 20px; border: 1px solid var(--forest); color: var(--forest); }
+  .btn.primary { background: var(--forest); color: var(--paper); }
+  .btn:hover { opacity: .88; }
+  .cta small { display: block; margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="wordmark">Rabbit Grill<span>Khao Yai · โรงย่างเนื้อ</span></div>
+    <h1>Ordering at the table</h1>
+    <p class="lede">A guest scans the QR on their table, joins with the code their server gives them, and orders in Thai or English. The kitchen sees it immediately. Staff run the floor, the bills and the menu from the same system.</p>
+    <div class="facts">
+      <span><b>12</b> tables</span>
+      <span><b>95</b> menu records</span>
+      <span><b>2</b> languages</span>
+      <span><b>5</b> staff roles</span>
+      <span><b>266</b> automated tests</span>
+    </div>
+  </header>
+
+  <div class="cta">
+    <h3>These are photographs. The system itself runs too.</h3>
+    <p>Every screen below was captured from the working application, but this page is
+      only pictures of it. To use the real thing &mdash; scan a table card with your own
+      phone, send an order, watch it appear on the kitchen board &mdash; GitHub will start
+      a copy in the cloud and give you an address any phone can open, on any network.
+      It takes about three minutes and costs nothing.</p>
+    <div class="btnrow">
+      <a class="btn primary" href="https://codespaces.new/MPC0367/rabbit-grill-ordering?quickstart=1">Start the live system</a>
+      <a class="btn" href="https://github.com/MPC0367/rabbit-grill-ordering#readme">Read the code</a>
+      <a class="btn" href="https://github.com/MPC0367/rabbit-grill-ordering/blob/main/docs/TRY-IT-ON-GITHUB.md">How that works</a>
+    </div>
+    <small>Staff sign-in for the demo: <b>demo-owner</b> with password <b>rabbit-owner-demo</b>. The guest
+      side needs no account at all &mdash; just the table card and the 4-digit code staff give at seating.</small>
+  </div>
+
+
+  <section>
+    <div class="shead"><span class="num">No. 01</span><h2>At the table</h2><em>On the guest's phone</em></div>
+    <p class="intro">Thai first, English on one tap. Prime rib is never added like a normal dish: the guest asks staff to weigh it, and only their confirmation of the quoted weight and price creates the order.</p>
+    <div class="phones">
+      <figure><button class="shot" data-full="docs/screens/join.webp" aria-label="Open larger: joining a table"><img src="docs/screens/join.webp" alt="Join screen showing table 07 and four empty boxes for the code" loading="lazy" width="440" height="952"></button><figcaption><b>Joining</b>The QR names the table; the 4-digit code comes from the server, and changes with every party.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/menu.webp" aria-label="Open larger: the menu"><img src="docs/screens/menu.webp" alt="Menu with Thai dish names, dotted lines to the prices and photographs" loading="lazy" width="440" height="952"></button><figcaption><b>The menu</b>Dotted leader lines run from each dish to its price, the way the printed menu reads.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/item-sheet.webp" aria-label="Open larger: a dish"><img src="docs/screens/item-sheet.webp" alt="Dish detail sheet with options, quantity and a note field" loading="lazy" width="440" height="952"></button><figcaption><b>A dish</b>Choices, quantity, a note, and a line saying a note is confirmed by staff rather than guaranteed.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/cart.webp" aria-label="Open larger: the draft order"><img src="docs/screens/cart.webp" alt="Draft order list with quantities and a total" loading="lazy" width="440" height="952"></button><figcaption><b>Your order</b>Still a draft. The bar says, in Thai, that it has not been sent to the kitchen yet.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/cart-review.webp" aria-label="Open larger: review before sending"><img src="docs/screens/cart-review.webp" alt="Review screen listing the table, the dishes and the total before sending" loading="lazy" width="440" height="952"></button><figcaption><b>Before sending</b>Table, dishes, notes and total, with "received" and "accepted by staff" kept apart.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/track.webp" aria-label="Open larger: tracking"><img src="docs/screens/track.webp" alt="Tracking timeline with completed steps and their times" loading="lazy" width="440" height="952"></button><figcaption><b>Tracking</b>Each step carries the time it actually happened. A skipped step says so instead of inventing one.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/bill.webp" aria-label="Open larger: the bill"><img src="docs/screens/bill.webp" alt="Table bill with lines, charges and total" loading="lazy" width="440" height="952"></button><figcaption><b>The bill</b>One bill for the table. Dishes not yet accepted are listed apart from the amount due.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/service.webp" aria-label="Open larger: calling staff"><img src="docs/screens/service.webp" alt="Service sheet with call staff and request the bill" loading="lazy" width="440" height="952"></button><figcaption><b>Asking for help</b>Call staff, ask for the bill, ask about allergies. Repeated taps never queue twice.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><span class="num">No. 02</span><h2>Behind the pass</h2><em>Kitchen, floor and cashier</em></div>
+    <p class="intro">Built for a Friday night: big numbers, one clear action per ticket, and anything that needs attention stated in words as well as colour.</p>
+    <div class="wides">
+      <figure class="full"><button class="shot" data-full="docs/screens/orders-board.webp" aria-label="Open larger: the orders board"><img src="docs/screens/orders-board.webp" alt="Kitchen board with columns from New to Ready and a red allergy band on one ticket" loading="lazy" width="1240" height="775"></button><figcaption><b>The orders board</b>New, accepted, preparing, almost done, ready. An allergy note is quoted on a full-width band in the guest's own words, and every button carries an exact count.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/tables.webp" aria-label="Open larger: the floor"><img src="docs/screens/tables.webp" alt="Grid of tables showing available, dining and checking out" loading="lazy" width="1240" height="775"></button><figcaption><b>The floor</b>Which tables are free, which are eating, which are paying, and what needs attention.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/tables-drawer.webp" aria-label="Open larger: a table"><img src="docs/screens/tables-drawer.webp" alt="Table drawer showing the guest PIN, rounds and checkout blockers" loading="lazy" width="1240" height="775"></button><figcaption><b>One table</b>The joining code, every round, the bill, and exactly what still blocks checkout.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/requests.webp" aria-label="Open larger: requests"><img src="docs/screens/requests.webp" alt="Queue of guest requests and prime rib portions waiting to be weighed" loading="lazy" width="1240" height="775"></button><figcaption><b>Requests</b>Guests calling for staff, and the cuts waiting to be weighed and quoted.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/overview.webp" aria-label="Open larger: the overview"><img src="docs/screens/overview.webp" alt="Overview with cards for rounds to accept, dishes ready and open requests" loading="lazy" width="1240" height="775"></button><figcaption><b>What needs doing now</b>Rounds to accept, dishes ready to run, requests open, bills asked for.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/menu-availability.webp" aria-label="Open larger: availability"><img src="docs/screens/menu-availability.webp" alt="List of dishes with sold-out switches" loading="lazy" width="1240" height="775"></button><figcaption><b>Sold out tonight</b>One tap takes a dish off every phone. It stays off until somebody puts it back.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/review-queue.webp" aria-label="Open larger: the review queue"><img src="docs/screens/review-queue.webp" alt="Review queue counting unverified items, missing Thai names and ambiguous prices" loading="lazy" width="1240" height="775"></button><figcaption><b>What the owner must confirm</b>Every record came from the restaurant's printed menus. None is approved yet, and the queue says so plainly.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/item-editor.webp" aria-label="Open larger: editing a dish"><img src="docs/screens/item-editor.webp" alt="Item editor with names, price, photo and source evidence" loading="lazy" width="1240" height="775"></button><figcaption><b>Editing a dish</b>Thai and English, price with its history, the photo, and the printed source it came from.</figcaption></figure>
+      <figure><button class="shot" data-full="docs/screens/payments.webp" aria-label="Open larger: payments"><img src="docs/screens/payments.webp" alt="Payments for the day with exceptions listed" loading="lazy" width="1240" height="775"></button><figcaption><b>Payments</b>What was taken today, by whom, and anything that does not reconcile.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><span class="num">No. 03</span><h2>What the owner sees</h2><em>Counted honestly</em></div>
+    <p class="intro">Every figure says what it counts. Devices are called devices, not people. A dish that was sold out all week is marked as such instead of being called unpopular, and a day with no data looks different from a day with none sold.</p>
+    <div class="wides">
+      <figure class="full tall"><button class="shot" data-full="docs/screens/order-stats.webp" aria-label="Open larger: order statistics"><img src="docs/screens/order-stats.webp" alt="Weekly bar chart of order rounds with today marked partial and upcoming days hatched" loading="lazy" width="1240" height="1481"></button><figcaption><b>Orders by day</b>Seven bars, Monday to Sunday. Today is marked partial, days still to come are not drawn as zero, and the comparison refuses to invent growth from nothing.</figcaption></figure>
+      <figure class="full tall"><button class="shot" data-full="docs/screens/menu-stats.webp" aria-label="Open larger: menu rankings"><img src="docs/screens/menu-stats.webp" alt="Ranked dishes with servings, share and availability context" loading="lazy" width="1240" height="1398"></button><figcaption><b>What sells</b>Most and least ordered, with how many days each dish was actually available beside it.</figcaption></figure>
+      <figure class="full tall"><button class="shot" data-full="docs/screens/engagement.webp" aria-label="Open larger: browsing"><img src="docs/screens/engagement.webp" alt="Engagement page with coverage, active time and the ordering funnel" loading="lazy" width="1240" height="2429"></button><figcaption><b>How guests browse</b>Active time only counts a screen someone is actually using, and the page states what it cannot know.</figcaption></figure>
+    </div>
+  </section>
+
+  <div class="note">
+    <h3>What these screens are</h3>
+    <ul>
+      <li>Captured from the working system, not mocked up. Guest screens are Thai at phone width; staff screens are English on a desktop.</li>
+      <li>The restaurant, dishes, prices and photographs are Rabbit Grill's own, taken from their printed menus. <b>Nothing has been approved by the restaurant yet</b>, so every screen is marked as demo data and the system refuses to take real orders for unverified dishes.</li>
+      <li>Orders, tables, staff and history are generated demo data: a seeded year of trading so the charts have something to show.</li>
+      <li>Everything has been tested on one laptop. No phone on a restaurant network, no hosting and no payment provider has been exercised yet.</li>
+    </ul>
+  </div>
+
+  <footer>Rabbit Grill Khao Yai · ordering platform · built by O2</footer>
+</div>
+
+<dialog id="zoom">
+  <img id="zoomimg" alt="">
+  <button class="zoomclose" id="zoomclose">Close</button>
+</dialog>
+
+<script>
+  (function () {
+    var dlg = document.getElementById('zoom');
+    var img = document.getElementById('zoomimg');
+    var opener = null;
+    document.querySelectorAll('.shot').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var inner = btn.querySelector('img');
+        img.src = btn.dataset.full;
+        img.alt = inner ? inner.alt : '';
+        opener = btn;
+        if (typeof dlg.showModal === 'function') dlg.showModal();
+      });
+    });
+    document.getElementById('zoomclose').addEventListener('click', function () { dlg.close(); });
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+    dlg.addEventListener('close', function () { if (opener) opener.focus(); });
+  })();
+</script>
+</body>
+</html>
