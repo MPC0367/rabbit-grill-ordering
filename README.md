@@ -7,6 +7,8 @@ One application, two interfaces, one SQLite database:
 - **Guest menu** (`/menu`, `/q/<table token>`). Join a table, browse Food and Drinks, customise a dish, send the order, follow each dish live, ask for staff or the bill, and see the visit end at checkout.
 - **Staff platform** (`/admin`). Orders board and requests, live tables with QR cards and checkout, menu and availability, insights (Order Stats, Menu Stats, Engagement), payments, annual PDF reports, team, settings and audit — each role sees only its own part: owner, manager, cashier, floor, kitchen.
 
+**The screens, on a page anyone can open: <https://mpc0367.github.io/rabbit-grill-ordering/>** — no account, no install, works on a phone on any network.
+
 ### See it running, free, in about three minutes
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/MPC0367/rabbit-grill-ordering?quickstart=1)
