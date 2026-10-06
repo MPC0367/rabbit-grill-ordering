@@ -26,6 +26,13 @@ repository page, or do it by hand:
 4. When it finishes, a browser preview opens. In the terminal's **PORTS** tab
    you will see port **8344** labelled "Rabbit Grill (guest menu + staff)".
 
+> **Do not sign in to the staff side in that preview panel.** The preview is an
+> embedded frame, and the staff session cookie is deliberately not sent inside
+> one, so the sign-in screen will just keep coming back. Copy the address from
+> the **Forwarded Address** column in the PORTS tab and open it in a normal
+> browser tab instead. The guest menu works either way; only staff sign-in
+> needs the real tab.
+
 ## Make the link openable on a phone
 
 By default the link only works for you, signed in to GitHub.
@@ -36,19 +43,24 @@ By default the link only works for you, signed in to GitHub.
 3. Anyone with that link can now open it, including a phone on mobile data.
    Turn it back to Private when the demo is over.
 
-The same thing from the terminal, if you prefer:
-
-```bash
-gh codespace ports visibility 8344:public -c $CODESPACE_NAME
-```
+> **Public means public.** That link opens the staff platform as well as the
+> guest menu, and the demo passwords are printed on this repository's front
+> page, which anyone can read. While the port is Public, treat the link like a
+> password: send it to the people in the meeting, not to a group chat, and set
+> the port back to Private as soon as you are finished. There is nothing real
+> behind it — it is demo data on a throwaway machine — but someone with the
+> link can sit in your Orders board while you present.
 
 ## What to open
 
 | Who | Where | How to get in |
 | --- | --- | --- |
 | Staff | `<your link>/admin` | `demo-owner` with password `rabbit-owner-demo` (also `demo-manager`, `demo-cashier`, `demo-floor`, `demo-kitchen`, each `rabbit-<role>-demo`) |
-| A guest at a table | **Admin → Tables → QR codes**, print or show a card, scan it | The 4-digit PIN shown in the table's drawer under **Guest access** |
+| A guest at a table | **Admin → Tables → Manage tables & QR**, print or show a card, scan it | The 4-digit PIN: it prints in the terminal when the app starts, and is in the table's drawer under **Guest access** (press **Show**) |
 | Anyone, browse only | `<your link>/menu` | Nothing: public visitors can read the menu but not order |
+
+A rehearsed path through the system, with the dishes and tables that are safe
+to demo, is in [DEMO-SCRIPT.md](DEMO-SCRIPT.md).
 
 Scanning a table card with a real phone is the part worth showing: the phone
 joins that table, orders, and the kitchen board on your screen updates live.

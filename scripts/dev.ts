@@ -16,7 +16,9 @@
 // http://<this computer's LAN address>:PORT, because a phone cannot open
 // "localhost" on the laptop. See docs/OPERATIONS.md.
 import { spawn, type ChildProcess } from 'node:child_process';
+import { createServer as createProbeServer } from 'node:net';
 import { resolve } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { envValue, isLoopbackUrl, isOff, lanAddresses, readDotEnv, ROOT } from './env.ts';
 
 const dotenv = readDotEnv();
@@ -32,10 +34,62 @@ const seedHistory = envValue('SEED_HISTORY', dotenv) ?? '1';
 
 const say = (line: string) => console.log(`[dev] ${line}`);
 
+/** True when nothing else holds the port, so a clash is reported in words, not a stack trace. */
+function portFree(port: number, host: string): Promise<boolean> {
+  return new Promise((done) => {
+    const probe = createProbeServer();
+    probe.once('error', () => done(false));
+    probe.once('listening', () => probe.close(() => done(true)));
+    probe.listen(port, host);
+  });
+}
+
+/**
+ * The open tables and their join PINs, for the banner below. The seed prints
+ * these too, but only the first time it runs: every later start skips seeding,
+ * so whoever is about to demo the system has no way to read a PIN off screen.
+ * Development only, and never allowed to stop a start: an unreadable database
+ * just means no banner.
+ */
+function openTablePins(): Array<{ label: string; pin: string; status: string }> {
+  try {
+    const file = resolve(ROOT, envValue('DATABASE_PATH', dotenv) ?? 'var/rabbit-grill.db');
+    const db = new DatabaseSync(file, { readOnly: true });
+    try {
+      return db.prepare(
+        `SELECT t.label AS label, v.join_pin AS pin, v.status AS status
+           FROM visits v JOIN dining_tables t ON t.id = v.table_id
+          WHERE v.closed_at IS NULL AND v.join_pin IS NOT NULL
+          ORDER BY t.sort, t.label`,
+      ).all() as Array<{ label: string; pin: string; status: string }>;
+    } finally {
+      db.close();
+    }
+  } catch (e) {
+    // Never fatal, but never silent either: a swallowed error here looks
+    // exactly like "no tables are open", which is a lie worth noticing.
+    say(`could not read the open-table PINs: ${(e as Error).message}`);
+    return [];
+  }
+}
+
 function pipe(name: string, child: ChildProcess) {
   const tag = (line: string) => (line.startsWith(`[${name}]`) ? line : `[${name}] ${line}`);
   child.stdout?.setEncoding('utf8').on('data', (d: string) => d.split(/\r?\n/).filter(Boolean).forEach((l) => console.log(tag(l))));
   child.stderr?.setEncoding('utf8').on('data', (d: string) => d.split(/\r?\n/).filter(Boolean).forEach((l) => console.error(tag(l))));
+}
+
+// ---- 0. ports, before the ~15 s seed, so a clash costs a second and reads as a sentence
+for (const [label, port, host] of [['web', Number(PORT), HOST], ['api', Number(API_PORT), '127.0.0.1']] as const) {
+  if (!(await portFree(port, host))) {
+    console.error(
+      `[dev] port ${port} (${label}) is already in use.\n`
+      + '[dev] The ordering system is most likely already running: open http://localhost:' + PORT + ' before starting another copy.\n'
+      + '[dev] To run a second copy anyway, give it its own ports: PORT=8400 API_PORT=8401 npm run dev\n'
+      + '[dev]   (PowerShell: $env:PORT=8400; $env:API_PORT=8401; npm run dev)',
+    );
+    process.exit(1);
+  }
 }
 
 // ---- 1. seed to completion, outside any watcher
@@ -61,6 +115,11 @@ if (seedDemo) {
 }
 
 // ---- 2 + 3. API (watched, local only) and web
+// Only a value set in the shell counts: a hosted environment that really does
+// add a proxy in front of Vite sets it there (a codespace sets 2).
+const shellHops = process.env.TRUST_PROXY_HOPS;
+const devHops = shellHops !== undefined && shellHops !== '' ? shellHops : '1';
+
 const children: ChildProcess[] = [];
 let stopping = false;
 
@@ -85,9 +144,11 @@ start('api', ['--watch-path=server', '--watch-path=shared', '--watch-preserve-ou
   // The Vite proxy is the only client and appends the phone's address to
   // X-Forwarded-For (scripts/vite-dev.ts). A higher value would let a phone
   // choose its own address by sending the header itself - raise it only when
-  // another proxy you trust sits in front (a codespace sets 2: GitHub's port
-  // forwarding, then Vite).
-  TRUST_PROXY_HOPS: envValue('TRUST_PROXY_HOPS', dotenv) ?? '1',
+  // another proxy you trust sits in front (a codespace sets 2 in the shell:
+  // GitHub's port forwarding, then Vite). A value in .env is for `npm start`
+  // and is NOT read here: .env.example ships 0, which would make every phone
+  // share one rate-limit budget behind Vite.
+  TRUST_PROXY_HOPS: devHops,
 });
 start('web', [resolve(ROOT, 'scripts/vite-dev.ts')], { PORT, API_PORT, HOST });
 
@@ -97,9 +158,24 @@ for (const a of lan) say(`same Wi-Fi      http://${a.address}:${PORT}   (${a.nam
 say(`QR cards        ${publicBaseUrl}${explicitBase ? '   (PUBLIC_BASE_URL)' : lan[0] ? '   (PUBLIC_BASE_URL not set: first LAN address above)' : ''}`);
 if (isLoopbackUrl(publicBaseUrl)) say('warning: QR cards point at this computer only. Phones cannot open them; set PUBLIC_BASE_URL=http://<LAN address>:' + PORT);
 say(`api             http://127.0.0.1:${API_PORT}   (local only, reached through the web port)`);
-const configuredHops = envValue('TRUST_PROXY_HOPS', dotenv);
-if (configuredHops !== undefined && configuredHops !== '1') {
-  say(`TRUST_PROXY_HOPS=${configuredHops} is not used here: the development API always sits behind one proxy (Vite), so it runs with 1.`);
+const fileHops = dotenv.TRUST_PROXY_HOPS;
+if (fileHops !== undefined && fileHops !== '' && fileHops !== devHops) {
+  say(`.env sets TRUST_PROXY_HOPS=${fileHops}; that setting is for "npm start". Development runs with ${devHops}.`);
+}
+
+// The PINs a guest needs, on every start - not only the start that seeded.
+if (seedDemo) {
+  const pins = openTablePins();
+  if (pins.length) {
+    console.log([
+      '',
+      '  ======== DEVELOPMENT ONLY - tables open right now (fixture PINs) ========',
+      ...pins.map((p) => `    table ${p.label}  PIN ${p.pin}${p.status === 'billing' ? '  (checking out: joins, cannot order)' : ''}`),
+      '  Show a table\'s QR from Admin > Tables > Manage tables & QR, scan it, enter the PIN.',
+      '  =========================================================================',
+      '',
+    ].join('\n'));
+  }
 }
 
 function shutdown(code = 0) {
