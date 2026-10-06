@@ -242,7 +242,7 @@ async function statesSet(owner: StaffApi, lang: 'th' | 'en', w: number) {
   const s = await open(`ended-${tag}`, { lang, w });
   try {
     await s.page.goto(`${env.base}/q/${token}`, { waitUntil: 'domcontentloaded' });
-    await joinWithPin(s.page, detail.join_pin!);
+    await joinWithPin(s.page, detail.join_pin);
     await go(s.page, '/menu/cart', '#main', 1500);
     await snap(s, set, `cart-empty-${tag}`, 'guest');
     await go(s.page, '/menu/orders', '#main', 2000);
