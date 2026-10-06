@@ -32,7 +32,7 @@ export interface State {
   table?: { id: string; label: string };
   visitId?: string;
   token?: string;
-  pin?: string;
+  pin?: string | null;
   reference?: string;
   orderId?: string;
   roundNo?: number;
@@ -80,9 +80,18 @@ async function quickAdd(page: Page, id: string) {
   await page.$eval(sel, (b) => { b.scrollIntoView({ block: 'center' }); (b as HTMLElement).click(); });
 }
 
-/** Type the visit PIN; press Join when the code length is not known up front. */
-export async function joinWithPin(page: Page, pin: string) {
-  await page.waitForSelector('.vpin__input', { timeout: 15_000 });
+/**
+ * Join from the scan screen. With a code in use, type it (pressing Join when
+ * the code length is not known up front). With codes off (D-G-08) the screen
+ * is a one-tap confirm card and there is nothing to type.
+ */
+export async function joinWithPin(page: Page, pin: string | null) {
+  await page.waitForSelector('.vjoin__card', { timeout: 15_000 });
+  if (!pin || !(await page.$('.vpin__input'))) {
+    await page.$eval('.vjoin__card button', (b) => (b as HTMLButtonElement).click());
+    await page.waitForFunction(() => location.pathname === '/menu', { timeout: 15_000 });
+    return;
+  }
   await page.type('.vpin__input', pin, { delay: 50 });
   const moved = await page.waitForFunction(() => location.pathname === '/menu', { timeout: 2000 }).then(() => true).catch(() => false);
   if (!moved) {
@@ -123,10 +132,12 @@ export async function journeyA(state: State, item: Item): Promise<Check> {
     await click(staff.page, 'dialog[open] .c5-choice', '2', { exact: true });
     await shot(staff.page, 'a01-seat-form-en-1440');
     await confirmTopDialog(staff.page);
-    await staff.page.waitForSelector('dialog[open] .c5-bigpin', { timeout: 10_000 });
-    const pin = (await staff.page.$eval('dialog[open] .c5-bigpin', (e) => e.textContent ?? '')).replace(/\D/g, '');
-    c.ok(/^\d{4}$/.test(pin), `staff reads a 4-digit PIN from the seat dialog`);
-    state.pin = pin;
+    // The seat dialog shows a big code only when this restaurant uses one
+    // (D-G-08); with codes off it says so instead, and there is none to read.
+    const pin = (await staff.page.$eval('dialog[open] .c5-bigpin', (e) => e.textContent ?? '').catch(() => '')).replace(/\D/g, '');
+    if (pin) c.ok(/^\d{4}$/.test(pin), 'staff reads a 4-digit PIN from the seat dialog');
+    else c.info('joining needs no code, so the seat dialog shows none');
+    state.pin = pin || null;
     await shot(staff.page, 'a02-seat-pin-en-1440');
     await click(staff.page, 'dialog[open]', /^Done$/);
     await sleep(1200);
@@ -138,12 +149,12 @@ export async function journeyA(state: State, item: Item): Promise<Check> {
     const url = cards.data.cards[0].url;
     if (lanAddresses().length) c.ok(!/\/\/(localhost|127\.)/.test(url), `QR card URL is reachable from a phone, not localhost (${new URL(url).host})`);
     else c.info(`no LAN address on this computer, so the QR card URL is ${new URL(url).host}`);
-    c.ok(!url.includes(pin), 'the printed QR URL does not carry the visit PIN');
+    if (pin) c.ok(!url.includes(pin), 'the printed QR URL does not carry the visit PIN');
     state.token = url.slice(url.lastIndexOf('/q/') + 3);
 
-    // Guest scans the QR and types the PIN.
+    // Guest scans the QR. A code screen only when this restaurant uses one.
     await guest.page.goto(`${env.base}/q/${state.token}`, { waitUntil: 'domcontentloaded' });
-    await guest.page.waitForSelector('.vpin__input', { timeout: 15_000 });
+    await guest.page.waitForSelector('.vjoin__card', { timeout: 15_000 });
     await shot(guest.page, 'a03-join-pin-th-390');
     await joinWithPin(guest.page, pin);
     await sleep(1200);
@@ -414,7 +425,7 @@ export async function journeyE(state: State, item: Item): Promise<Check> {
   const a = await guestFrom('guestA', state.guestA);
   const b = await open('guestB', { lang: 'en', w: 390 });
   try {
-    if (!state.token || !state.pin) throw new Error('journey a did not seat a table');
+    if (!state.token) throw new Error('journey a did not seat a table');
     await go(a.page, '/menu', '.dish', 1200);
     await clearSearch(a.page);
     await sleep(600);
@@ -422,7 +433,7 @@ export async function journeyE(state: State, item: Item): Promise<Check> {
     await sleep(1500);
     // Phone B joins with the same QR and PIN.
     await b.page.goto(`${env.base}/q/${state.token}`, { waitUntil: 'domcontentloaded' });
-    await joinWithPin(b.page, state.pin);
+    await joinWithPin(b.page, state.pin ?? null);
     await sleep(1200);
     c.ok(!(await b.page.$('.dock .slip')), 'phone B has no order slip: its draft is its own');
     await go(b.page, '/menu/cart', '#main', 1200);

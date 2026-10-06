@@ -195,13 +195,19 @@ async function guestSet(owner: StaffApi, item: Awaited<ReturnType<typeof menuIte
   try {
     const t07 = (await owner<{ tables: Tile[] }>('GET', '/api/staff/tables')).tables.find((t) => t.label === '07')!;
     await j.page.goto(`${env.base}/q/${await qrToken(owner, t07.id)}`, { waitUntil: 'domcontentloaded' });
-    await j.page.waitForSelector('.vpin__input', { timeout: 15_000 });
+    // The scan screen is a code pad only when this restaurant uses a code
+    // (D-G-08). With codes off it is a one-tap confirm card, and waiting for
+    // the code field would hang here until the whole run times out.
+    await j.page.waitForSelector('.vjoin__card', { timeout: 15_000 });
+    const codePad = await j.page.$('.vpin__input');
     await sleep(1200);
     await snap(j, set, `join-${tag}`, 'guest');
-    await j.page.type('.vpin__input', '0000', { delay: 40 });
-    await j.page.$eval('.vjoin__card button[type="submit"]', (b) => (b as HTMLButtonElement).click()).catch(() => {});
-    await sleep(1500);
-    await snap(j, set, `join-wrong-pin-${tag}`, 'guest');
+    if (codePad) {
+      await j.page.type('.vpin__input', '0000', { delay: 40 });
+      await j.page.$eval('.vjoin__card button[type="submit"]', (b) => (b as HTMLButtonElement).click()).catch(() => {});
+      await sleep(1500);
+      await snap(j, set, `join-wrong-pin-${tag}`, 'guest');
+    }
     await go(j.page, '/menu', '.dish', 1500);
     await snap(j, set, `browse-only-${tag}`, 'guest');
     closeOut(j, `join ${tag}`);

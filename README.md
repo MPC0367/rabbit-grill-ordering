@@ -29,7 +29,7 @@ On the guest's phone. Prime rib is never added like a normal dish: the guest ask
 
 <table>
 <tr>
-<td width="25%"><img src="docs/screens/join.webp" alt="Join screen showing table 07 and four empty boxes for the code"><b>Joining</b><br>The QR names the table. Out of the box there is no code to type: scanning is the whole journey. A restaurant that wants one turns it on in Settings.</td>
+<td width="25%"><img src="docs/screens/join.webp" alt="Join screen showing table 07 and a single join button"><b>Joining</b><br>The QR names the table. Out of the box there is no code to type: scanning is the whole journey. A restaurant that wants one turns it on in Settings.</td>
 <td width="25%"><img src="docs/screens/menu.webp" alt="Menu with Thai dish names, dotted lines to the prices and photographs"><b>The menu</b><br>Dotted leader lines run from each dish to its price, the way the printed menu reads.</td>
 <td width="25%"><img src="docs/screens/item-sheet.webp" alt="Dish detail sheet with options, quantity and a note field"><b>A dish</b><br>Choices, quantity, a note, and a line saying a note is confirmed by staff rather than guaranteed.</td>
 <td width="25%"><img src="docs/screens/cart.webp" alt="Draft order list with quantities and a total"><b>Your order</b><br>Still a draft. The bar says, in Thai, that it has not been sent to the kitchen yet.</td>
