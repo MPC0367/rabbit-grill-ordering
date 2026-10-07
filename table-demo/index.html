@@ -55,6 +55,7 @@
   --shadow-card:0 1px 0 rgba(23,21,15,.04),0 1px 3px rgba(23,21,15,.06);
   --shadow-sheet:0 -10px 30px rgba(23,21,15,.22);
   --shadow-float:0 6px 18px -4px rgba(23,21,15,.24);
+  --shadow-page:0 0 40px -12px rgba(23,21,15,.25);
   --tap:44px; --control-h:44px; --control-h-lg:52px; --nav-h:64px;
   --ease-out:cubic-bezier(.2,.7,.3,1); --ease-sheet:cubic-bezier(.32,.72,0,1);
   --dur-fast:160ms; --dur-base:200ms; --dur-sheet:240ms; --sheet-travel:24px; --press-scale:.97;
@@ -73,6 +74,9 @@
     --inverse:var(--bone); --on-inverse:var(--ink); --on-inverse-2:var(--ink-soft);
     --image-mat:var(--ink-3); --scrim:rgba(0,0,0,.66);
     --shadow-card:0 0 0 1px rgba(248,244,234,.06);
+    --shadow-sheet:0 -10px 30px rgba(0,0,0,.55);
+    --shadow-float:0 6px 18px -4px rgba(0,0,0,.6);
+    --shadow-page:0 0 40px -8px rgba(0,0,0,.72);
     --plate-a1:#4A3B2C; --plate-b1:#2E2419; --plate-a2:#473C2C; --plate-b2:#2B2318;
     --plate-a3:#4C3C30; --plate-b3:#2F241C; --plate-a4:#44412F; --plate-b4:#29271B;
     --plate-a5:#4E3B2E; --plate-b5:#30231A; --plate-a6:#413E33; --plate-b6:#27251E;
@@ -91,6 +95,9 @@
   --inverse:var(--bone); --on-inverse:var(--ink); --on-inverse-2:var(--ink-soft);
   --image-mat:var(--ink-3); --scrim:rgba(0,0,0,.66);
   --shadow-card:0 0 0 1px rgba(248,244,234,.06);
+  --shadow-sheet:0 -10px 30px rgba(0,0,0,.55);
+  --shadow-float:0 6px 18px -4px rgba(0,0,0,.6);
+  --shadow-page:0 0 40px -8px rgba(0,0,0,.72);
   --plate-a1:#4A3B2C; --plate-b1:#2E2419; --plate-a2:#473C2C; --plate-b2:#2B2318;
   --plate-a3:#4C3C30; --plate-b3:#2F241C; --plate-a4:#44412F; --plate-b4:#29271B;
   --plate-a5:#4E3B2E; --plate-b5:#30231A; --plate-a6:#413E33; --plate-b6:#27251E;
@@ -111,8 +118,8 @@ button{background:none; border:0; cursor:pointer; text-align:left}
 /* ---------- shell ---------- */
 #col{max-width:var(--col); margin:0 auto; min-height:100vh; background:var(--canvas); position:relative;
   box-shadow:0 0 0 1px var(--rule-soft);}
-@media (min-width:600px){ body{background:var(--sunken)} #col{box-shadow:0 0 40px -12px rgba(23,21,15,.25),0 0 0 1px var(--rule)} }
-#main{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 28px)}
+@media (min-width:600px){ body{background:var(--sunken)} #col{box-shadow:var(--shadow-page),0 0 0 1px var(--rule)} }
+#app{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 28px)}
 .gut{padding-left:var(--gutter); padding-right:var(--gutter)}
 
 .mast{position:sticky; top:0; z-index:20; background:var(--canvas);
@@ -123,8 +130,8 @@ button{background:none; border:0; cursor:pointer; text-align:left}
 .tag b{font:500 var(--fs-20)/1 var(--font-display); font-feature-settings:var(--num); letter-spacing:.01em}
 .tag i{font-style:normal; font-size:var(--fs-12); color:var(--text-2); line-height:1}
 .mark{flex:1 1 auto; text-align:center; min-width:0}
-.mark b{display:block; font:600 var(--fs-16)/1 var(--font-serif); letter-spacing:.18em; text-transform:uppercase; white-space:nowrap}
-.mark i{display:block; font:500 var(--fs-12)/1 var(--font-display); letter-spacing:.3em; color:var(--text-2); margin-top:4px; font-style:normal}
+.mark b{display:block; font:600 var(--fs-16)/1 var(--font-serif); letter-spacing:.18em; text-transform:uppercase; white-space:nowrap; text-indent:.18em}
+.mark i{display:block; font:500 var(--fs-12)/1 var(--font-display); letter-spacing:.3em; color:var(--text-2); margin-top:5px; font-style:normal; text-transform:uppercase; text-indent:.3em}
 .lang{display:flex; border:1px solid var(--rule-ink); border-radius:var(--radius-hair); overflow:hidden; flex:0 0 auto}
 .lang button{padding:9px 11px; font:500 var(--fs-14)/1 var(--font-ui); color:var(--text-2); min-height:40px}
 .lang button[aria-pressed="true"]{background:var(--inverse); color:var(--on-inverse)}
@@ -230,6 +237,8 @@ button{background:none; border:0; cursor:pointer; text-align:left}
 .plate{flex:0 0 auto; width:clamp(96px,28vw,112px); aspect-ratio:4/3; border-radius:var(--radius-hair);
   display:grid; place-items:center; box-shadow:0 0 0 3px var(--image-mat),0 0 0 4px var(--rule); margin:4px}
 .plate span{font:italic 600 var(--fs-28)/1 var(--font-serif); color:var(--plate-ink); opacity:.5}
+.plate.has-photo,.thumb.has-photo{overflow:hidden; background:var(--sunken)}
+.plate img,.thumb img{width:100%; height:100%; object-fit:cover; display:block; border-radius:inherit}
 .pl1{background:linear-gradient(135deg,var(--plate-a1),var(--plate-b1))}
 .pl2{background:linear-gradient(135deg,var(--plate-a2),var(--plate-b2))}
 .pl3{background:linear-gradient(135deg,var(--plate-a3),var(--plate-b3))}
@@ -277,7 +286,7 @@ button{background:none; border:0; cursor:pointer; text-align:left}
   background:var(--sunken); padding:12px; font-size:var(--fs-16); line-height:var(--lh-thai); outline:none}
 .ta:focus-visible{outline:2px solid var(--focus); outline-offset:1px}
 .tawrap{position:relative; margin-top:var(--space-2)}
-.cnt{position:absolute; right:10px; bottom:8px; font:400 var(--fs-13)/1 var(--font-ui); color:var(--text-3); font-feature-settings:var(--num); pointer-events:none}
+.cnt{position:absolute; right:24px; bottom:8px; font:400 var(--fs-13)/1 var(--font-ui); color:var(--text-3); font-feature-settings:var(--num); pointer-events:none}
 .num{width:100%; border:1px solid var(--edge); border-radius:var(--radius-ctl); background:var(--sunken); padding:11px 12px; font-size:var(--fs-16); outline:none}
 .lbl{display:flex; align-items:baseline; gap:8px; font:600 var(--fs-16)/var(--lh-thai) var(--font-ui); margin-top:var(--space-5)}
 .lbl i{font-style:normal; font-weight:400; font-size:var(--fs-14); color:var(--text-2)}
@@ -335,7 +344,10 @@ button{background:none; border:0; cursor:pointer; text-align:left}
 .thumb{width:56px; height:56px; flex:0 0 auto; border-radius:var(--radius-hair); display:grid; place-items:center;
   box-shadow:0 0 0 3px var(--image-mat),0 0 0 4px var(--rule); margin:3px}
 .thumb span{font:italic 600 var(--fs-20)/1 var(--font-serif); color:var(--plate-ink); opacity:.5}
-.lacts{display:flex; align-items:center; gap:var(--space-4); margin-top:var(--space-3); flex-wrap:wrap}
+.lacts{display:flex; align-items:center; gap:var(--space-3); margin-top:var(--space-3); flex-wrap:wrap}
+.step.sm button{width:38px}
+.step.sm b{min-width:26px; font-size:var(--fs-16)}
+.lacts .btn-txt{font-size:var(--fs-14)}
 .notebox{margin-top:var(--space-2); padding:9px 11px; background:var(--sunken); border-radius:var(--radius-sm); font-size:var(--fs-14); line-height:var(--lh-thai)}
 .notebox b{display:block; font-size:var(--fs-13); color:var(--text-2); font-weight:600; margin-bottom:2px}
 .notebox.al{background:var(--alert-tint); color:var(--text)}
@@ -691,9 +703,17 @@ function plateClass(key){
   var h=0; for (var i=0;i<key.length;i++) h=(h*31+key.charCodeAt(i))>>>0;
   return 'pl'+(h%6+1);
 }
+function photoUrl(it,w){ return "../media/dish/"+it.img+"-"+w+".webp"; }
+/* The restaurant photographed 35 of its dishes; the rest keep the engraved
+   initial rather than borrowing a stock photo of someone else food. */
+function plateInner(it,big){
+  if (!it.img) return "<span"+(big?" style=\"font-size:var(--fs-48)\"":"")+">"+esc(initial(it))+"</span>";
+  return "<img src=\""+photoUrl(it,480)+"\" srcset=\""+photoUrl(it,240)+" 240w, "+photoUrl(it,480)+" 480w\" sizes=\""+(big?"(max-width:640px) 92vw, 560px":"(max-width:640px) 28vw, 112px")+"\" alt=\"\" loading=\"lazy\" decoding=\"async\">";
+}
 function initial(it){
-  var n = it.th || it.en || '?';
-  return n.charAt(0);
+  var n = it.en || it.th || '';
+  var m = n.match(/[A-Za-z]/);
+  return m ? m[0].toUpperCase() : n.charAt(0);
 }
 function whyText(it){
   if (it.soldOut) return t('unavailSold');
@@ -749,10 +769,16 @@ function newRef(){
   return 'RG-'+s;
 }
 function schedule(from, station){
-  var base = station==='bar' ? 2600 : 4200;
+  /* Simulated step gaps, in ms. Each gap is over a minute, so no two steps
+     ever stamp the same clock minute, and each is a different length -- the
+     cooking step is the long one. A round lands in roughly 4 to 5 minutes,
+     the bar a little quicker than the kitchen. */
+  var gaps = station==='bar'
+    ? [[61000,4000],[61000,6000],[62000,8000],[61000,4000]]
+    : [[61000,5000],[62000,7000],[65000,13000],[61000,6000]];
   var out = [from];
-  for (var i=1;i<5;i++){
-    out.push(out[i-1] + base + Math.floor(Math.random()*2600));
+  for (var i=0;i<4;i++){
+    out.push(out[i] + gaps[i][0] + Math.floor(Math.random()*gaps[i][1]));
   }
   return out;
 }
@@ -793,7 +819,7 @@ function pendingLines(){
 (function seed(){
   function find(key){ for (var k in ITEM) if (ITEM[k].key===key) return ITEM[k]; return null; }
   var t0 = Date.now() - 22*60000;
-  var picks = [['nashville-chicken',1],['grilled-fish',1],['pepsi-original',2]];
+  var picks = [['nashville-hot-chicken',1],['grilled-fish',1],['pepsi-original',2]];
   var lines = [];
   picks.forEach(function(p){
     var it = find(p[0]); if (!it) return;
@@ -883,7 +909,7 @@ function dishRow(it){
   var meas = isMeasured(it);
   var alt = altOf(it);
   var h = '<button class="row'+(ok?'':' off')+'" data-act="open" data-v="'+it.id+'" data-th="'+esc((it.th||'')+' '+(it.en||'')).toLowerCase()+'">';
-  if (it.img) h += '<span class="plate '+plateClass(it.key)+'" aria-hidden="true"><span>'+esc(initial(it))+'</span></span>';
+  h += '<span class="plate '+plateClass(it.key)+(it.img?' has-photo':'')+'" aria-hidden="true">'+plateInner(it,false)+'</span>';
   h += '<span class="rbody">';
   if (meas) h += '<span class="rkick">'+ic('scale',16)+esc(t('priceByWeight'))+'</span>';
   h += '<span class="lead"><span class="nm rname">'+esc(nameOf(it))+'</span><span class="dots"></span>';
@@ -969,8 +995,7 @@ function menuScreen(){
 
 /* ------------------------------------------------------------------ cart */
 function thumb(it){
-  if (!it.img) return '';
-  return '<span class="thumb '+plateClass(it.key)+'" aria-hidden="true"><span>'+esc(initial(it))+'</span></span>';
+  return '<span class="thumb '+plateClass(it.key)+(it.img?' has-photo':'')+'" aria-hidden="true">'+plateInner(it,false)+'</span>';
 }
 function noteBlocks(l){
   if (!l.note) return '';
@@ -997,7 +1022,7 @@ function cartScreen(){
       + '<span class="dots"></span><span class="amt">'+baht(lineAmount(l))+'</span></div>'
       + '<div class="hint" style="margin-top:2px">× '+l.qty+(l.qty>1?' · '+baht(l.unit)+'':'')+'</div>'
       + noteBlocks(l)
-      + '<div class="lacts"><span class="step">'
+      + '<div class="lacts"><span class="step sm">'
       +   '<button data-act="qty" data-v="'+l.uid+'" data-d="-1" aria-label="-"'+(l.qty<=1?' disabled':'')+'>−</button>'
       +   '<b>'+l.qty+'</b>'
       +   '<button data-act="qty" data-v="'+l.uid+'" data-d="1" aria-label="+"'+(l.qty>=MAX_QTY?' disabled':'')+'>+</button>'
@@ -1009,7 +1034,7 @@ function cartScreen(){
   h += '</div>';
 
   h += '<div class="card"><h3>'+esc(t('roundTotal'))+'</h3><hr class="r" style="margin:0 0 14px">'
-    + '<div class="lead"><span class="nm" style="font-weight:600">'+esc(t('subtotal',{n:S.draft.length}))+'</span>'
+    + '<div class="lead"><span class="nm" style="font-weight:600">'+esc(t('subtotal',{n:draftCount()}))+'</span>'
     + '<span class="dots"></span><span class="amt amt-lg">'+baht(draftTotal())+'</span></div>'
     + '<p class="hint">'+esc(t('cartTotalNote'))+'</p>'
     + '<div style="margin-top:16px"><button class="btn btn-p" data-act="review">'+esc(t('cartSend'))+' · '+baht(draftTotal())+'</button></div>'
@@ -1029,7 +1054,7 @@ function reviewScreen(){
     +   '<div><p class="note" style="margin:0">'+esc(t('subTable'))+'</p>'
     +   '<b style="font:500 var(--fs-40)/1 var(--font-display);font-feature-settings:var(--num)">'+TABLE+'</b></div>'
     +   '<div style="text-align:right"><p class="note" style="margin:0">'+esc(t('subItems'))+'</p>'
-    +   '<b style="font:600 var(--fs-18)/1.4 var(--font-ui)">'+esc(t('subItemsValue',{n:S.draft.length}))+'</b></div>'
+    +   '<b style="font:600 var(--fs-18)/1.4 var(--font-ui)">'+esc(t('subItemsValue',{n:draftCount()}))+'</b></div>'
     + '</div><hr class="r">';
   S.draft.forEach(function(l){
     var it = ITEM[l.itemId];
@@ -1039,7 +1064,7 @@ function reviewScreen(){
       + '<div class="hint" style="margin-top:2px">× '+l.qty+'</div>'+noteBlocks(l)+'</div></div>';
   });
   h += '<hr class="r">'
-    + '<div class="lead"><span class="nm" style="font-weight:600">'+esc(t('subtotal',{n:S.draft.length}))+'</span>'
+    + '<div class="lead"><span class="nm" style="font-weight:600">'+esc(t('subtotal',{n:draftCount()}))+'</span>'
     + '<span class="dots"></span><span class="amt amt-lg">'+baht(draftTotal())+'</span></div>'
     + '<p class="hint">'+esc(t('cartTotalNote'))+'</p></div>';
   h += '<div class="card"><p class="note" style="display:flex;gap:10px;align-items:flex-start;margin:0">'
@@ -1291,7 +1316,7 @@ function itemSheet(){
     + '<button class="iconbtn x" data-act="closeSheet" aria-label="'+esc(t('close'))+'">'+ic('x',20)+'</button></div>'
     + '<div class="sh-b">';
 
-  if (it.img) h += '<div class="plate '+plateClass(it.key)+'" style="width:100%;margin:0 0 18px" aria-hidden="true"><span style="font-size:var(--fs-48)">'+esc(initial(it))+'</span></div>';
+  h += '<div class="plate '+plateClass(it.key)+(it.img?' has-photo':'')+'" style="width:100%;margin:0 0 18px" aria-hidden="true">'+plateInner(it,true)+'</div>';
 
   h += '<h2 style="margin:0;font:600 var(--fs-24)/var(--lh-thai-min) var(--font-ui)">'+esc(nameOf(it))+'</h2>';
   if (altOf(it)) h += '<p style="margin:4px 0 0;font:italic 500 var(--fs-22)/1.2 var(--font-serif);color:var(--text-3)">'+esc(altOf(it))+'</p>';
@@ -1710,7 +1735,7 @@ setInterval(function(){
     if (p.state==='requested' && S.now >= p.quoteAt){
       var it = ITEM[p.itemId];
       var g = p.grams || 320;
-      g = Math.round((g + (Math.random()*40 - 12)) / 5) * 5;
+      g = Math.max(100, Math.round((g + (Math.random()*50 - 15)) / 10) * 10);
       p.quoteGrams = g;
       p.quoteAmount = Math.round(g * it.rate / it.basis);
       p.quoteAt = S.now;
