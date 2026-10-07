@@ -242,6 +242,7 @@ hr{ border:0; border-top:1px solid var(--rule); margin:0; }
 
 /* ---------- shell ---------- */
 .app{ display:grid; grid-template-columns:1fr; min-height:100dvh; }
+.app > *{ min-width:0; }
 @media (min-width:980px){ .app{ grid-template-columns:var(--rail-w) minmax(0,1fr); } }
 
 .rail{
@@ -286,7 +287,8 @@ hr{ border:0; border-top:1px solid var(--rule); margin:0; }
 @media (max-width:979px){
   .navbtn[aria-current="page"]::before{ left:10px; right:10px; top:auto; bottom:-8px; width:auto; height:3px; border-radius:2px 2px 0 0; }
 }
-.navbtn .ico{ flex:none; width:18px; height:18px; opacity:.9; }
+svg.ico{ flex:none; width:18px; height:18px; display:block; }
+.navbtn .ico{ opacity:.9; }
 .navbtn .cnt{
   margin-left:auto; font:500 .75rem/1 var(--font-display);
   font-feature-settings:var(--num-features);
@@ -303,6 +305,9 @@ hr{ border:0; border-top:1px solid var(--rule); margin:0; }
 }
 .seg button[aria-pressed="true"]{ background:var(--surface); color:var(--text); font-weight:600; }
 .railfoot .when{ margin-top:12px; font:400 .75rem/1.5 var(--font-ui); color:var(--text-3); }
+/* the topbar copy of the language switch carries phone width, where .railfoot is hidden */
+.seg.topseg{ display:none; }
+@media (max-width:979px){ .seg.topseg{ display:inline-flex; } }
 
 /* ---------- topbar ---------- */
 .work{ min-width:0; display:flex; flex-direction:column; background:var(--canvas); }
@@ -364,6 +369,7 @@ main{ padding:var(--gutter); padding-bottom:64px; min-width:0; }
 .num{ font-family:var(--font-display); font-feature-settings:var(--num-features); font-weight:500; }
 .big{ font-size:2.5rem; line-height:1; }
 .mid{ font-size:1.75rem; line-height:1; }
+.dishphoto{display:block; width:100%; max-width:240px; aspect-ratio:4/3; object-fit:cover; border-radius:6px; margin-bottom:6px; background:var(--sunken)}
 .muted{ color:var(--text-2); }
 .tiny{ font-size:.75rem; line-height:1.5; }
 .sm{ font-size:.8125rem; line-height:1.55; }
@@ -442,8 +448,8 @@ table.data tr.off td{ opacity:.62; }
 }
 .plate.lg{ width:72px; height:72px; font-size:1.25rem; }
 .dishcell .nm{ min-width:0; }
-.dishcell .th{ font:600 .9375rem/1.45 var(--font-ui); }
-.dishcell .en{ font:italic 500 .875rem/1.3 var(--font-serif); color:var(--text-3); }
+.dishcell .th{ display:block; font:600 .9375rem/1.45 var(--font-ui); }
+.dishcell .en{ display:block; font:italic 500 .9375rem/1.3 var(--font-serif); color:var(--text-3); }
 
 /* ---------- switch ---------- */
 .sw{
@@ -496,7 +502,7 @@ table.data tr.off td{ opacity:.62; }
 .barrow .vv{ font-family:var(--font-display); font-feature-settings:var(--num-features); font-weight:500; white-space:nowrap; }
 .barrow .vv i{ font-style:normal; color:var(--text-2); font-size:.8125rem; margin-left:5px; }
 .barrow .tr{ grid-column:1/-1; height:7px; border-radius:2px; background:var(--chart-track); overflow:hidden; }
-.barrow .fl{ height:100%; background:var(--chart-bar); border-radius:2px; }
+.barrow .fl{ display:block; height:100%; width:0; background:var(--chart-bar); border-radius:2px; }
 .barrow .fl.ok{ background:var(--ok); }
 .barrow .fl.zero{ background:none; }
 
@@ -676,7 +682,7 @@ var DEMO = {
   /* Engagement — anonymous menu sessions on guests' phones */
   eng:{
     sessions:41, atTable:29, browsingOnly:12, optedOut:0,
-    measuredSince:{ en:'1 Jun 2025', th:'1 มิ.ย. 2025' },
+    measuredSince:{ en:'Mon 5 Oct 2026', th:'จ. 5 ต.ค. 2026' },
     medianMenuSec:52, p90MenuSec:161, menuSessions:29,
     medianDetailSec:19, p90DetailSec:36, detailViews:61,
     roundsPeriod:34, roundsMeasured:30, roundsUnlinked:4,
@@ -708,6 +714,11 @@ var S = {
   role:{en:'Owner',th:'เจ้าของร้าน'},
   langlabel:{en:'Language',th:'ภาษา'},
   tz:{en:'Asia/Bangkok',th:'Asia/Bangkok'},
+  reset:{en:'Reset demo',th:'รีเซ็ตตัวอย่าง'},
+  reset_t:{
+    en:'Clears the sold-out marks, verifications and price changes made in this demo and returns to the menu.',
+    th:'ล้างสถานะหมด การยืนยัน และการแก้ราคาที่ทำไว้ในตัวอย่างนี้ แล้วกลับไปหน้าเมนู'},
+  reset_done:{en:'Demo reset to its first-run state',th:'รีเซ็ตตัวอย่างกลับเป็นสถานะเริ่มต้นแล้ว'},
 
   /* menu page */
   menu_lede:{
@@ -818,6 +829,7 @@ var S = {
   photoref:{en:'Photo referenced',th:'รูปที่อ้างถึง'},
   nophotoref:{en:'No photo in the record',th:'ไม่มีรูปในระบบ'},
   photonotbundled:{en:'The image file is not bundled in this demo.',th:'ไฟล์รูปไม่ได้รวมมาในตัวอย่างนี้'},
+  photoalt:{en:'Photograph supplied by the restaurant',th:'รูปจากทางร้าน'},
   reviewstate:{en:'Review state',th:'สถานะการตรวจ'},
   availability:{en:'Availability',th:'สถานะของ'},
   saved:{en:'Saved',th:'บันทึกแล้ว'},
@@ -913,6 +925,9 @@ var S = {
   availdays:{en:'Days on sale',th:'วันที่เปิดขาย'},
   vslast:{en:'vs last week',th:'เทียบสัปดาห์ก่อน'},
   nobaseline:{en:'No prior baseline',th:'ยังไม่มีฐานเทียบ'},
+  nobaseline_why:{
+    en:'Records begin on {d}, so there is no earlier week to compare these dishes with. A percentage here would be invented.',
+    th:'ข้อมูลเริ่มบันทึกเมื่อ {d} จึงไม่มีสัปดาห์ก่อนให้เทียบจานเหล่านี้ ถ้าใส่เปอร์เซ็นต์ตรงนี้ก็คือแต่งขึ้น'},
   availfrag:{en:'Available on {a} of {b} days',th:'เปิดขาย {a} จาก {b} วัน'},
   soldout_allweek:{en:'Sold out every day this week',th:'หมดทุกวันในสัปดาห์นี้'},
   soldout_block_h:{en:'Sold out all week — not ranked',th:'หมดทั้งสัปดาห์ ไม่จัดอันดับ'},
@@ -921,8 +936,8 @@ var S = {
     th:'จานเหล่านี้สั่งไม่ได้เลยในวันที่ผ่านมา ศูนย์ตรงนี้แปลว่าครัวไม่มีของ ไม่ได้แปลว่าลูกค้าไม่สั่ง'},
   blocked_block_h:{en:'Never orderable this week — not ranked',th:'สั่งไม่ได้ทั้งสัปดาห์ ไม่จัดอันดับ'},
   blocked_block_d:{
-    en:'{n} published items could not be added at any point this week, because the record has no price or is not verified. They cannot be called unpopular.',
-    th:'มี {n} รายการที่กดเพิ่มไม่ได้เลยทั้งสัปดาห์ เพราะไม่มีราคาหรือยังไม่ยืนยัน จึงบอกไม่ได้ว่าไม่มีคนสั่ง'},
+    en:'These records could not be added at any point this week, because each one has no price or is not verified. None of them can be called unpopular.',
+    th:'รายการเหล่านี้กดเพิ่มไม่ได้เลยทั้งสัปดาห์ เพราะไม่มีราคาหรือยังไม่ยืนยัน จึงบอกไม่ได้ว่าไม่มีคนสั่ง'},
   ties:{en:'Ties share a rank and are listed by English name.',th:'อันดับเท่ากันจะใช้อันดับเดียวกัน เรียงตามชื่ออังกฤษ'},
   foodonly:{en:'Food',th:'อาหาร'},
   drinksonly:{en:'Drinks',th:'เครื่องดื่ม'},
@@ -1008,6 +1023,20 @@ function save(){
   try{ localStorage.setItem(LS, JSON.stringify({ lang:state.lang, nav:state.nav, soldOut:state.soldOut, verified:state.verified, edits:state.edits })); }
   catch(e){ /* nothing to do; the page works without it */ }
 }
+/* Back to first run: nothing anyone did tonight should still be here tomorrow.
+   render() saves as its last step, so the stored copy is dropped after it. */
+function resetDemo(){
+  state.lang = 'en'; state.nav = 'menu';
+  state.mcat = 'all'; state.mgroup = 'all'; state.q = ''; state.soldOnly = false; state.open = null;
+  state.soldOut = {}; state.verified = {}; state.edits = {};
+  state.rgroup = 'none'; state.rcat = 'all'; state.rlimit = 10; state.rsort = 'most';
+  state.billOpen = null; state.dishAll = false;
+  try{ history.replaceState(null, '', '#menu'); }catch(e){}
+  render();
+  try{ localStorage.removeItem(LS); }catch(e){ /* storage blocked: memory is already clean */ }
+  window.scrollTo(0,0);
+  toast(t('reset_done'));
+}
 
 function t(k, vars){
   var e = S[k]; var s = e ? (e[state.lang] || e.en) : k;
@@ -1027,6 +1056,12 @@ function money(sat){
   return (neg?'−':'') + '฿' + s;
 }
 function pct(n, d){ return d ? Math.round(n/d*100) : 0; }
+S.dish_1 = { en:'dish', th:'จาน' };
+S.record_1 = { en:'record', th:'รายการ' };
+S.record_n = { en:'records', th:'รายการ' };
+/* Thai has no plural form, so both keys resolve to the same word there. */
+function nDish(n){ return '<span class="num">'+n+'</span> '+esc(n===1 ? t('dish_1') : t('dishes')); }
+function nRec(n){ return '<span class="num">'+n+'</span> '+esc(n===1 ? t('record_1') : t('record_n')); }
 function dur(sec){
   if(sec < 60) return '<span class="num">'+sec+'</span> '+t('secs');
   var m = Math.floor(sec/60), s = sec%60;
@@ -1137,6 +1172,12 @@ function renderTop(){
                 orders:'nav_orders', dishes:'nav_dishes', engagement:'nav_eng' }[state.nav];
   return '<h1>'+esc(t(title))+'</h1>'
     + '<span class="demotag" lang="'+state.lang+'">'+esc(t('demodata'))+'</span>'
+    /* .railfoot is hidden under 980px, so the language switch is rendered here too */
+    + '<div class="seg topseg" role="group" aria-label="'+esc(t('langlabel'))+'">'
+    + '<button data-lang="th" aria-pressed="'+(state.lang==='th')+'" lang="th">ไทย</button>'
+    + '<button data-lang="en" aria-pressed="'+(state.lang==='en')+'" lang="en">EN</button>'
+    + '</div>'
+    + '<button class="btn sm" data-reset="1" title="'+esc(t('reset_t'))+'">'+esc(t('reset'))+'</button>'
     + '<div class="who">'
     + '<span class="mode"><span class="dot"></span>'+esc(t('demomode'))+' · '+DEMO.clock+'</span>'
     + '<span class="av" lang="en">DO</span>'
@@ -1239,6 +1280,10 @@ function viewMenu(){
    =========================================================== */
 S.noprice_d = { en:'Whole categories the printed menu leaves unpriced', th:'ทั้งหมวดที่เมนูพิมพ์ไม่ได้ลงราคา' };
 S.unver_d   = { en:'Has a price, but nobody has checked it', th:'มีราคาแล้ว แต่ยังไม่มีใครตรวจ' };
+S.whole_cats = { en:'{n} categories have no price from end to end — {c} of the {t} items here.',
+                 th:'{n} หมวดไม่มีราคาทั้งหมวด คิดเป็น {c} จาก {t} รายการในกลุ่มนี้' };
+S.whole_rest = { en:'The rest sit in priced categories but carry no price of their own.',
+                 th:'ที่เหลืออยู่ในหมวดที่มีราคา แต่ตัวรายการเองไม่มีราคา' };
 function statCard(label, value, desc, tone){
   return '<div class="card stat">'
     + '<div class="h kicker">'+esc(label)+'</div>'
@@ -1307,11 +1352,14 @@ function viewReview(){
     + statCard(t('photos_missing'), 0, t('photos_d'))
     + '</div>';
 
+  var inWhole = whole.reduce(function(n,x){ return n + ITEMS.filter(function(i){ return i.cat===x.id; }).length; }, 0);
+  var rest = noPrice.length - inWhole;
   var catsLine = whole.length
     ? '<div class="banner"><span class="ico">'+ico('info')+'</span><span>'
       + whole.map(function(x){ return '<b>'+esc(catName(x))+'</b>'; }).join(' · ')
-      + ' — <span class="num">'+whole.reduce(function(n,x){ return n+ITEMS.filter(function(i){return i.cat===x.id;}).length; },0)+'</span> '
-      + esc(t('dishes'))+'. '+esc(t('noprice_why'))+'</span></div>'
+      + ' — ' + esc(t('whole_cats', { n:whole.length, c:inWhole, t:noPrice.length }))
+      + (rest > 0 ? ' ' + esc(t('whole_rest')) : '')
+      + '</span></div>'
     : '';
 
   h += reviewGroup(t('noprice_group'), t('noprice_why'), noPrice, catsLine);
@@ -1393,7 +1441,7 @@ function viewEditor(it){
     + '<dt>'+esc(t('recordkey'))+'</dt><dd lang="en">'+esc(it.key)+'</dd>'
     + '<dt>'+esc(t('category'))+'</dt><dd>'+esc(catName(CATBY[it.cat]))+'</dd>'
     + '<dt>'+esc(t('station'))+'</dt><dd>'+esc(it.station==='kitchen'?t('kitchen'):t('bar'))+'</dd>'
-    + '<dt>'+esc(t('photoref'))+'</dt><dd lang="en">'+(it.img ? esc(it.img)+' <span class="muted">— '+esc(t('photonotbundled'))+'</span>' : '<span class="muted">'+esc(t('nophotoref'))+'</span>')+'</dd>'
+    + '<dt>'+esc(t('photoref'))+'</dt><dd>'+(it.img ? '<img class="dishphoto" src="../media/dish/'+esc(it.img)+'-480.webp" srcset="../media/dish/'+esc(it.img)+'-240.webp 240w, ../media/dish/'+esc(it.img)+'-480.webp 480w" sizes="(max-width:700px) 60vw, 240px" alt="'+esc(t('photoalt'))+'" loading="lazy" decoding="async"><span class="muted mono" lang="en">'+esc(it.img)+'</span>' : '<span class="muted">'+esc(t('nophotoref'))+'</span>')+'</dd>'
     + '<dt>'+esc(t('notes_on'))+'</dt><dd>'+(it.notes?'✓':'—')+'</dd>'
     + '<dt>'+esc(t('maxqty'))+'</dt><dd class="num">'+esc(it.maxQty)+'</dd>'
     + '</dl></div>';
@@ -1506,6 +1554,7 @@ function viewPayments(){
 /* ===========================================================
    10. Order stats — SVG bar chart, drawn to scale
    =========================================================== */
+S.lg_upcoming_short = { en:'Not reached yet', th:'ยังไม่ถึง' };
 function axisMax(v){
   var steps = [5,10,15,20,25,30,40,50,75,100];
   for(var i=0;i<steps.length;i++) if(v <= steps[i]) return steps[i];
@@ -1545,7 +1594,7 @@ function roundsChart(){
     }
     s += '<text x="'+cx.toFixed(1)+'" y="'+(T+ph+20)+'" text-anchor="middle" font-size="13" fill="'+(d.state==='partial'?'var(--now-text)':'var(--text)')+'" font-weight="'+(d.state==='partial'?600:400)+'">'+esc(d.dn[state.lang])+' '+d.dd+'</text>';
     s += '<text x="'+cx.toFixed(1)+'" y="'+(T+ph+38)+'" text-anchor="middle" font-size="11" fill="var(--text-2)">'
-       + esc(d.state==='partial'?t('lg_partial'):(d.state==='upcoming'?t('lg_upcoming').split('—')[0].trim():t('lg_complete')))+'</text>';
+       + esc(d.state==='partial'?t('lg_partial'):(d.state==='upcoming'?t('lg_upcoming_short'):t('lg_complete')))+'</text>';
   });
   s += '</svg>';
   return s;
@@ -1700,12 +1749,12 @@ function viewDishes(){
   h += '</tbody></table></div>'
     + '<div class="pad tiny muted" style="border-top:1px solid var(--rule)">'
     + esc(t('showing'))+' <span class="num">'+shown.length+'</span> '+esc(t('of'))+' <span class="num">'+sorted.length+'</span> · '
-    + esc(t('ties'))+' '+esc(t('wow_why',{d:DEMO.recordsBegin[state.lang]}))
+    + esc(t('ties'))+' '+esc(t('nobaseline_why',{d:DEMO.recordsBegin[state.lang]}))
     + '</div></div>';
 
   if(soldOutAll.length){
     h += '<section class="sec"><div class="sechead"><h2>'+esc(t('soldout_block_h'))+'</h2>'
-      + '<span class="note"><span class="num">'+soldOutAll.length+'</span> '+esc(t('dishes'))+'</span></div>'
+      + '<span class="note">'+nDish(soldOutAll.length)+'</span></div>'
       + '<p class="lede">'+esc(t('soldout_block_d'))+'</p><div class="card"><div class="tablewrap"><table class="data"><tbody>'
       + soldOutAll.map(function(it){
           return '<tr><td><button class="dishcell" data-edit="'+it.id+'" style="background:none;border:0;padding:0;text-align:left;width:100%">'
@@ -1720,8 +1769,8 @@ function viewDishes(){
   }
   if(neverOrderable.length){
     h += '<section class="sec"><div class="sechead"><h2>'+esc(t('blocked_block_h'))+'</h2>'
-      + '<span class="note"><span class="num">'+neverOrderable.length+'</span> '+esc(t('dishes'))+'</span></div>'
-      + '<p class="lede">'+esc(t('blocked_block_d',{n:neverOrderable.length}))+'</p>'
+      + '<span class="note">'+nDish(neverOrderable.length)+'</span></div>'
+      + '<p class="lede">'+esc(t('blocked_block_d'))+'</p>'
       + '<div class="card pad"><div style="display:flex;flex-wrap:wrap;gap:7px">'
       + neverOrderable.map(function(it){
           return '<button class="chip hollow" data-edit="'+it.id+'" style="cursor:pointer">'+esc(nmPrimary(it))+'</button>';
@@ -1734,6 +1783,7 @@ function viewDishes(){
 /* ===========================================================
    12. Engagement
    =========================================================== */
+S.base_w = { en:'base', th:'ฐาน' };
 function bar(label, value, denom, suffix, cls){
   return '<div class="barrow">'
     + '<span class="lb">'+label+'</span>'
@@ -1799,7 +1849,7 @@ function viewEngagement(){
     + '<div style="margin-top:12px">'
     + E.funnel.map(function(f){
         var lab = { base:'f_base', saw:'f_saw', details:'f_details', added:'f_added', sent:'f_sent' }[f.k];
-        return bar(esc(t(lab)), f.v, base, f.k==='base' ? esc(t('f_base')) : pct(f.v,base)+'%', f.k==='sent'?'ok':'');
+        return bar(esc(t(lab)), f.v, base, f.k==='base' ? esc(t('base_w')) : pct(f.v,base)+'%', f.k==='sent'?'ok':'');
       }).join('')
     + '</div>'
     + '<p class="sm muted" style="margin-top:10px">'+esc(t('funnel_base'))+'</p>'
@@ -1810,7 +1860,7 @@ function viewEngagement(){
   /* exposure + depth */
   h += '<div class="cols b" style="margin-top:14px">';
   h += '<div class="card pad"><div class="kicker">'+esc(t('catexposure'))+'</div><div style="margin-top:12px">'
-    + CATS.map(function(c){
+    + CATS.slice().sort(function(a,b){ return (E.exposure[b.key]||0)-(E.exposure[a.key]||0) || a.en.localeCompare(b.en); }).map(function(c){
         var v = E.exposure[c.key] || 0;
         return bar(esc(catName(c)), v, E.sessions, pct(v,E.sessions)+'%', v?'':'zero');
       }).join('')
@@ -1896,11 +1946,18 @@ function toast(msg){
    14. Events
    =========================================================== */
 document.addEventListener('click', function(ev){
-  var el = ev.target.closest ? ev.target.closest('[data-nav],[data-lang],[data-mg],[data-sold],[data-edit],[data-close],[data-verify],[data-revert],[data-bill],[data-rg],[data-rs],[data-dishall]') : null;
+  var el = ev.target.closest ? ev.target.closest('[data-nav],[data-lang],[data-mg],[data-sold],[data-edit],[data-close],[data-verify],[data-revert],[data-bill],[data-rg],[data-rs],[data-dishall],[data-reset]') : null;
   if(!el) return;
   var g = function(k){ return el.getAttribute(k); };
 
-  if(g('data-nav')){ state.nav = g('data-nav'); state.open = null; state.dishAll = false; render(); window.scrollTo(0,0); return; }
+  if(g('data-reset')){ resetDemo(); return; }
+  if(g('data-nav')){
+    state.nav = g('data-nav'); state.open = null; state.dishAll = false;
+    var slug = { menu:'menu', review:'needs-review', payments:'payments',
+                 orders:'order-stats', dishes:'menu-stats', engagement:'engagement' }[state.nav];
+    try{ history.replaceState(null, '', '#'+slug); }catch(e){}
+    render(); window.scrollTo(0,0); return;
+  }
   if(g('data-lang')){ state.lang = g('data-lang'); render(); return; }
   if(g('data-mg')){ state.mgroup = g('data-mg'); render(); return; }
   if(g('data-rg')){ state.rgroup = g('data-rg'); state.dishAll = false; render(); return; }
@@ -1955,6 +2012,28 @@ document.addEventListener('change', function(ev){
 document.addEventListener('keydown', function(ev){
   if(ev.key === 'Escape' && state.open){ state.open = null; render(); }
 });
+
+/* A shared link can name the language and the section:
+   ?lang=th#needs-review, or #dish-prime-rib for one dish. */
+(function(){
+  var lm = /[?&]lang=(th|en)\b/.exec(location.search || '');
+  if(lm) state.lang = lm[1];
+})();
+(function(){
+  var map = { 'menu':'menu', 'needs-review':'review', 'payments':'payments',
+              'order-stats':'orders', 'menu-stats':'dishes', 'engagement':'engagement' };
+  function fromHash(){
+    var k = (location.hash || '').replace('#','');
+    if(map[k]){ state.nav = map[k]; return true; }
+    if(k.indexOf('dish-') === 0){
+      var it = ITEMKEY[k.slice(5)];
+      if(it){ state.nav = 'menu'; state.open = it.id; return true; }
+    }
+    return false;
+  }
+  if(fromHash()) { /* opened from a link */ }
+  window.addEventListener('hashchange', function(){ if(fromHash()){ state.open = null; render(); } });
+})();
 
 render();
 })();

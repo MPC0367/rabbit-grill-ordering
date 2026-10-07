@@ -88,7 +88,7 @@
   --dur-fast:160ms; --dur-base:200ms; --dur-step:220ms; --dur-sheet:240ms; --dur-tile:180ms;
   --rise:4px; --press-scale:.97;
   --tap-staff:48px; --control-h:40px; --control-h-staff:48px;
-  --rail-w:208px; --admin-pad:20px; --drawer-w:460px; --board-col-min:252px;
+  --rail-w:208px; --admin-pad:20px; --drawer-w:460px; --board-col-min:220px;
   --ticket-pad:10px;
   --z-sticky:20; --z-drawer:40; --z-sheet:50; --z-toast:60;
 }
@@ -242,6 +242,8 @@ input{ font:inherit; color:inherit; }
 .seg button{ padding:7px 11px; font:500 var(--fs-13)/1.2 var(--font-ui); color:var(--text-2); min-height:34px; }
 .seg button[aria-pressed="true"]{ background:var(--inverse); color:var(--on-inverse); font-weight:600; }
 .seg button + button{ border-left:var(--border-hair); }
+.seg-wrap{ flex-wrap:wrap; max-width:100%; }
+.seg-wrap button{ white-space:nowrap; }
 .rail-meta{ margin-top:var(--space-4); font:400 var(--fs-13)/1.5 var(--font-ui); color:var(--text-3); }
 
 /* ===== Main ===== */
@@ -506,13 +508,13 @@ input{ font:inherit; color:inherit; }
       <span class="brand-w" lang="en">Rabbit Grill</span>
       <span class="brand-l" lang="en">Khao Yai &middot; Staff</span>
     </div>
-    <nav class="nav" id="nav" aria-label="Sections"></nav>
+    <nav class="nav" id="nav" aria-label="ส่วนต่าง ๆ"></nav>
     <div class="rail-foot">
-      <div class="seg" id="lang" role="group" aria-label="Language">
+      <div class="seg" id="lang" role="group" aria-label="ภาษา">
         <button type="button" data-act="lang" data-v="th" lang="th">ไทย</button>
         <button type="button" data-act="lang" data-v="en" lang="en">EN</button>
       </div>
-      <div class="seg" id="theme" role="group" style="margin-left:8px" aria-label="Theme"></div>
+      <div class="seg" id="theme" role="group" style="margin-left:8px" aria-label="ธีมสี"></div>
       <div class="rail-meta" id="railMeta"></div>
     </div>
   </aside>
@@ -595,7 +597,7 @@ var S = {
   rowIntake:['เพดานรับออเดอร์','Intake limit'], rowNone:['ไม่ตั้ง','None'],
   rowWait:['เวลารอที่แสดงให้ลูกค้า','Wait shown to guests'], rowNotShown:['ไม่แสดง','Not shown'],
   rowHours:['เวลาเปิดรับออเดอร์','Ordering hours'], rowNotEnforced:['ไม่บังคับ','Not enforced'],
-  menuFact:['เมนู {a} รายการจาก {b} รายการขายได้ อีก {c} รายการไม่มีราคาในเมนูที่ร้านพิมพ์','{a} of {b} menu items can be sold. {c} have no price on the restaurant’s printed menu.'],
+  menuFact:['เมนู {a} รายการจาก {b} รายการขายได้ อีก {c} รายการไม่มีราคาในเมนูที่ร้านพิมพ์ และอีก {d} รายการมีราคาแต่ยังไม่ได้ยืนยัน','{a} of {b} menu items can be sold. {c} have no price on the restaurant’s printed menu, and {d} has a price that is not verified yet.'],
 
   /* board */
   colNew:['ใหม่','New'], colAccepted:['รับแล้ว','Accepted'], colPreparing:['กำลังทำ','Preparing'],
@@ -666,6 +668,7 @@ var S = {
   floorTitle:['ผังโต๊ะ','Live floor'],
   seated:['นั่งแล้ว {d}','Seated {d}'],
   covers:['{n} ที่','{n} covers'],
+  noCovers:['ยังไม่ได้บันทึกจำนวนคน','Diners not recorded'],
   roundsDishes:['{r} รอบ · {d} จานยังไม่เสิร์ฟ','{r} rounds · {d} dishes not served yet'],
   roundDishes1:['{r} รอบ · {d} จานยังไม่เสิร์ฟ','{r} round · {d} dishes not served yet'],
   allServed:['{r} รอบ · เสิร์ฟครบแล้ว','{r} rounds · all served'],
@@ -707,6 +710,9 @@ var S = {
   toastDisabled:['โต๊ะ {n} ปิดใช้งานแล้ว','Table {n} is disabled'],
   blockedToast:['ยังเช็กบิลไม่ได้: {r}','Cannot complete checkout: {r}'],
   tableWord:['โต๊ะ','Table'],
+  ariaSections:['ส่วนต่าง ๆ','Sections'],
+  ariaLanguage:['ภาษา','Language'],
+  ariaTheme:['ธีมสี','Theme'],
   demoDisclaimer:['ตัวเลขและรอบทั้งหมดในหน้านี้เป็นข้อมูลสาธิต ไม่ใช่ยอดขายจริง','Every round and figure on this screen is demo data, not real trade.']
 };
 var lang = 'th';
@@ -924,7 +930,7 @@ function ticketHTML(tk){
   var cls = 'ticket' + (m >= 20 ? ' is-late' : (m >= 12 ? ' is-warm' : '')) + (state.newIds[tk.id] ? ' is-new' : '');
   var h = '<article class="'+cls+'" data-tk="'+tk.id+'">';
   h += '<header class="t-head">';
-  h += '<span class="tag-table"><span class="tag-k" lang="en">Table</span><span class="tag-n num">'+pad2(tk.table)+'</span></span>';
+  h += '<span class="tag-table"><span class="tag-k">'+esc(t('tableWord'))+'</span><span class="tag-n num">'+pad2(tk.table)+'</span></span>';
   h += '<span class="t-ref num" lang="en">'+esc(tk.ref)+'</span>';
   h += '<span class="t-age">'+ic('clock',14)+'<b class="num" data-since="'+tk.sentAt+'">'+m+'</b><i>'+esc(t('minShort'))+'</i></span>';
   h += '</header>';
@@ -972,6 +978,9 @@ function ticketHTML(tk){
 /* ============ chrome ============ */
 function renderChrome(){
   document.documentElement.lang = lang;
+  document.getElementById('nav').setAttribute('aria-label', t('ariaSections'));
+  document.getElementById('lang').setAttribute('aria-label', t('ariaLanguage'));
+  document.getElementById('theme').setAttribute('aria-label', t('ariaTheme'));
   var navItems = [
     ['overview','ov','nav_overview', null],
     ['orders','board','nav_orders', liveTickets().filter(function(x){return x.col==='new';}).length],
@@ -1056,6 +1065,8 @@ function renderOverview(){
        '</dl><p class="note" style="margin-top:12px">'+esc(t('tableSum',{a:cFree,b:cDine,c:cChk,d:cOff}))+'</p></section>';
 
   var sellable = CAT.items.filter(function(i){ return i.orderable; }).length;
+  var heldNoPrice    = CAT.items.filter(function(i){ return !i.orderable && i.why === 'no_price';   }).length;
+  var heldUnverified = CAT.items.filter(function(i){ return !i.orderable && i.why === 'unverified'; }).length;
   h += '<section class="card"><h2 class="sec-t">'+esc(t('guestOrdering'))+'</h2>'+
        '<p style="margin-top:12px"><span class="chip chip-ok">'+ic('check',14)+esc(t('open'))+'</span></p>'+
        '<p class="kicker" style="margin-top:16px">'+esc(t('blocking'))+'</p>'+
@@ -1070,7 +1081,7 @@ function renderOverview(){
          '<p class="row"><span>'+esc(t('rowHours'))+'</span><span>'+esc(t('rowNotEnforced'))+'</span></p>'+
        '</div>'+
        '<p class="note" style="margin-top:14px">'+ic('warn',15)+'<span>'+
-         esc(t('menuFact',{ a: sellable, b: CAT.items.length, c: CAT.items.length - sellable }))+'</span></p>'+
+         esc(t('menuFact',{ a: sellable, b: CAT.items.length, c: heldNoPrice, d: heldUnverified }))+'</span></p>'+
        '</section>';
   h += '</div>';
   h += '<p class="note" style="margin-top:24px">'+ic('warn',15)+'<span>'+esc(t('demoDisclaimer'))+'</span></p>';
@@ -1140,7 +1151,7 @@ var KINDICON = { call:'bell', bill:'bill', allergy:'warn', change:'board' };
 var KINDKEY  = { call:'kCall', bill:'kBill', allergy:'kAllergy', change:'kChange' };
 
 function tableTag(n){
-  return '<span class="tag-table"><span class="tag-k" lang="en">Table</span><span class="tag-n num">'+pad2(n)+'</span></span>';
+  return '<span class="tag-table"><span class="tag-k">'+esc(t('tableWord'))+'</span><span class="tag-n num">'+pad2(n)+'</span></span>';
 }
 function requestHTML(r){
   var m = mins(r.sentAt);
@@ -1259,7 +1270,7 @@ function tileHTML(tb){
     h += '<span class="tile-foot">'+esc(t('tEnable'))+'…</span>';
   } else {
     var rounds = ticketsFor(tb.n).length, un = unservedFor(tb.n);
-    h += '<span class="tile-m">'+esc(t('seated', { d: dur(tb.seatedAt) }))+' · '+esc(t('covers', { n: tb.covers }))+'</span>';
+    h += '<span class="tile-m">'+esc(t('seated', { d: dur(tb.seatedAt) }))+' · '+esc((tb.covers ? t('covers', { n: tb.covers }) : t('noCovers')))+'</span>';
     if (tb.st === 'checkout'){
       h += '<span class="tile-m">'+esc(t(tb.paid ? 'billPaid' : 'billNotPaid', { m: baht(billSat(tb.n)) }))+'</span>';
       h += '<span class="tile-m">'+esc(un ? t('roundsDishes', { r: rounds, d: un }) : t('foodAllServed'))+'</span>';
@@ -1282,7 +1293,7 @@ function renderTables(){
     disabled: state.tables.filter(function(x){return x.st==='disabled';}).length,
     attn: attn
   };
-  var h = '<div class="toolbar"><div class="seg" role="group" aria-label="'+esc(t('floorTitle'))+'">'+
+  var h = '<div class="toolbar"><div class="seg seg-wrap" role="group" aria-label="'+esc(t('floorTitle'))+'">'+
     [['all','filterAll'],['free','stFree'],['dining','stDining'],['checkout','stCheckout'],['disabled','stOff'],['attn','filterAttn']]
     .map(function(x){
       return '<button type="button" data-act="tfilter" data-v="'+x[0]+'" aria-pressed="'+(state.tableFilter===x[0])+'">'+
@@ -1301,23 +1312,22 @@ function renderTables(){
 /* ============ drawer ============ */
 function renderDrawer(){
   var root = document.getElementById('drawerRoot');
-  if (state.drawer == null){ root.innerHTML = ''; return; }
+  if (state.drawer == null){ root.innerHTML = ''; root.removeAttribute('data-open'); return; }
   var tb = tableOf(state.drawer);
-  if (!tb){ root.innerHTML = ''; return; }
+  if (!tb){ root.innerHTML = ''; root.removeAttribute('data-open'); return; }
   var tks = ticketsFor(tb.n).slice().sort(function(a,b){ return a.round - b.round; });
   var bill = billSat(tb.n);
   var blk = blockersFor(tb);
   var wgs = openWeighs(tb.n);
   var rqs = openRequests(tb.n);
 
-  var h = '<div class="scrim" data-act="closedrawer"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="'+
-          esc(t('tableWord'))+' '+pad2(tb.n)+'">';
-  h += '<header class="dw-h">'+tableTag(tb.n)+'<div style="flex:1 1 auto;min-width:0">'+
+  var dwLabel = esc(t('tableWord'))+' '+pad2(tb.n);
+  var h = '<header class="dw-h">'+tableTag(tb.n)+'<div style="flex:1 1 auto;min-width:0">'+
        '<h2 class="dw-t">'+esc(t('tableWord'))+' '+pad2(tb.n)+
        '<span class="chip chip-neutral">'+esc(t(tb.st==='free'?'stFree':tb.st==='dining'?'stDining':tb.st==='checkout'?'stCheckout':'stOff'))+'</span></h2>';
   if (tb.seatedAt)
     h += '<p class="dw-s">'+esc(t('seatedAt', { t: clock(tb.seatedAt) }))+' · '+
-         esc(dur(tb.seatedAt))+' · '+esc(t('covers', { n: tb.covers }))+' · '+esc(t('byFloor'))+'</p>';
+         esc(dur(tb.seatedAt))+' · '+esc((tb.covers ? t('covers', { n: tb.covers }) : t('noCovers')))+' · '+esc(t('byFloor'))+'</p>';
   else h += '<p class="dw-s">'+esc(tb.st === 'disabled' ? t('noSeating') : t('noVisit'))+'</p>';
   h += '</div><button type="button" class="btn btn-sm btn-ghost" data-act="closedrawer" aria-label="'+esc(t('drawerClose'))+'">'+ic('x',18)+'</button></header>';
 
@@ -1382,8 +1392,27 @@ function renderDrawer(){
     h += '<button type="button" class="btn '+(blk.length ? 'btn-blocked' : 'btn-pri')+'" data-act="completeco" data-n="'+tb.n+'"'+
          (blk.length ? ' aria-disabled="true"' : '')+'>'+esc(t('bCompleteCheckout'))+'</button>';
   }
-  h += '</footer></aside>';
-  root.innerHTML = h;
+  h += '</footer>';
+
+  /* An already-open drawer is updated in place: replacing the .drawer node would replay
+     its slide-in animation and pull focus back to Close on every in-drawer action. */
+  var dw = root.querySelector('.drawer');
+  if (dw && root.getAttribute('data-open') === String(tb.n)){
+    var af = document.activeElement;
+    var keepAct = (af && af.getAttribute && dw.contains(af)) ? af.getAttribute('data-act') : null;
+    var keepN   = keepAct ? af.getAttribute('data-n') : null;
+    dw.setAttribute('aria-label', dwLabel);
+    dw.innerHTML = h;
+    if (keepAct){
+      var again = dw.querySelector('[data-act="'+keepAct+'"]'+(keepN ? '[data-n="'+keepN+'"]' : ''))
+               || dw.querySelector('.dw-f button');
+      if (again) again.focus();
+    }
+    return;
+  }
+  root.innerHTML = '<div class="scrim" data-act="closedrawer"></div>'+
+                   '<aside class="drawer" role="dialog" aria-modal="true" aria-label="'+dwLabel+'">'+h+'</aside>';
+  root.setAttribute('data-open', tb.n);
   var close = root.querySelector('[data-act="closedrawer"].btn');
   if (close) close.focus();
 }
@@ -1545,7 +1574,7 @@ function completeCheckout(n){
 }
 function seatTable(n){
   var tb = tableOf(n); if (!tb || tb.st !== 'free') return;
-  tb.st = 'dining'; tb.seatedAt = now(); tb.covers = 2 + Math.floor(Math.random()*4);
+  tb.st = 'dining'; tb.seatedAt = now(); tb.covers = 0;
   tb.paid = false; tb.checkoutStarted = false;
   toast(t('toastSeat', { n: pad2(n) }));
   render();
