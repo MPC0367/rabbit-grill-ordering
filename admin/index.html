@@ -1,0 +1,1964 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Rabbit Grill management: the menu and what the owner must confirm, payments, and figures that say what they count.">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; background: #faf9f7; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<title>Rabbit Grill Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Noto+Sans+Thai:wght@400;500;600;700&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Rabbit Grill Khao Yai — staff platform (owner / manager)
+   Tokens lifted from client/src/styles/tokens.css
+   ============================================================ */
+:root{
+  color-scheme: light;
+
+  /* 1. brand primitives */
+  --paper:#F3ECDD; --paper-2:#E9E0CB; --bone:#F8F4EA;
+  --ink:#17150F; --ink-2:#221E16; --ink-3:#2E2921;
+  --forest:#1E4230; --forest-2:#2C5A40; --oxblood:#6E1621;
+  --taupe:#6B5E4B; --ember:#CB6234; --ember-ink:#A8441E; --steel:#8E8B82;
+  --ink-soft:#5D574A; --ink-edge:#7A7264; --ink-numeral:#857D6F;
+  --paper-hover:#EFE8D8; --paper-well:#EDE5D2;
+  --forest-tint:#E3EAE2; --oxblood-tint:#EEE4DC; --ember-tint:#F3E2D4;
+  --sage:#D5DDD4; --blush:#EAD3D3; --ash:#B9B2A2; --ash-2:#8F8878; --smoke:#37342E;
+  --sage-light:#9FC4AA; --rose-light:#E59C90; --ember-light:#E08A5E;
+  --forest-night:#223127; --oxblood-night:#3A1B1C; --ember-night:#3A2419;
+  --ink-0:#131109;
+
+  /* 2. semantic roles — light paper surface */
+  --canvas:var(--paper);
+  --surface:var(--bone);
+  --sunken:var(--paper-2);
+  --well:var(--paper-well);
+  --hover:var(--paper-hover);
+  --text:var(--ink);
+  --text-2:var(--ink-soft);
+  --text-3:var(--taupe);
+  --numeral:var(--ink-numeral);
+  --rule:rgba(23,21,15,.14);
+  --rule-soft:rgba(23,21,15,.08);
+  --rule-strong:rgba(23,21,15,.26);
+  --rule-ink:var(--ink);
+  --edge:var(--ink-edge);
+  --action:var(--forest);
+  --action-hover:var(--forest-2);
+  --on-action:var(--bone);
+  --action-text:var(--forest);
+  --selected:var(--forest-tint);
+  --selected-edge:var(--forest);
+  --ok:var(--forest);
+  --ok-tint:var(--forest-tint);
+  --alert:var(--oxblood);
+  --alert-tint:var(--oxblood-tint);
+  --on-alert:var(--bone);
+  --heat-text:var(--ember-ink);
+  --heat-tint:var(--ember-tint);
+  --now:var(--ember);
+  --now-text:var(--ember-ink);
+  --inverse:var(--ink);
+  --on-inverse:var(--bone);
+  --focus:var(--ember);
+  --scrim:rgba(23,21,15,.56);
+  --image-bg:var(--paper-2);
+  --image-mat:var(--bone);
+  --tone-neutral-bg:var(--sunken); --tone-neutral-fg:var(--text);
+  --tone-ok-bg:var(--ok-tint);     --tone-ok-fg:var(--ok);
+  --tone-alert-bg:var(--alert-tint); --tone-alert-fg:var(--alert);
+  --tone-heat-bg:var(--heat-tint); --tone-heat-fg:var(--heat-text);
+  --tone-ink-bg:var(--inverse);    --tone-ink-fg:var(--on-inverse);
+
+  /* charts */
+  --chart-bar:var(--ink);
+  --chart-today:var(--ember);
+  --chart-future:var(--steel);
+  --chart-grid:rgba(23,21,15,.10);
+  --chart-axis:var(--text-2);
+  --chart-missing:var(--edge);
+  --chart-track:var(--paper-2);
+
+  --shadow-card:0 1px 0 rgba(23,21,15,.04), 0 1px 3px rgba(23,21,15,.06);
+  --shadow-drawer:-14px 0 40px -10px rgba(23,21,15,.30);
+
+  /* type */
+  --font-ui:"Noto Sans Thai","Leelawadee UI",Thonburi,"Helvetica Neue",Arial,sans-serif;
+  --font-display:"Oswald","Noto Sans Thai","Arial Narrow",sans-serif;
+  --font-serif:"Cormorant Garamond","Noto Sans Thai",Georgia,"Times New Roman",serif;
+  --num-features:"tnum" 1,"lnum" 1;
+
+  /* space / shape */
+  --gutter:16px;
+  --rail-w:212px;
+  --radius-hair:2px; --radius-sm:4px; --radius-ctl:6px; --radius-card:8px; --radius-pill:999px;
+  --tap:44px;
+  --dur-fast:160ms; --dur-base:200ms;
+  --ease-out:cubic-bezier(.2,.7,.3,1);
+}
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --canvas:var(--ink-2);
+    --surface:var(--ink-3);
+    --sunken:#383228;
+    --well:var(--ink-2);
+    --hover:var(--smoke);
+    --text:var(--bone);
+    --text-2:var(--ash);
+    --text-3:var(--ash-2);
+    --numeral:var(--ash-2);
+    --rule:rgba(248,244,234,.14);
+    --rule-soft:rgba(248,244,234,.08);
+    --rule-strong:rgba(248,244,234,.28);
+    --rule-ink:var(--bone);
+    --edge:var(--ash-2);
+    --action:var(--forest-2);
+    --action-hover:#356B4C;
+    --on-action:var(--bone);
+    --action-text:var(--sage-light);
+    --selected:var(--forest-night);
+    --selected-edge:var(--sage-light);
+    --ok:var(--sage-light);
+    --ok-tint:var(--forest-night);
+    --alert:var(--rose-light);
+    --alert-tint:var(--oxblood-night);
+    --on-alert:var(--ink);
+    --heat-text:var(--ember-light);
+    --heat-tint:var(--ember-night);
+    --now:var(--ember);
+    --now-text:var(--ember-light);
+    --inverse:var(--bone);
+    --on-inverse:var(--ink);
+    --focus:var(--ember);
+    --scrim:rgba(0,0,0,.66);
+    --image-bg:var(--ink-3);
+    --image-mat:var(--ink-3);
+    --tone-neutral-bg:#383228; --tone-neutral-fg:var(--bone);
+    --tone-ok-bg:var(--forest-night); --tone-ok-fg:var(--sage-light);
+    --tone-alert-bg:var(--oxblood-night); --tone-alert-fg:var(--rose-light);
+    --tone-heat-bg:var(--ember-night); --tone-heat-fg:var(--ember-light);
+    --tone-ink-bg:var(--bone); --tone-ink-fg:var(--ink);
+    --chart-bar:var(--bone);
+    --chart-today:var(--ember);
+    --chart-future:var(--steel);
+    --chart-grid:rgba(248,244,234,.12);
+    --chart-axis:var(--ash);
+    --chart-missing:var(--ash-2);
+    --chart-track:#3C362B;
+    --shadow-card:0 0 0 1px rgba(248,244,234,.06);
+    --shadow-drawer:-14px 0 40px -10px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --canvas:var(--ink-2);
+  --surface:var(--ink-3);
+  --sunken:#383228;
+  --well:var(--ink-2);
+  --hover:var(--smoke);
+  --text:var(--bone);
+  --text-2:var(--ash);
+  --text-3:var(--ash-2);
+  --numeral:var(--ash-2);
+  --rule:rgba(248,244,234,.14);
+  --rule-soft:rgba(248,244,234,.08);
+  --rule-strong:rgba(248,244,234,.28);
+  --rule-ink:var(--bone);
+  --edge:var(--ash-2);
+  --action:var(--forest-2);
+  --action-hover:#356B4C;
+  --on-action:var(--bone);
+  --action-text:var(--sage-light);
+  --selected:var(--forest-night);
+  --selected-edge:var(--sage-light);
+  --ok:var(--sage-light);
+  --ok-tint:var(--forest-night);
+  --alert:var(--rose-light);
+  --alert-tint:var(--oxblood-night);
+  --on-alert:var(--ink);
+  --heat-text:var(--ember-light);
+  --heat-tint:var(--ember-night);
+  --now:var(--ember);
+  --now-text:var(--ember-light);
+  --inverse:var(--bone);
+  --on-inverse:var(--ink);
+  --focus:var(--ember);
+  --scrim:rgba(0,0,0,.66);
+  --image-bg:var(--ink-3);
+  --image-mat:var(--ink-3);
+  --tone-neutral-bg:#383228; --tone-neutral-fg:var(--bone);
+  --tone-ok-bg:var(--forest-night); --tone-ok-fg:var(--sage-light);
+  --tone-alert-bg:var(--oxblood-night); --tone-alert-fg:var(--rose-light);
+  --tone-heat-bg:var(--ember-night); --tone-heat-fg:var(--ember-light);
+  --tone-ink-bg:var(--bone); --tone-ink-fg:var(--ink);
+  --chart-bar:var(--bone);
+  --chart-today:var(--ember);
+  --chart-future:var(--steel);
+  --chart-grid:rgba(248,244,234,.12);
+  --chart-axis:var(--ash);
+  --chart-missing:var(--ash-2);
+  --chart-track:#3C362B;
+  --shadow-card:0 0 0 1px rgba(248,244,234,.06);
+  --shadow-drawer:-14px 0 40px -10px rgba(0,0,0,.6);
+}
+
+@media (min-width:860px){ :root{ --gutter:22px; } }
+@media (min-width:1240px){ :root{ --gutter:28px; } }
+
+*,*::before,*::after{ box-sizing:border-box; }
+body{
+  margin:0;
+  background:var(--canvas);
+  color:var(--text);
+  font:400 .9375rem/1.6 var(--font-ui);
+  -webkit-text-size-adjust:100%;
+  overflow-x:hidden;
+}
+:focus-visible{
+  outline:2px solid var(--focus);
+  outline-offset:2px;
+  border-radius:var(--radius-sm);
+}
+button,input,select,textarea{ font:inherit; color:inherit; }
+button{ cursor:pointer; }
+table{ border-collapse:collapse; }
+h1,h2,h3,h4{ margin:0; font-weight:600; }
+p{ margin:0; }
+ul{ margin:0; padding:0; list-style:none; }
+hr{ border:0; border-top:1px solid var(--rule); margin:0; }
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:1ms !important; transition-duration:1ms !important; }
+}
+
+/* ---------- shell ---------- */
+.app{ display:grid; grid-template-columns:1fr; min-height:100dvh; }
+@media (min-width:980px){ .app{ grid-template-columns:var(--rail-w) minmax(0,1fr); } }
+
+.rail{
+  --canvas:var(--ink); --surface:var(--ink-2); --sunken:var(--ink-3);
+  --text:var(--bone); --text-2:var(--ash); --text-3:var(--ash-2);
+  --rule:rgba(248,244,234,.14); --rule-strong:rgba(248,244,234,.28);
+  --hover:var(--smoke); --focus:var(--ember);
+  background:var(--canvas); color:var(--text);
+  display:flex; flex-direction:column;
+  border-right:1px solid var(--rule-strong);
+}
+@media (max-width:979px){ .rail{ border-right:0; border-bottom:1px solid var(--rule-strong); } }
+
+.brand{ padding:18px var(--gutter) 14px; }
+.brand b{
+  display:block; font:600 .9375rem/1 var(--font-serif);
+  letter-spacing:.18em; text-transform:uppercase;
+}
+.brand span{
+  display:block; margin-top:5px;
+  font:500 .6875rem/1 var(--font-display);
+  letter-spacing:.3em; color:var(--now); text-transform:uppercase;
+}
+.railnav{ padding:4px 10px 10px; display:flex; flex-direction:column; gap:1px; }
+@media (max-width:979px){
+  .railnav{ flex-direction:row; overflow-x:auto; gap:2px; padding:0 10px 8px; scrollbar-width:thin; }
+}
+.navbtn{
+  display:flex; align-items:center; gap:10px;
+  min-height:var(--tap); padding:8px 12px;
+  background:none; border:0; border-radius:var(--radius-ctl);
+  color:var(--text-2); text-align:left; white-space:nowrap;
+  font:500 .875rem/1.4 var(--font-ui);
+  position:relative; transition:background var(--dur-fast), color var(--dur-fast);
+}
+.navbtn:hover{ background:var(--hover); color:var(--text); }
+.navbtn[aria-current="page"]{ background:var(--surface); color:var(--text); font-weight:600; }
+.navbtn[aria-current="page"]::before{
+  content:""; position:absolute; left:-10px; top:9px; bottom:9px; width:3px;
+  background:var(--now); border-radius:0 2px 2px 0;
+}
+@media (max-width:979px){
+  .navbtn[aria-current="page"]::before{ left:10px; right:10px; top:auto; bottom:-8px; width:auto; height:3px; border-radius:2px 2px 0 0; }
+}
+.navbtn .ico{ flex:none; width:18px; height:18px; opacity:.9; }
+.navbtn .cnt{
+  margin-left:auto; font:500 .75rem/1 var(--font-display);
+  font-feature-settings:var(--num-features);
+  background:var(--sunken); color:var(--text-2);
+  padding:3px 6px; border-radius:var(--radius-pill);
+}
+.navbtn[aria-current="page"] .cnt{ background:var(--ink); color:var(--text); }
+.railfoot{ margin-top:auto; padding:14px var(--gutter) 18px; border-top:1px solid var(--rule); }
+@media (max-width:979px){ .railfoot{ display:none; } }
+.seg{ display:inline-flex; border:1px solid var(--rule-strong); border-radius:var(--radius-ctl); overflow:hidden; }
+.seg button{
+  min-width:48px; min-height:36px; padding:6px 12px; border:0; background:none;
+  color:var(--text-2); font:500 .8125rem/1 var(--font-ui);
+}
+.seg button[aria-pressed="true"]{ background:var(--surface); color:var(--text); font-weight:600; }
+.railfoot .when{ margin-top:12px; font:400 .75rem/1.5 var(--font-ui); color:var(--text-3); }
+
+/* ---------- topbar ---------- */
+.work{ min-width:0; display:flex; flex-direction:column; background:var(--canvas); }
+.topbar{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:14px var(--gutter);
+  border-bottom:1px solid var(--rule);
+  background:var(--canvas);
+}
+.topbar h1{
+  font:600 1.5rem/1.1 var(--font-serif); font-style:italic; letter-spacing:.01em;
+}
+.demotag{
+  font:500 .6875rem/1 var(--font-display); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--text-2); border:1px dashed var(--rule-strong);
+  padding:6px 9px; border-radius:var(--radius-sm); white-space:nowrap;
+}
+.who{ margin-left:auto; display:flex; align-items:center; gap:10px; }
+.who .mode{
+  display:flex; align-items:center; gap:7px;
+  font:400 .8125rem/1 var(--font-ui); color:var(--text-2);
+  padding-right:12px; border-right:1px solid var(--rule);
+}
+.who .dot{ width:7px; height:7px; border-radius:50%; background:var(--now); flex:none; }
+.who .av{
+  width:34px; height:34px; border-radius:50%; flex:none;
+  background:var(--inverse); color:var(--on-inverse);
+  display:grid; place-items:center;
+  font:500 .75rem/1 var(--font-display); letter-spacing:.04em;
+}
+.who .nm{ font:600 .8125rem/1.3 var(--font-ui); }
+.who .nm small{ display:block; font-weight:400; color:var(--text-2); font-size:.75rem; }
+@media (max-width:620px){ .who .mode, .who .nm{ display:none; } }
+
+main{ padding:var(--gutter); padding-bottom:64px; min-width:0; }
+.wrap{ max-width:1180px; margin:0 auto; }
+.lede{ max-width:68ch; color:var(--text-2); font-size:.875rem; margin-bottom:18px; }
+.lede b{ color:var(--text); font-weight:600; }
+
+/* ---------- generic furniture ---------- */
+.card{
+  background:var(--surface); border:1px solid var(--rule);
+  border-radius:var(--radius-card); box-shadow:var(--shadow-card);
+}
+.pad{ padding:16px; }
+.sec{ margin-top:28px; }
+.sechead{
+  display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  padding-bottom:8px; margin-bottom:14px; border-bottom:1px solid var(--rule-ink);
+}
+.sechead h2{ font:600 1.25rem/1.25 var(--font-ui); }
+.sechead .en{ font:italic 500 1rem/1.2 var(--font-serif); color:var(--text-3); }
+.sechead .note{ margin-left:auto; font-size:.8125rem; color:var(--text-2); }
+.kicker{
+  font:500 .6875rem/1.2 var(--font-display); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text-2);
+}
+:lang(th) .kicker{ letter-spacing:0; text-transform:none; }
+.num{ font-family:var(--font-display); font-feature-settings:var(--num-features); font-weight:500; }
+.big{ font-size:2.5rem; line-height:1; }
+.mid{ font-size:1.75rem; line-height:1; }
+.muted{ color:var(--text-2); }
+.tiny{ font-size:.75rem; line-height:1.5; }
+.sm{ font-size:.8125rem; line-height:1.55; }
+
+.chip{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 8px; border-radius:var(--radius-sm);
+  font:500 .75rem/1.4 var(--font-ui); white-space:nowrap;
+  background:var(--tone-neutral-bg); color:var(--tone-neutral-fg);
+}
+.chip.ok{ background:var(--tone-ok-bg); color:var(--tone-ok-fg); }
+.chip.alert{ background:var(--tone-alert-bg); color:var(--tone-alert-fg); }
+.chip.heat{ background:var(--tone-heat-bg); color:var(--tone-heat-fg); }
+.chip.ink{ background:var(--tone-ink-bg); color:var(--tone-ink-fg); }
+.chip.hollow{ background:none; border:1px solid var(--rule-strong); color:var(--text-2); }
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  min-height:var(--tap); padding:9px 16px;
+  border:1px solid var(--edge); background:var(--surface); color:var(--text);
+  border-radius:var(--radius-ctl); font:600 .875rem/1.2 var(--font-ui);
+  transition:background var(--dur-fast), border-color var(--dur-fast);
+}
+.btn:hover{ background:var(--hover); }
+.btn.primary{ background:var(--action); border-color:var(--action); color:var(--on-action); }
+.btn.primary:hover{ background:var(--action-hover); border-color:var(--action-hover); }
+.btn.sm{ min-height:34px; padding:5px 11px; font-size:.8125rem; }
+.btn[disabled]{ opacity:.5; cursor:not-allowed; }
+.link{
+  background:none; border:0; padding:0; color:var(--action-text);
+  font:600 .875rem/1.4 var(--font-ui); text-decoration:underline;
+  text-underline-offset:3px;
+}
+
+.banner{
+  display:flex; gap:12px; align-items:flex-start;
+  padding:13px 15px; border-radius:var(--radius-card);
+  background:var(--sunken); border:1px solid var(--rule);
+  font-size:.875rem; color:var(--text-2); margin-bottom:18px;
+}
+.banner b{ color:var(--text); }
+.banner.ink{ background:var(--inverse); color:var(--on-inverse); border-color:var(--inverse); }
+.banner.ink b{ color:inherit; }
+.banner .ico{ flex:none; width:18px; height:18px; margin-top:2px; }
+
+.statgrid{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+.stat{ padding:14px 15px; }
+.stat .v{ display:block; margin:6px 0 4px; }
+.stat .h{ display:flex; align-items:center; gap:6px; }
+.stat .d{ font-size:.75rem; color:var(--text-2); line-height:1.5; }
+
+/* ---------- tables ---------- */
+.tablewrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table.data{ width:100%; min-width:640px; font-size:.875rem; }
+table.data th{
+  text-align:left; padding:10px 12px; white-space:nowrap;
+  font:500 .6875rem/1.2 var(--font-display); letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-2); border-bottom:1px solid var(--rule-ink);
+}
+:lang(th) table.data th{ letter-spacing:0; text-transform:none; font-family:var(--font-ui); font-size:.75rem; }
+table.data td{ padding:10px 12px; border-bottom:1px solid var(--rule); vertical-align:middle; }
+table.data tbody tr:hover{ background:var(--hover); }
+table.data td.n, table.data th.n{ text-align:right; font-family:var(--font-display); font-feature-settings:var(--num-features); }
+:lang(th) table.data td.n{ font-family:var(--font-display); }
+table.data tr.off td{ opacity:.62; }
+
+.dishcell{ display:flex; align-items:center; gap:11px; min-width:0; }
+.plate{
+  flex:none; width:40px; height:40px; border-radius:var(--radius-hair);
+  background:
+    radial-gradient(120% 100% at 30% 20%, rgba(203,98,52,.22), transparent 60%),
+    linear-gradient(140deg, var(--image-bg), var(--sunken));
+  box-shadow:0 0 0 3px var(--image-mat), 0 0 0 4px var(--rule);
+  display:grid; place-items:center;
+  font:500 .8125rem/1 var(--font-display); color:var(--text-2);
+}
+.plate.lg{ width:72px; height:72px; font-size:1.25rem; }
+.dishcell .nm{ min-width:0; }
+.dishcell .th{ font:600 .9375rem/1.45 var(--font-ui); }
+.dishcell .en{ font:italic 500 .875rem/1.3 var(--font-serif); color:var(--text-3); }
+
+/* ---------- switch ---------- */
+.sw{
+  display:inline-flex; align-items:center; gap:9px;
+  background:none; border:0; padding:4px; min-height:var(--tap);
+}
+.sw .track{
+  width:42px; height:24px; border-radius:var(--radius-pill); flex:none;
+  background:var(--sunken); border:1px solid var(--edge); position:relative;
+  transition:background var(--dur-fast), border-color var(--dur-fast);
+}
+.sw .knob{
+  position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%;
+  background:var(--text-2); transition:transform var(--dur-base) var(--ease-out), background var(--dur-fast);
+}
+.sw[aria-pressed="true"] .track{ background:var(--alert-tint); border-color:var(--alert); }
+.sw[aria-pressed="true"] .knob{ transform:translateX(18px); background:var(--alert); }
+.sw .lbl{ font:500 .8125rem/1.3 var(--font-ui); color:var(--text-2); white-space:nowrap; }
+.sw[aria-pressed="true"] .lbl{ color:var(--alert); font-weight:600; }
+
+/* ---------- filters ---------- */
+.filters{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
+.pillset{ display:inline-flex; border:1px solid var(--rule-strong); border-radius:var(--radius-ctl); overflow:hidden; }
+.pillset button{
+  min-height:40px; padding:7px 13px; border:0; background:none; color:var(--text-2);
+  font:500 .8125rem/1.2 var(--font-ui); display:inline-flex; align-items:center; gap:6px;
+}
+.pillset button + button{ border-left:1px solid var(--rule-strong); }
+.pillset button[aria-pressed="true"]{ background:var(--inverse); color:var(--on-inverse); font-weight:600; }
+.pillset button .c{ font-family:var(--font-display); font-feature-settings:var(--num-features); opacity:.75; }
+.field{
+  display:inline-flex; align-items:center; gap:8px;
+  border:1px solid var(--edge); border-radius:var(--radius-ctl);
+  background:var(--surface); padding:0 12px; min-height:40px;
+}
+.field svg{ flex:none; opacity:.6; }
+.field input, .field select{
+  border:0; background:none; outline:none; min-height:38px; font-size:1rem; min-width:0;
+}
+.field input{ width:min(260px,46vw); }
+.field select{ padding-right:4px; }
+.chkline{ display:inline-flex; align-items:center; gap:8px; min-height:40px; font-size:.875rem; }
+.chkline input{ width:18px; height:18px; accent-color:var(--action); }
+
+.empty{ padding:40px 20px; text-align:center; color:var(--text-2); font-size:.875rem; }
+
+/* ---------- bars ---------- */
+.barrow{ display:grid; grid-template-columns:minmax(96px,1fr) auto; gap:4px 12px; align-items:baseline; margin-bottom:9px; }
+.barrow .lb{ font-size:.875rem; }
+.barrow .vv{ font-family:var(--font-display); font-feature-settings:var(--num-features); font-weight:500; white-space:nowrap; }
+.barrow .vv i{ font-style:normal; color:var(--text-2); font-size:.8125rem; margin-left:5px; }
+.barrow .tr{ grid-column:1/-1; height:7px; border-radius:2px; background:var(--chart-track); overflow:hidden; }
+.barrow .fl{ height:100%; background:var(--chart-bar); border-radius:2px; }
+.barrow .fl.ok{ background:var(--ok); }
+.barrow .fl.zero{ background:none; }
+
+/* ---------- drawer ---------- */
+.scrim{
+  position:fixed; inset:0; background:var(--scrim); z-index:40;
+  animation:fade var(--dur-base) var(--ease-out);
+}
+@keyframes fade{ from{opacity:0} to{opacity:1} }
+.drawer{
+  position:fixed; top:0; right:0; bottom:0; z-index:41;
+  width:min(560px,100vw); background:var(--canvas);
+  border-left:1px solid var(--rule-strong); box-shadow:var(--shadow-drawer);
+  display:flex; flex-direction:column;
+  animation:slide var(--dur-base) var(--ease-out);
+}
+@keyframes slide{ from{transform:translateX(18px); opacity:.6} to{transform:none; opacity:1} }
+.drawer header{
+  display:flex; gap:12px; align-items:flex-start;
+  padding:16px var(--gutter); border-bottom:1px solid var(--rule);
+}
+.drawer .body{ overflow-y:auto; padding:16px var(--gutter) 28px; flex:1; }
+.drawer footer{
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  padding:12px var(--gutter); border-top:1px solid var(--rule); background:var(--surface);
+}
+.closeb{
+  margin-left:auto; flex:none; width:38px; height:38px; border-radius:var(--radius-ctl);
+  border:1px solid var(--rule-strong); background:none; color:var(--text-2);
+  display:grid; place-items:center; font-size:1.1rem; line-height:1;
+}
+.closeb:hover{ background:var(--hover); color:var(--text); }
+
+.fgrid{ display:grid; gap:14px; grid-template-columns:1fr; }
+@media (min-width:480px){ .fgrid.two{ grid-template-columns:1fr 1fr; } }
+label.f{ display:block; }
+label.f .lab{ display:block; font:600 .8125rem/1.4 var(--font-ui); margin-bottom:5px; }
+label.f .lab i{ font-style:normal; font-weight:400; color:var(--text-2); }
+label.f input, label.f textarea{
+  width:100%; padding:10px 12px; font-size:1rem;
+  background:var(--surface); color:var(--text);
+  border:1px solid var(--edge); border-radius:var(--radius-ctl);
+}
+label.f .hint{ display:block; margin-top:5px; font-size:.75rem; color:var(--text-2); line-height:1.5; }
+.checklist li{ display:flex; gap:9px; padding:5px 0; font-size:.8125rem; align-items:flex-start; }
+.checklist .mk{ flex:none; width:16px; font-family:var(--font-display); }
+.checklist .yes .mk{ color:var(--ok); }
+.checklist .no .mk{ color:var(--text-2); }
+
+.block{ border:1px solid var(--rule); border-radius:var(--radius-card); padding:14px; background:var(--surface); }
+.block + .block{ margin-top:14px; }
+.block h3{ font:600 .9375rem/1.3 var(--font-ui); margin-bottom:9px; }
+.kv{ display:grid; grid-template-columns:auto 1fr; gap:4px 14px; font-size:.8125rem; }
+.kv dt{ color:var(--text-2); white-space:nowrap; }
+.kv dd{ margin:0; }
+
+/* ---------- charts ---------- */
+.chartbox{ padding:16px; }
+.chartbox svg{ display:block; width:100%; height:auto; }
+.legend{ display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:12px; font-size:.75rem; color:var(--text-2); }
+.legend span{ display:inline-flex; align-items:center; gap:7px; }
+.legend i{ width:14px; height:11px; flex:none; border-radius:1px; display:inline-block; }
+.srt{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+
+.cols{ display:grid; gap:14px; grid-template-columns:1fr; }
+@media (min-width:900px){ .cols.a{ grid-template-columns:300px minmax(0,1fr); } .cols.b{ grid-template-columns:1fr 1fr; } }
+
+.limits li{ position:relative; padding-left:16px; font-size:.8125rem; line-height:1.6; color:var(--text-2); }
+.limits li::before{ content:""; position:absolute; left:3px; top:.7em; width:4px; height:4px; border-radius:50%; background:var(--text-3); }
+.toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+  z-index:60; background:var(--inverse); color:var(--on-inverse);
+  padding:11px 17px; border-radius:var(--radius-ctl); font:500 .875rem/1.3 var(--font-ui);
+  box-shadow:0 8px 24px -6px rgba(23,21,15,.45); max-width:calc(100vw - 32px);
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail" id="rail"></aside>
+  <div class="work">
+    <header class="topbar" id="topbar"></header>
+    <main id="main"><div class="wrap" id="view"></div></main>
+  </div>
+</div>
+<div id="overlay"></div>
+<div id="toast"></div>
+
+<script type="application/json" id="catalog">{"categories":[{"id":"cat_0BA5DYW1J3VESA1X","key":"beef-selection","th":"เนื้อ","en":"Beef Selection","sort":10,"alcohol":0},{"id":"cat_8FBBSM63TPSMNR1G","key":"special-matcha","th":"มัทฉะพิเศษ","en":"Special Matcha","sort":10,"alcohol":0},{"id":"cat_KTT2M9BZEX4PXBJZ","key":"coffee","th":null,"en":"Coffee","sort":20,"alcohol":0},{"id":"cat_M8B2FR0P7XTAG16J","key":"from-the-grill","th":"จานหลักจากเตา","en":"From the Grill","sort":20,"alcohol":0},{"id":"cat_87PHD7YFQ3X359EG","key":"appetizers","th":"ของเรียกน้ำย่อย","en":"Appetizers","sort":30,"alcohol":0},{"id":"cat_NEB527WYF5B2GHNG","key":"hot-tea","th":null,"en":"Hot Tea","sort":30,"alcohol":0},{"id":"cat_S8E2BBMJWV9GTJ6J","key":"milky","th":"นม","en":"Milky","sort":40,"alcohol":0},{"id":"cat_0QYKYTGDETP4S97B","key":"salads","th":"สลัด","en":"Salads","sort":40,"alcohol":0},{"id":"cat_YV71KQQGDP6Q5PQB","key":"soda","th":"โซดา","en":"Soda","sort":50,"alcohol":0},{"id":"cat_M9ZBHVF9B40082Q1","key":"fresh-juice","th":"น้ำผลไม้สด","en":"Fresh Juice","sort":60,"alcohol":0},{"id":"cat_VECWBRKSNDZTYR56","key":"rice","th":"ข้าว","en":"Rice","sort":60,"alcohol":0},{"id":"cat_ZPHNYVWDWE1ZV5FR","key":"side-dishes","th":"เครื่องเคียง","en":"Side Dishes","sort":70,"alcohol":0},{"id":"cat_FFFWB1FHHAXHFV7V","key":"dessert","th":"ของหวาน","en":"Dessert","sort":80,"alcohol":0},{"id":"cat_TE3DMBX2CA3RB477","key":"draft-beer","th":"เบียร์สด","en":"Draft Beer","sort":80,"alcohol":1},{"id":"cat_PT89MTX75AN1TV45","key":"bottled-beer","th":"เบียร์ขวด","en":"Bottled Beer","sort":90,"alcohol":1},{"id":"cat_D1ET9ECCK5MNCMAY","key":"whiskey","th":null,"en":"Whiskey","sort":100,"alcohol":1},{"id":"cat_6EZ1KHJ38D7AG8H1","key":"soft-drinks","th":null,"en":"Soft Drinks","sort":110,"alcohol":0}],"items":[{"id":"itm_ZR1ZETGDZ5RXBN1J","key":"prime-rib","cat":"cat_0BA5DYW1J3VESA1X","sort":10,"th":"ไพร์มริบ","en":"Prime Rib","dth":null,"den":null,"price":null,"rate":49000,"basis":100,"kind":"measured_weight","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"primerib-full","pnth":null,"pnen":null},{"id":"itm_4EVP3WEYXSV627GF","key":"grilled-baby-chicken","cat":"cat_M8B2FR0P7XTAG16J","sort":10,"th":"ไก่ย่างตัวเล็กคลุกเครื่องเทศ","en":"Grilled Baby Chicken","dth":null,"den":null,"price":59000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"baby-chicken","pnth":null,"pnen":null},{"id":"itm_ZNZEB0707PTG0GCA","key":"corn-rib","cat":"cat_87PHD7YFQ3X359EG","sort":10,"th":"คอร์นริบ","en":"Corn Rib","dth":null,"den":null,"price":15000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"corn-rib","pnth":null,"pnen":null},{"id":"itm_KWPVZZ3R7SVTQZEW","key":"grilled-caesar-salad","cat":"cat_0QYKYTGDETP4S97B","sort":10,"th":"กริลลซีซาร์สลัด","en":"Grilled Caesar Salad","dth":null,"den":null,"price":26000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"caesar","pnth":null,"pnen":null},{"id":"itm_R6FD78PR48XJCTYA","key":"basil-beef-rice","cat":"cat_VECWBRKSNDZTYR56","sort":10,"th":"ข้าวกะเพราคลุกเนื้อย่าง","en":"Rice with Stir-Fried Basil and Grilled Beef","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"basil-beef-rice","pnth":null,"pnen":null},{"id":"itm_EW1E0DZRJY4EF4HR","key":"mashed-potato","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":10,"th":"มันบด","en":"Mashed Potato","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"mashed-potato","pnth":null,"pnen":null},{"id":"itm_VESFD6Y1HCQ8VF00","key":"creme-brulee-lemon","cat":"cat_FFFWB1FHHAXHFV7V","sort":10,"th":"เครมบรูเล่เลมอน","en":"Crème Brûlée Lemon","dth":null,"den":null,"price":16000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"creme-brulee","pnth":null,"pnen":null},{"id":"itm_81MP7FQ8WABP9KGF","key":"clear-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":10,"th":null,"en":"Clear Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_62NXTGRK0VJGSQ2B","key":"short-black","cat":"cat_KTT2M9BZEX4PXBJZ","sort":10,"th":null,"en":"Short Black","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_FYV9SNSAW1XZN1DF","key":"rosemary-tea","cat":"cat_NEB527WYF5B2GHNG","sort":10,"th":null,"en":"Rosemary Tea","dth":null,"den":null,"price":14000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_XJFJX8W6173ZF7C9","key":"caramel-fresh-milk","cat":"cat_S8E2BBMJWV9GTJ6J","sort":10,"th":null,"en":"Caramel Fresh Milk","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_V9NEYBJX5RP67EWF","key":"strawberry-soda","cat":"cat_YV71KQQGDP6Q5PQB","sort":10,"th":null,"en":"Strawberry Soda","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_STD0A6P1HCVPWMR2","key":"cold-pressed-watermelon","cat":"cat_M9ZBHVF9B40082Q1","sort":10,"th":null,"en":"Cold Pressed Watermelon","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_68HBTKXX3XPT1CPJ","key":"hoegaarden-white","cat":"cat_TE3DMBX2CA3RB477","sort":10,"th":null,"en":"Hoegaarden White","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_ZHG9YRP2TNAFJ7JN","key":"beer-budweiser","cat":"cat_PT89MTX75AN1TV45","sort":10,"th":null,"en":"Beer Budweiser","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_CRQCSR8551R227FK","key":"regency","cat":"cat_D1ET9ECCK5MNCMAY","sort":10,"th":null,"en":"Regency","dth":null,"den":null,"price":55000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":"350 มล.","pnen":"350 ml"},{"id":"itm_4D48X2XE8JH3X00S","key":"mont-fleur","cat":"cat_6EZ1KHJ38D7AG8H1","sort":10,"th":null,"en":"Mont Fleur","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_AJ8RK7JFF244GRTC","key":"australian-striploin","cat":"cat_0BA5DYW1J3VESA1X","sort":20,"th":"เนื้อสันนอกออสเตรเลีย","en":"Australian Striploin","dth":null,"den":null,"price":59000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"striploin","pnth":null,"pnen":null},{"id":"itm_XFDH3XRYRAXNXPRQ","key":"grilled-pork","cat":"cat_M8B2FR0P7XTAG16J","sort":20,"th":"หมูย่าง","en":"Grilled Pork","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"grilled-pork","pnth":null,"pnen":null},{"id":"itm_RPXR9D9727CFP1W7","key":"nashville-hot-chicken","cat":"cat_87PHD7YFQ3X359EG","sort":20,"th":"ไก่ทอดซอสเผ็ดแนชวิลล์","en":"Nashville Hot Chicken","dth":null,"den":null,"price":24000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"nashville-chicken","pnth":null,"pnen":null},{"id":"itm_RWXGZDQX60GH0Z8R","key":"green-beans-peas-salad","cat":"cat_0QYKYTGDETP4S97B","sort":20,"th":"สลัดถั่วหวานกับซอสบัลซามิก","en":"Green Beans and Peas Salad","dth":null,"den":null,"price":28000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"greenbean-peas","pnth":null,"pnen":null},{"id":"itm_229S2ZAM9PTXXHMX","key":"american-fried-rice","cat":"cat_VECWBRKSNDZTYR56","sort":20,"th":"ข้าวผัดอเมริกัน","en":"American Fried Rice","dth":null,"den":null,"price":35000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"american-fried-rice","pnth":null,"pnen":null},{"id":"itm_M6A6PH2XJH02SSZ7","key":"sauteed-potato","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":20,"th":"มันฝรั่งผัด","en":"Sauteed Potato","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"sauteed-potato","pnth":null,"pnen":null},{"id":"itm_2XQQ5HXKVE0R9T57","key":"tiramisu","cat":"cat_FFFWB1FHHAXHFV7V","sort":20,"th":"ทีรามิสุ","en":"Tiramisu","dth":null,"den":null,"price":18000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"tiramisu","pnth":null,"pnen":null},{"id":"itm_H5JK8ZEDAGM95DPX","key":"coconut-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":20,"th":null,"en":"Coconut Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_3KMG0DNP1J5GYC3S","key":"long-black","cat":"cat_KTT2M9BZEX4PXBJZ","sort":20,"th":null,"en":"Long Black","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_7H02JKYE1745RZV3","key":"chocolate","cat":"cat_S8E2BBMJWV9GTJ6J","sort":20,"th":null,"en":"Chocolate","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_AD66SBT5D1482FVR","key":"blueberry-soda","cat":"cat_YV71KQQGDP6Q5PQB","sort":20,"th":null,"en":"Blueberry Soda","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_KHE0SGV8VQ7AJE7C","key":"orange-juice-fresh","cat":"cat_M9ZBHVF9B40082Q1","sort":20,"th":null,"en":"Orange Juice","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_YTHPYHTD4C9J8X9A","key":"hoegaarden-rosee","cat":"cat_TE3DMBX2CA3RB477","sort":20,"th":null,"en":"Hoegaarden Rosee","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_HTHYFPC6E29EHJBE","key":"beer-singha","cat":"cat_PT89MTX75AN1TV45","sort":20,"th":null,"en":"Beer Singha","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_QX8QW5NZZBB29HMR","key":"soda-singha","cat":"cat_6EZ1KHJ38D7AG8H1","sort":20,"th":null,"en":"Soda Singha","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_6PSBKVEYNGQ4DH3X","key":"wagyu-tenderloin","cat":"cat_0BA5DYW1J3VESA1X","sort":30,"th":"เนื้อสันในวากิวย่างซอสไวน์แดง","en":"Wagyu Tenderloin MB 6–7 with Red Wine Jus","dth":null,"den":null,"price":199000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"wagyu-tenderloin","pnth":"300 กรัม","pnen":"300 g"},{"id":"itm_VRZE8YJ7MHCSB9H1","key":"grilled-pork-ribs","cat":"cat_M8B2FR0P7XTAG16J","sort":30,"th":"ซี่โครงหมูย่าง","en":"Grilled Pork Ribs","dth":null,"den":null,"price":59000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"pork-ribs","pnth":null,"pnen":null},{"id":"itm_VEZ8ZDBWFNH4YJNY","key":"fried-sweet-potato","cat":"cat_87PHD7YFQ3X359EG","sort":30,"th":"มันหวานทอด","en":"Fried Sweet Potato","dth":null,"den":null,"price":18000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"sweet-potato","pnth":null,"pnen":null},{"id":"itm_786PB5EYXD1YA7JM","key":"green-salad-balsamic","cat":"cat_0QYKYTGDETP4S97B","sort":30,"th":"สลัดรวมกับซอสบัลซามิก","en":"Green Salad with Balsamic Dressing","dth":null,"den":null,"price":26000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"green-salad","pnth":null,"pnen":null},{"id":"itm_WEP5DDFMAV7TMW1E","key":"beef-fried-rice","cat":"cat_VECWBRKSNDZTYR56","sort":30,"th":"ข้าวผัดมันเนื้อย่าง","en":"Beef Fried Rice with Grilled Beef","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"beef-fried-rice","pnth":null,"pnen":null},{"id":"itm_T537S3CFA4DNEGFG","key":"french-fries","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":30,"th":"เฟรนช์ฟรายส์","en":"French Fries","dth":null,"den":null,"price":9000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"french-fries","pnth":null,"pnen":null},{"id":"itm_GKGF7AVQ435Q2TAS","key":"coconut-matcha-cold-foam","cat":"cat_8FBBSM63TPSMNR1G","sort":30,"th":null,"en":"Coconut Matcha Cold Foam","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_V23HRXSACT6W4NBK","key":"long-black-coconut","cat":"cat_KTT2M9BZEX4PXBJZ","sort":30,"th":null,"en":"Long Black Coconut","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_FCVT0W7HGW8PAZJ9","key":"strawberry-cocao","cat":"cat_S8E2BBMJWV9GTJ6J","sort":30,"th":null,"en":"Strawberry Cocao","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_7VK7AGZSY90RCXAM","key":"apple-soda","cat":"cat_YV71KQQGDP6Q5PQB","sort":30,"th":null,"en":"Apple Soda","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_FBGN1J2JZPM2W5EM","key":"coconut-water-fresh","cat":"cat_M9ZBHVF9B40082Q1","sort":30,"th":null,"en":"Coconut Water","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_413KWHNR5RH1H9VA","key":"stellar","cat":"cat_TE3DMBX2CA3RB477","sort":30,"th":null,"en":"Stellar","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_Z4KY0HTJKE46W1B8","key":"beer-chang-classic","cat":"cat_PT89MTX75AN1TV45","sort":30,"th":null,"en":"Beer Chang Classic","dth":null,"den":null,"price":11000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_S4P17PNNZHJPYKAF","key":"singha-lemon-soda","cat":"cat_6EZ1KHJ38D7AG8H1","sort":30,"th":null,"en":"Singha Lemon Soda","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_91YNJX36NV8G7T0R","key":"grilled-tongue","cat":"cat_0BA5DYW1J3VESA1X","sort":40,"th":"ลิ้นวัวย่าง","en":"Grilled Tongue","dth":null,"den":null,"price":59000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"grilled-tongue","pnth":null,"pnen":null},{"id":"itm_8SBYMH2NHRC27XG0","key":"fish-and-chips","cat":"cat_M8B2FR0P7XTAG16J","sort":40,"th":"ฟิชแอนดชิปส์","en":"Fish and Chips","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"fish-chips","pnth":null,"pnen":null},{"id":"itm_VX8VN6SC1AQ6B6QJ","key":"beef-tartare-bone-marrow","cat":"cat_87PHD7YFQ3X359EG","sort":40,"th":"บีฟทาร์ทาร์เสิร์ฟพร้อมโบนแมโรว์","en":"Beef Tartare Bone Marrow","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"bone-marrow","pnth":null,"pnen":null},{"id":"itm_5Q7981HYKPBD44SJ","key":"tomato-salad","cat":"cat_0QYKYTGDETP4S97B","sort":40,"th":"สลัดมะเขือเทศ","en":"Tomato Salad","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"tomato-salad","pnth":null,"pnen":null},{"id":"itm_DMEF2ZS2860EWKSA","key":"sauteed-green-beans-bacon","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":40,"th":"ถั่วแขกผัดเบคอน","en":"Sauteed Green Beans Bacon","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"greenbeans-bacon","pnth":null,"pnen":null},{"id":"itm_R45N7EHVEH7DJQMF","key":"matcha-latte-special","cat":"cat_8FBBSM63TPSMNR1G","sort":40,"th":null,"en":"Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_2YJ0TYXEZ4A53ZKA","key":"long-black-longan","cat":"cat_KTT2M9BZEX4PXBJZ","sort":40,"th":null,"en":"Long Black Longan","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_GGKGGRW1SK1848YA","key":"matcha-latte-milky","cat":"cat_S8E2BBMJWV9GTJ6J","sort":40,"th":null,"en":"Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_QYNPCHZREP0MFAGQ","key":"longan-juice","cat":"cat_M9ZBHVF9B40082Q1","sort":40,"th":"น้ำลำไย","en":"Longan Juice","dth":null,"den":null,"price":8000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_X6JS8KP8HCWERTKY","key":"pepsi-original","cat":"cat_6EZ1KHJ38D7AG8H1","sort":40,"th":null,"en":"Pepsi Original","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_JD9ZMCN5ZV6JKY4X","key":"beef-tongue-stew","cat":"cat_0BA5DYW1J3VESA1X","sort":50,"th":"สตูว์ลิ้นวัว","en":"Beef Tongue Stew","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"tongue-stew","pnth":null,"pnen":null},{"id":"itm_GD0SDECQ2YGQXQWD","key":"grilled-river-prawns","cat":"cat_M8B2FR0P7XTAG16J","sort":50,"th":"กุ้งแม่น้ำย่าง","en":"Grilled River Prawns","dth":null,"den":null,"price":99000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"river-prawns","pnth":null,"pnen":null},{"id":"itm_M4AE863Q8SRB34W1","key":"calamari-tartar-sauce","cat":"cat_87PHD7YFQ3X359EG","sort":50,"th":"หมึกชุบเกล็ดขนมปังทอดเสิร์ฟพร้อมซอสทาร์ทาร์","en":"Calamari Served with Tartar Sauce","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"calamari","pnth":null,"pnen":null},{"id":"itm_VHGHMQR912R82DA8","key":"burrata-tomato-salad","cat":"cat_0QYKYTGDETP4S97B","sort":50,"th":"ชีสบุเรต้าสลัดมะเขือเทศ","en":"Burrata Cheese and Tomato Salad","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"burrata-tomato","pnth":null,"pnen":null},{"id":"itm_Q4PHS17KMXPWFDMC","key":"garlic-confit","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":50,"th":"กระเทียมคอนฟี","en":"Garlic Confit","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"garlic-confit","pnth":null,"pnen":null},{"id":"itm_SGF135C3BDH9KP60","key":"strawberry-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":50,"th":null,"en":"Strawberry Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_EB3D2B170NCX6TDY","key":"piccolo-latte","cat":"cat_KTT2M9BZEX4PXBJZ","sort":50,"th":null,"en":"Piccolo Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_ZDJE30CP4K54Z7R5","key":"thai-tea","cat":"cat_S8E2BBMJWV9GTJ6J","sort":50,"th":null,"en":"Thai Tea","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_NTYA5TAY46W0996J","key":"pepsi-zero","cat":"cat_6EZ1KHJ38D7AG8H1","sort":50,"th":null,"en":"Pepsi Zero","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_3JX23QAV4CT6CJD6","key":"grilled-lamb-rack","cat":"cat_0BA5DYW1J3VESA1X","sort":60,"th":"ซี่โครงแกะย่าง","en":"Grilled Lamb Rack","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"lamb-rack","pnth":null,"pnen":null},{"id":"itm_NZAC4Y6231TTADQJ","key":"grilled-squid","cat":"cat_M8B2FR0P7XTAG16J","sort":60,"th":"ปลาหมึกย่าง","en":"Grilled Squid","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"grilled-squid","pnth":null,"pnen":null},{"id":"itm_G40VTMS7THNPP4AS","key":"sauteed-mini-broccoli","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":60,"th":"บรอกโคลีเล็กผัด","en":"Sauteed Mini Broccoli","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"mini-broccoli","pnth":null,"pnen":null},{"id":"itm_48HJ6SBBXG3QHZS7","key":"earl-grey-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":60,"th":null,"en":"Earl Grey Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_AX9ZSWJK1CNSZWJZ","key":"latte","cat":"cat_KTT2M9BZEX4PXBJZ","sort":60,"th":null,"en":"Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_1QF9DY894X7G603Q","key":"sprite","cat":"cat_6EZ1KHJ38D7AG8H1","sort":60,"th":null,"en":"Sprite","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_RGFJMXHHT3VY3RGY","key":"grilled-fish","cat":"cat_M8B2FR0P7XTAG16J","sort":70,"th":"ปลาย่าง","en":"Grilled Fish","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"grilled-fish","pnth":null,"pnen":null},{"id":"itm_HHP25XT91741N06N","key":"sauteed-mushrooms","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":70,"th":"เห็ดผัด","en":"Sauteed Mushrooms","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"mushrooms","pnth":null,"pnen":null},{"id":"itm_QMM327EGD37993AY","key":"red-bean-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":70,"th":null,"en":"Red Bean Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_J2767MJ8TZNTH36Y","key":"cappuccino","cat":"cat_KTT2M9BZEX4PXBJZ","sort":70,"th":null,"en":"Cappuccino","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_SW2RBENZCZ7RYVC5","key":"ice","cat":"cat_6EZ1KHJ38D7AG8H1","sort":70,"th":null,"en":"Ice","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":false,"why":"unverified","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_8TTGA01GBJ0G5FYP","key":"biscoff-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":80,"th":null,"en":"Biscoff Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_GEJAF5XFNCKA9V0X","key":"mocha","cat":"cat_KTT2M9BZEX4PXBJZ","sort":80,"th":null,"en":"Mocha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_ASCK1RZ1VKM2H6JS","key":"nutella-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":90,"th":null,"en":"Nutella Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_QJ7Q1X2N8EZR9FBA","key":"ice-coffee","cat":"cat_KTT2M9BZEX4PXBJZ","sort":90,"th":null,"en":"Ice Coffee","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_R6K79WVH6V96SM2P","key":"longan-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":100,"th":null,"en":"Longan Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_51TB63SDNDNQHK1N","key":"dirty-coffee","cat":"cat_KTT2M9BZEX4PXBJZ","sort":100,"th":null,"en":"Dirty Coffee","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_FRQ2DN3F7XA3103A","key":"orange-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":110,"th":null,"en":"Orange Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_QGQ6T2RJ8ANVZ1RW","key":"caramel-latte","cat":"cat_KTT2M9BZEX4PXBJZ","sort":110,"th":null,"en":"Caramel Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_EY8XW3NNV40RFQE0","key":"dirty-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":120,"th":null,"en":"Dirty Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_H369SMP2NJ71GKN3","key":"biscoff-latte","cat":"cat_KTT2M9BZEX4PXBJZ","sort":120,"th":null,"en":"Biscoff Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_1HN4BHY8S1RDC6N9","key":"black-orange","cat":"cat_KTT2M9BZEX4PXBJZ","sort":130,"th":null,"en":"Black Orange","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null}],"groups":[{"id":"mgp_C5VS2B1302NBCTNX","th":"เมล็ดกาแฟ","en":"Beans","min":0,"max":1,"included":0}],"options":[{"id":"mop_SFYQ7770BZ4ZZP81","group":"mgp_C5VS2B1302NBCTNX","th":null,"en":"Laos Bolaven single-origin","sort":10},{"id":"mop_BATVMRGTRFF15ARS","group":"mgp_C5VS2B1302NBCTNX","th":null,"en":"Balanced Blend - Bluetamp","sort":20}],"links":[{"item":"itm_62NXTGRK0VJGSQ2B","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_3KMG0DNP1J5GYC3S","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_V23HRXSACT6W4NBK","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_2YJ0TYXEZ4A53ZKA","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_EB3D2B170NCX6TDY","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_AX9ZSWJK1CNSZWJZ","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_J2767MJ8TZNTH36Y","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_GEJAF5XFNCKA9V0X","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_51TB63SDNDNQHK1N","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_QGQ6T2RJ8ANVZ1RW","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_H369SMP2NJ71GKN3","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_1HN4BHY8S1RDC6N9","group":"mgp_C5VS2B1302NBCTNX"}]}</script>
+<script>
+(function(){
+"use strict";
+
+/* ===========================================================
+   0. Catalog (inlined; the real product reads it from SQLite)
+   =========================================================== */
+var CAT = JSON.parse(document.getElementById('catalog').textContent);
+var CATS = CAT.categories.slice().sort(function(a,b){ return a.sort-b.sort || a.en.localeCompare(b.en); });
+var ITEMS = CAT.items.slice();
+var CATBY = {}; CATS.forEach(function(c){ CATBY[c.id]=c; });
+var ITEMBY = {}, ITEMKEY = {};
+ITEMS.forEach(function(i){ ITEMBY[i.id]=i; ITEMKEY[i.key]=i; });
+ITEMS.sort(function(a,b){
+  var ca=CATBY[a.cat], cb=CATBY[b.cat];
+  return (ca.sort-cb.sort) || ca.en.localeCompare(cb.en) || (a.sort-b.sort) || a.en.localeCompare(b.en);
+});
+
+/* ===========================================================
+   1. Demo fixtures. Every money figure below is a list of real
+      catalog keys; amounts are summed from the catalog prices,
+      never typed in. Counts are seed fixtures, marked as such.
+   =========================================================== */
+var DEMO = {
+  tz:'Asia/Bangkok',
+  recordsBegin:{ en:'Mon 5 Oct 2026', th:'จ. 5 ต.ค. 2026' },
+  weekLabel:{ en:'Mon 5 – Sun 11 Oct 2026', th:'จ. 5 – อา. 11 ต.ค. 2026' },
+  todayLabel:{ en:'Wed 7 Oct 2026', th:'พ. 7 ต.ค. 2026' },
+  clock:'21:48',
+  days:[
+    { k:'mon', dn:{en:'Mon',th:'จ.'}, dd:'5',  state:'done',     rounds:14, visits:11, devices:16, diners:34, items:97 },
+    { k:'tue', dn:{en:'Tue',th:'อ.'}, dd:'6',  state:'done',     rounds:11, visits:9,  devices:13, diners:26, items:78 },
+    { k:'wed', dn:{en:'Wed',th:'พ.'}, dd:'7',  state:'partial',  rounds:9,  visits:7,  devices:12, diners:21, items:56 },
+    { k:'thu', dn:{en:'Thu',th:'พฤ.'},dd:'8',  state:'upcoming' },
+    { k:'fri', dn:{en:'Fri',th:'ศ.'}, dd:'9',  state:'upcoming' },
+    { k:'sat', dn:{en:'Sat',th:'ส.'}, dd:'10', state:'upcoming' },
+    { k:'sun', dn:{en:'Sun',th:'อา.'},dd:'11', state:'upcoming' }
+  ],
+  hoursToday:[ {h:'18',n:1},{h:'19',n:2},{h:'20',n:3},{h:'21',n:3} ],
+  acceptedToday:8, waitingToday:1, rejectedToday:0, unresolvedToday:3,
+  medianAcceptSec:104,
+
+  /* Payment records for Wed 7 Oct 2026. `lines` are catalog keys. */
+  bills:[
+    { ref:'RG-4K7P', time:'19:42', table:'04', method:'cash', by:'Demo Cashier',
+      tender:110000,
+      lines:[['grilled-baby-chicken',1],['french-fries',1],['beer-singha',2],['tomato-salad',1]] },
+    { ref:'RG-8QD2', time:'20:05', table:'09', method:'cash', by:'Demo Cashier', reversed:true,
+      lines:[['australian-striploin',1],['mashed-potato',1],['grilled-caesar-salad',1],['orange-juice-fresh',2],['tiramisu',1]] },
+    { ref:'RG-8QD2', time:'20:09', table:'09', kind:'reversal', by:'Demo Manager',
+      reason:{ en:'Method recorded wrong. The guest paid by card.', th:'บันทึกวิธีชำระผิด ลูกค้าจ่ายด้วยบัตร' },
+      lines:[['australian-striploin',1],['mashed-potato',1],['grilled-caesar-salad',1],['orange-juice-fresh',2],['tiramisu',1]] },
+    { ref:'RG-8QD5', time:'20:10', table:'09', method:'card', by:'Demo Cashier',
+      lines:[['australian-striploin',1],['mashed-potato',1],['grilled-caesar-salad',1],['orange-juice-fresh',2],['tiramisu',1]] },
+    { ref:'RG-W28V', time:'20:21', table:'02', method:'promptpay', by:'Demo Cashier',
+      lines:[['grilled-pork',2],['basil-beef-rice',1],['sauteed-mushrooms',1],['pepsi-original',2],['longan-juice',1]] },
+    { ref:'RG-M6GS', time:'20:48', table:'11', method:'cash', by:'Demo Owner', tender:450000,
+      lines:[['grilled-river-prawns',1],['burrata-tomato-salad',1],['garlic-confit',1],['regency',1],['soda-singha',3]],
+      weighed:[['prime-rib',420]] },
+    { ref:'RG-Q9Q6', time:'21:10', table:'07', method:'card', by:'Demo Cashier',
+      lines:[['wagyu-tenderloin',1],['sauteed-mini-broccoli',1],['green-salad-balsamic',1],['creme-brulee-lemon',2],['cold-pressed-watermelon',2]] },
+    { ref:'RG-5FJC', time:'21:33', table:'05', method:'promptpay', by:'Demo Floor',
+      lines:[['fish-and-chips',1],['corn-rib',1],['nashville-hot-chicken',1],['apple-soda',2],['french-fries',1]] }
+  ],
+  unpaid:{ ref:'RG-TXWK', time:'21:04', table:'03', by:'Demo Floor',
+    lines:[['grilled-pork-ribs',1],['beef-tongue-stew',1],['american-fried-rice',1],['beer-chang-classic',2],['sauteed-potato',1]] },
+
+  /* Week servings per dish, and the number of the 3 elapsed days the
+     dish was actually on sale. Anything not listed: 0 servings, 3 days. */
+  servings:{
+    'grilled-pork':14,'grilled-baby-chicken':12,'french-fries':11,'australian-striploin':9,
+    'basil-beef-rice':8,'mashed-potato':8,'grilled-pork-ribs':7,'corn-rib':7,'tiramisu':6,
+    'grilled-caesar-salad':6,'prime-rib':6,'fish-and-chips':5,'grilled-fish':5,'sauteed-mushrooms':5,
+    'creme-brulee-lemon':4,'nashville-hot-chicken':4,'green-salad-balsamic':4,'american-fried-rice':3,
+    'sauteed-green-beans-bacon':3,'grilled-tongue':3,'beef-fried-rice':3,'sauteed-potato':2,
+    'garlic-confit':2,'sauteed-mini-broccoli':2,'fried-sweet-potato':2,'green-beans-peas-salad':2,
+    'wagyu-tenderloin':2,'grilled-squid':1,'beef-tongue-stew':1,'tomato-salad':1,
+    'grilled-river-prawns':3,'burrata-tomato-salad':1,'calamari-tartar-sauce':0,'beef-tartare-bone-marrow':0,
+    'beer-singha':9,'beer-chang-classic':7,'beer-budweiser':5,'pepsi-original':8,'soda-singha':7,
+    'sprite':4,'pepsi-zero':3,'mont-fleur':6,'singha-lemon-soda':2,'orange-juice-fresh':6,
+    'cold-pressed-watermelon':5,'coconut-water-fresh':3,'longan-juice':2,'apple-soda':4,
+    'strawberry-soda':3,'blueberry-soda':2,'rosemary-tea':2,'regency':1
+  },
+  availDays:{ 'grilled-river-prawns':1,'burrata-tomato-salad':1,'calamari-tartar-sauce':1,
+              'beef-tartare-bone-marrow':0,'grilled-squid':2 },
+  elapsedDays:3,
+
+  /* Engagement — anonymous menu sessions on guests' phones */
+  eng:{
+    sessions:41, atTable:29, browsingOnly:12, optedOut:0,
+    measuredSince:{ en:'1 Jun 2025', th:'1 มิ.ย. 2025' },
+    medianMenuSec:52, p90MenuSec:161, menuSessions:29,
+    medianDetailSec:19, p90DetailSec:36, detailViews:61,
+    roundsPeriod:34, roundsMeasured:30, roundsUnlinked:4,
+    funnel:[ {k:'base', v:29}, {k:'saw', v:29}, {k:'details', v:24}, {k:'added', v:21}, {k:'sent', v:17} ],
+    straightFromList:9,
+    depth:[ {p:'25', v:31}, {p:'50', v:18}, {p:'75', v:9}, {p:'100', v:6} ],
+    exposure:{ 'beef-selection':41,'from-the-grill':36,'appetizers':27,'salads':21,'rice':16,
+      'side-dishes':15,'dessert':12,'soft-drinks':11,'bottled-beer':9,'soda':8,'fresh-juice':7,
+      'coffee':6,'special-matcha':5,'milky':3,'draft-beer':3,'hot-tea':2,'whiskey':2 },
+    byDay:[ {k:'mon', s:16, m:14}, {k:'tue', s:13, m:11}, {k:'wed', s:12, m:9} ]
+  }
+};
+
+/* ===========================================================
+   2. Strings. Every rendered string comes from here.
+   =========================================================== */
+var S = {
+  nav_menu:{en:'Menu',th:'เมนู'},
+  nav_review:{en:'Needs review',th:'รอตรวจสอบ'},
+  nav_payments:{en:'Payments',th:'การชำระเงิน'},
+  nav_orders:{en:'Order stats',th:'สถิติออเดอร์'},
+  nav_dishes:{en:'Menu stats',th:'สถิติเมนู'},
+  nav_eng:{en:'Engagement',th:'การใช้งานเมนู'},
+
+  brand2:{en:'Khao Yai · Staff',th:'Khao Yai · Staff'},
+  demodata:{en:'Demo data',th:'ข้อมูลตัวอย่าง'},
+  demomode:{en:'Demo mode',th:'โหมดตัวอย่าง'},
+  signedin:{en:'Demo Owner',th:'Demo Owner'},
+  role:{en:'Owner',th:'เจ้าของร้าน'},
+  langlabel:{en:'Language',th:'ภาษา'},
+  tz:{en:'Asia/Bangkok',th:'Asia/Bangkok'},
+
+  /* menu page */
+  menu_lede:{
+    en:'Everything the restaurant publishes, as the guest list is built from it. A dish switched off here stops being orderable on every phone at once.',
+    th:'ทุกอย่างที่ร้านเผยแพร่อยู่ ใช้สร้างรายการที่ลูกค้าเห็น ปิดจานไหนที่นี่ จานนั้นจะสั่งไม่ได้ทุกเครื่องพร้อมกัน'},
+  all:{en:'All',th:'ทั้งหมด'},
+  food:{en:'Food',th:'อาหาร'},
+  drinks:{en:'Drinks',th:'เครื่องดื่ม'},
+  allcats:{en:'All categories',th:'ทุกหมวด'},
+  category:{en:'Category',th:'หมวด'},
+  finddish:{en:'Find a dish',th:'ค้นหาจาน'},
+  soldoutonly:{en:'Sold out only',th:'เฉพาะที่หมด'},
+  nothing_soldout:{en:'Nothing is sold out right now',th:'ตอนนี้ไม่มีจานไหนหมด'},
+  soldout_rule:{
+    en:'A sold-out dish stays sold out until someone marks it back in stock. Nothing comes back on sale by itself.',
+    th:'จานที่ปิดไว้จะปิดจนกว่าจะมีคนเปิดกลับเอง ไม่มีอะไรกลับมาขายเองอัตโนมัติ'},
+  n_soldout:{en:'sold out right now',th:'หมดอยู่ตอนนี้'},
+  th_name:{en:'Thai name',th:'ชื่อไทย'},
+  en_name:{en:'English name',th:'ชื่ออังกฤษ'},
+  price:{en:'Price',th:'ราคา'},
+  station:{en:'Station',th:'จุดทำ'},
+  status:{en:'Status',th:'สถานะ'},
+  kitchen:{en:'Kitchen',th:'ครัว'},
+  bar:{en:'Bar',th:'บาร์'},
+  soldout:{en:'Sold out',th:'หมด'},
+  instock:{en:'In stock',th:'มีของ'},
+  canorder:{en:'Can be ordered',th:'สั่งได้'},
+  cannotorder:{en:'Cannot be ordered',th:'สั่งไม่ได้'},
+  byweight:{en:'Priced by weight',th:'คิดตามน้ำหนัก'},
+  per:{en:'per',th:'ต่อ'},
+  g:{en:'g',th:'ก.'},
+  noprice_short:{en:'No price',th:'ไม่มีราคา'},
+  unver_short:{en:'Awaiting verification',th:'รอยืนยัน'},
+  nomatch:{en:'No dish matches that filter.',th:'ไม่มีจานที่ตรงกับตัวกรองนี้'},
+  showing:{en:'Showing',th:'แสดง'},
+  of:{en:'of',th:'จาก'},
+  dishes:{en:'dishes',th:'จาน'},
+  noThaiName:{en:'No Thai name in the record. Shown in English in both languages.',
+              th:'ไม่มีชื่อไทยในระบบ แสดงเป็นอังกฤษทั้งสองภาษา'},
+
+  /* review page */
+  rev_lede:{
+    en:'Live ordering only sells dishes the restaurant has verified. Unverified dishes still show on the guest menu, but cannot be added.',
+    th:'โหมดขายจริงจะขายเฉพาะจานที่ร้านยืนยันแล้ว จานที่ยังไม่ยืนยันยังแสดงในเมนูลูกค้า แต่กดเพิ่มไม่ได้'},
+  rev_none_verified:{
+    en:'No item has been approved by the restaurant yet. Every number on this page counts records, not approvals.',
+    th:'ยังไม่มีรายการใดที่ร้านอนุมัติ ตัวเลขทุกตัวในหน้านี้นับจากข้อมูลที่บันทึกไว้ ไม่ใช่การอนุมัติ'},
+  published:{en:'Published',th:'เผยแพร่แล้ว'},
+  published_d:{en:'Items on the guest menu right now',th:'รายการที่อยู่ในเมนูลูกค้าตอนนี้'},
+  orderable_now:{en:'Can be ordered',th:'สั่งได้'},
+  orderable_d:{en:'Has a price and is in stock',th:'มีราคาและยังมีของ'},
+  blocked:{en:'Cannot be ordered',th:'สั่งไม่ได้'},
+  blocked_d:{en:'Shown to guests, refused on add',th:'ลูกค้าเห็น แต่กดเพิ่มไม่ได้'},
+  ownerver:{en:'Verified by the restaurant',th:'ร้านยืนยันแล้ว'},
+  ownerver_d:{en:'Checked and signed off by the owner',th:'เจ้าของตรวจและยืนยันแล้ว'},
+  noprice_group:{en:'No price on the printed menu',th:'เมนูที่พิมพ์ไม่มีราคา'},
+  noprice_why:{
+    en:'The restaurant’s own printed menu lists these without a price. Nobody has told us what they cost, so the app will not guess one.',
+    th:'เมนูที่ร้านพิมพ์ไว้ไม่ได้ลงราคาของรายการเหล่านี้ ยังไม่มีใครบอกราคา ระบบจึงไม่เดาให้'},
+  unver_group:{en:'Awaiting verification',th:'รอการยืนยัน'},
+  unver_why:{
+    en:'The record has a price, but nobody has confirmed the name, the price and the portion against the restaurant’s own menu.',
+    th:'มีราคาในระบบแล้ว แต่ยังไม่มีใครตรวจชื่อ ราคา และปริมาณกับเมนูของร้าน'},
+  markverified:{en:'Mark verified',th:'ยืนยันรายการนี้'},
+  unmark:{en:'Undo verification',th:'ยกเลิกการยืนยัน'},
+  verified:{en:'Verified',th:'ยืนยันแล้ว'},
+  notreviewed:{en:'Not reviewed',th:'ยังไม่ตรวจ'},
+  still_blocked:{
+    en:'Verified, but still not orderable: the record has no price.',
+    th:'ยืนยันแล้ว แต่ยังสั่งไม่ได้ เพราะยังไม่มีราคาในระบบ'},
+  demo_signoff:{
+    en:'Verifying here changes this demo only. In the real platform it is the owner’s sign-off and it is written to the audit log.',
+    th:'การยืนยันที่นี่เปลี่ยนเฉพาะในตัวอย่างนี้ ในระบบจริงคือการเซ็นรับของเจ้าของ และจะถูกบันทึกใน audit log'},
+  remaining:{en:'left to review',th:'เหลือรอตรวจ'},
+  queue_clear:{en:'Nothing left in this group.',th:'กลุ่มนี้ไม่เหลือรายการแล้ว'},
+  thainames_missing:{en:'Records with no Thai name',th:'รายการที่ไม่มีชื่อไทย'},
+  thainames_d:{en:'Shown in English in both languages',th:'แสดงเป็นอังกฤษทั้งสองภาษา'},
+  photos_missing:{en:'Photos in this demo file',th:'รูปในไฟล์ตัวอย่างนี้'},
+  photos_d:{en:'No image files are bundled; every plate is drawn',th:'ไฟล์นี้ไม่มีรูปจริง ทุกจานวาดขึ้นมา'},
+
+  /* editor */
+  editdish:{en:'Edit dish',th:'แก้ไขจาน'},
+  close:{en:'Close',th:'ปิด'},
+  names:{en:'Names and price',th:'ชื่อและราคา'},
+  pricebaht:{en:'Price in baht',th:'ราคา (บาท)'},
+  ratebaht:{en:'Rate in baht',th:'อัตรา (บาท)'},
+  optional:{en:'Optional',th:'ไม่บังคับ'},
+  spellhint:{
+    en:'Spell it as the restaurant’s menu does. Do not correct Thai text until the owner confirms it.',
+    th:'สะกดตามเมนูของร้าน อย่าแก้ภาษาไทยจนกว่าเจ้าของจะยืนยัน'},
+  pricehint:{en:'Stored as integer satang. Leave empty when the printed menu gives no price.',
+             th:'เก็บเป็นสตางค์จำนวนเต็ม เว้นว่างไว้ถ้าเมนูที่พิมพ์ไม่มีราคา'},
+  weighthint:{en:'Charged on the weight the kitchen records.',th:'คิดตามน้ำหนักที่ครัวชั่ง'},
+  publishing:{en:'Publishing',th:'การเผยแพร่'},
+  guestsee_yes:{en:'Guests can see and order this dish.',th:'ลูกค้าเห็นและสั่งจานนี้ได้'},
+  guestsee_no:{en:'Guests can see this dish but cannot add it.',th:'ลูกค้าเห็นจานนี้ แต่กดเพิ่มไม่ได้'},
+  chk_name:{en:'Has a name',th:'มีชื่อ'},
+  chk_price:{en:'Has a price',th:'มีราคา'},
+  chk_rate:{en:'Has a rate per weight',th:'มีอัตราต่อน้ำหนัก'},
+  chk_photo:{en:'Has a photo',th:'มีรูป'},
+  chk_stock:{en:'In stock',th:'ยังมีของ'},
+  chk_ver:{en:'Verified by the restaurant',th:'ร้านยืนยันแล้ว'},
+  source:{en:'Where this record came from',th:'ที่มาของรายการนี้'},
+  source_body:{
+    en:'Imported from the restaurant’s own printed menu. The import is listed line by line in docs/source-audit.md. Nothing here was written by the studio.',
+    th:'นำเข้าจากเมนูที่ร้านพิมพ์เอง รายการนำเข้าอยู่ใน docs/source-audit.md ทีละบรรทัด ไม่มีอะไรที่สตูดิโอเขียนขึ้นเอง'},
+  recordkey:{en:'Record key',th:'รหัสรายการ'},
+  photoref:{en:'Photo referenced',th:'รูปที่อ้างถึง'},
+  nophotoref:{en:'No photo in the record',th:'ไม่มีรูปในระบบ'},
+  photonotbundled:{en:'The image file is not bundled in this demo.',th:'ไฟล์รูปไม่ได้รวมมาในตัวอย่างนี้'},
+  reviewstate:{en:'Review state',th:'สถานะการตรวจ'},
+  availability:{en:'Availability',th:'สถานะของ'},
+  saved:{en:'Saved',th:'บันทึกแล้ว'},
+  revert:{en:'Undo my changes',th:'ย้อนการแก้ไข'},
+  nochanges:{en:'No changes in this demo',th:'ยังไม่ได้แก้อะไรในตัวอย่างนี้'},
+  changed_here:{en:'Changed in this demo',th:'แก้ไว้ในตัวอย่างนี้'},
+  notes_on:{en:'Guests may add a note to this dish',th:'ลูกค้าเขียนโน้ตกับจานนี้ได้'},
+  maxqty:{en:'Most a guest can add at once',th:'จำนวนสูงสุดต่อครั้ง'},
+
+  /* payments */
+  pay_lede:{
+    en:'Staff-confirmed payment records for one business day, and the exceptions to review. Records are never edited or deleted: a correction adds a reversal with a reason.',
+    th:'บันทึกการรับเงินที่พนักงานยืนยันแล้วของหนึ่งวันทำการ พร้อมรายการที่ต้องตรวจ บันทึกจะไม่ถูกแก้หรือลบ การแก้ไขจะเพิ่มรายการกลับรายการพร้อมเหตุผล'},
+  today:{en:'Today',th:'วันนี้'},
+  confirmed:{en:'Payments confirmed',th:'ยอดที่ยืนยันแล้ว'},
+  records:{en:'Records',th:'จำนวนบันทึก'},
+  exceptions:{en:'Exceptions',th:'รายการที่ต้องตรวจ'},
+  worth:{en:'Worth',th:'มูลค่า'},
+  payrecords:{en:'Payment records',th:'บันทึกการรับเงิน'},
+  payrecords_d:{en:'Everything staff recorded, including reversals.',th:'ทุกอย่างที่พนักงานบันทึก รวมถึงการกลับรายการ'},
+  time:{en:'Time',th:'เวลา'},
+  table:{en:'Table',th:'โต๊ะ'},
+  method:{en:'Method',th:'วิธีชำระ'},
+  amount:{en:'Amount',th:'จำนวนเงิน'},
+  tender:{en:'Received / change',th:'รับมา / ทอน'},
+  reference:{en:'Reference',th:'อ้างอิง'},
+  confirmedby:{en:'Confirmed by',th:'ผู้ยืนยัน'},
+  cash:{en:'Cash',th:'เงินสด'},
+  card:{en:'Card',th:'บัตร'},
+  promptpay:{en:'PromptPay',th:'พร้อมเพย์'},
+  reversal:{en:'Reversal',th:'กลับรายการ'},
+  reversed:{en:'Reversed',th:'ถูกกลับรายการ'},
+  recorded:{en:'Recorded',th:'บันทึกแล้ว'},
+  total_day:{en:'Total for the day',th:'รวมทั้งวัน'},
+  total_rule:{en:'The total is the sum of every row above, reversals included.',th:'ยอดรวมคือผลรวมของทุกแถวด้านบน รวมรายการกลับรายการแล้ว'},
+  exc_notpaid:{en:'Finalised, not paid',th:'ปิดบิลแล้ว ยังไม่ได้รับเงิน'},
+  exc_notpaid_d:{en:'The bill was closed on the floor and no payment record followed. It is listed, not hidden, and it is not in the total.',
+                 th:'บิลถูกปิดที่หน้าร้านแล้วไม่มีบันทึกการรับเงินตามมา จึงแสดงไว้ ไม่ซ่อน และไม่ถูกนับในยอดรวม'},
+  exc_rev_d:{en:'A payment that was recorded, then reversed with a reason. Both rows stay.',th:'รายการที่บันทึกแล้วถูกกลับรายการพร้อมเหตุผล ทั้งสองแถวยังอยู่'},
+  reason:{en:'Reason',th:'เหตุผล'},
+  billlines:{en:'What was on the bill',th:'รายการในบิล'},
+  show:{en:'Show',th:'ดู'},
+  hide:{en:'Hide',th:'ซ่อน'},
+
+  /* order stats */
+  ord_lede:{
+    en:'Submitted order rounds for the week. A round is one tap of Send, however many dishes it carries.',
+    th:'จำนวนรอบที่ลูกค้ากดส่งออเดอร์ในสัปดาห์นี้ หนึ่งรอบคือการกดส่งหนึ่งครั้ง ไม่ว่าจะมีกี่จาน'},
+  thisweek:{en:'This week',th:'สัปดาห์นี้'},
+  roundsperday:{en:'Submitted order rounds per day',th:'รอบออเดอร์ที่ส่งต่อวัน'},
+  so_far:{en:'this week so far',th:'สัปดาห์นี้จนถึงตอนนี้'},
+  submitted_rounds:{en:'submitted order rounds',th:'รอบออเดอร์ที่ส่งแล้ว'},
+  lg_complete:{en:'Complete day',th:'วันที่จบแล้ว'},
+  lg_partial:{en:'Today, partial',th:'วันนี้ ยังไม่จบวัน'},
+  lg_upcoming:{en:'Not reached yet — no bar drawn',th:'ยังไม่ถึง จึงไม่วาดแท่ง'},
+  upcoming_why:{
+    en:'Thursday to Sunday have not happened. They are hatched, not drawn as zero, because no service has been recorded for them. A zero bar would read as a day with no orders.',
+    th:'วันพฤหัสถึงวันอาทิตย์ยังไม่ถึง จึงวาดเป็นลายเฉียง ไม่ใช่แท่งศูนย์ เพราะยังไม่มีการเปิดบริการที่บันทึกไว้ แท่งศูนย์จะอ่านได้ว่าเป็นวันที่ไม่มีออเดอร์'},
+  wow:{en:'Compared with the same point last week',th:'เทียบกับจุดเดียวกันของสัปดาห์ก่อน'},
+  wow_none:{en:'No figure',th:'ไม่มีตัวเลข'},
+  wow_why:{
+    en:'Records begin on {d}, so there is no Wed 30 Sep to compare with. A percentage here would be invented.',
+    th:'ข้อมูลเริ่มบันทึกเมื่อ {d} จึงไม่มีวันพุธที่ 30 ก.ย. ให้เทียบ ถ้าใส่เปอร์เซ็นต์ตรงนี้ก็คือแต่งขึ้น'},
+  todaysofar:{en:'today so far',th:'วันนี้จนถึงตอนนี้'},
+  submitted:{en:'Submitted',th:'ส่งแล้ว'},
+  accepted:{en:'Accepted',th:'รับแล้ว'},
+  waiting:{en:'Waiting to be accepted',th:'รอรับ'},
+  rejected:{en:'Rejected or cancelled',th:'ปฏิเสธหรือยกเลิก'},
+  orderingvisits:{en:'Ordering visits',th:'รอบเข้าโต๊ะที่สั่ง'},
+  visits_d:{en:'Each visit counts once, however many rounds it sends',th:'หนึ่งรอบเข้าโต๊ะนับครั้งเดียว ไม่ว่าจะส่งกี่รอบ'},
+  devices:{en:'Ordering devices',th:'เครื่องที่ใช้สั่ง'},
+  devices_d:{en:'Phones, not people. One table can use several.',th:'นับเครื่อง ไม่ใช่คน หนึ่งโต๊ะใช้ได้หลายเครื่อง'},
+  itemsordered:{en:'Items ordered',th:'จำนวนจานที่สั่ง'},
+  items_d:{en:'Net of rejected and cancelled quantities',th:'หักจำนวนที่ถูกปฏิเสธและยกเลิกแล้ว'},
+  medianaccept:{en:'Median time to accept',th:'เวลารับออเดอร์ (ค่ากลาง)'},
+  medianaccept_d:{en:'Sent to accepted, today',th:'จากส่งถึงรับ เฉพาะวันนี้'},
+  unresolved:{en:'Unresolved now',th:'ค้างอยู่ตอนนี้'},
+  unresolved_d:{en:'Rounds on open tables with a dish still to serve',th:'รอบที่ยังมีจานค้างเสิร์ฟบนโต๊ะที่ยังไม่ปิด'},
+  roundsbyhour:{en:'Rounds by hour',th:'รอบออเดอร์ตามชั่วโมง'},
+  bkkhours:{en:'Bangkok clock hours.',th:'เวลาตามเขตกรุงเทพฯ'},
+  dataasof:{en:'Data as of',th:'ข้อมูล ณ'},
+
+  /* menu stats */
+  dish_lede:{
+    en:'Most and least ordered dishes for the week, counted in net accepted servings. Beside each one: how many of this week’s elapsed days it was actually on sale.',
+    th:'จานที่สั่งมากและน้อยที่สุดในสัปดาห์นี้ นับจากจำนวนที่รับออเดอร์จริง ข้างแต่ละจานคือจำนวนวันที่จานนั้นเปิดขายจริงในสัปดาห์นี้'},
+  most:{en:'Most ordered',th:'สั่งมากที่สุด'},
+  least:{en:'Least ordered',th:'สั่งน้อยที่สุด'},
+  rank:{en:'Rank',th:'อันดับ'},
+  dish:{en:'Dish',th:'จาน'},
+  servings:{en:'Servings',th:'จำนวนที่สั่ง'},
+  share:{en:'Share',th:'สัดส่วน'},
+  availdays:{en:'Days on sale',th:'วันที่เปิดขาย'},
+  vslast:{en:'vs last week',th:'เทียบสัปดาห์ก่อน'},
+  nobaseline:{en:'No prior baseline',th:'ยังไม่มีฐานเทียบ'},
+  availfrag:{en:'Available on {a} of {b} days',th:'เปิดขาย {a} จาก {b} วัน'},
+  soldout_allweek:{en:'Sold out every day this week',th:'หมดทุกวันในสัปดาห์นี้'},
+  soldout_block_h:{en:'Sold out all week — not ranked',th:'หมดทั้งสัปดาห์ ไม่จัดอันดับ'},
+  soldout_block_d:{
+    en:'These dishes could not be ordered on any elapsed day. Zero servings here means the kitchen had none, not that guests did not want them.',
+    th:'จานเหล่านี้สั่งไม่ได้เลยในวันที่ผ่านมา ศูนย์ตรงนี้แปลว่าครัวไม่มีของ ไม่ได้แปลว่าลูกค้าไม่สั่ง'},
+  blocked_block_h:{en:'Never orderable this week — not ranked',th:'สั่งไม่ได้ทั้งสัปดาห์ ไม่จัดอันดับ'},
+  blocked_block_d:{
+    en:'{n} published items could not be added at any point this week, because the record has no price or is not verified. They cannot be called unpopular.',
+    th:'มี {n} รายการที่กดเพิ่มไม่ได้เลยทั้งสัปดาห์ เพราะไม่มีราคาหรือยังไม่ยืนยัน จึงบอกไม่ได้ว่าไม่มีคนสั่ง'},
+  ties:{en:'Ties share a rank and are listed by English name.',th:'อันดับเท่ากันจะใช้อันดับเดียวกัน เรียงตามชื่ออังกฤษ'},
+  foodonly:{en:'Food',th:'อาหาร'},
+  drinksonly:{en:'Drinks',th:'เครื่องดื่ม'},
+  top10:{en:'Top 10',th:'10 อันดับ'},
+  showall:{en:'Show all',th:'ดูทั้งหมด'},
+  showless:{en:'Show fewer',th:'ย่อลง'},
+
+  /* engagement */
+  eng_lede:{
+    en:'How guests move through the menu on their own phones. Counts come from anonymous menu sessions. They show what was on screen and what was tapped, not what anyone thought.',
+    th:'ลูกค้าใช้เมนูบนเครื่องของตัวเองอย่างไร ตัวเลขมาจากเซสชันเมนูแบบไม่ระบุตัวตน บอกได้แค่ว่าอะไรอยู่บนจอและกดอะไร ไม่ได้บอกว่าใครคิดอะไร'},
+  coverage:{en:'Coverage',th:'ความครอบคลุม'},
+  meas_sessions:{en:'measured menu sessions',th:'เซสชันเมนูที่วัดได้'},
+  session_is:{en:'One session is one phone on the menu. A table can have several.',th:'หนึ่งเซสชันคือหนึ่งเครื่องที่เปิดเมนู หนึ่งโต๊ะมีได้หลายเครื่อง'},
+  attable:{en:'At a table',th:'อยู่ที่โต๊ะ'},
+  browsing:{en:'Browsing only',th:'เปิดดูอย่างเดียว'},
+  optedout:{en:'Turned measurement off',th:'ปิดการวัด'},
+  measuredsince:{en:'Measured since',th:'เริ่มวัดเมื่อ'},
+  period:{en:'Period',th:'ช่วงเวลา'},
+  limits:{en:'What these figures cannot tell you',th:'สิ่งที่ตัวเลขเหล่านี้บอกไม่ได้'},
+  lim1:{en:'Active time only counts a visible screen that was used recently.',th:'เวลาใช้งานนับเฉพาะหน้าจอที่เปิดอยู่และเพิ่งถูกใช้'},
+  lim2:{en:'Closing the browser can lose the last few seconds.',th:'ถ้าปิดเบราว์เซอร์ วินาทีสุดท้ายอาจหายไป'},
+  lim3:{en:'Scroll depth is approximate and depends on screen size and photos.',th:'ความลึกการเลื่อนเป็นค่าประมาณ ขึ้นกับขนาดจอและรูป'},
+  lim4:{en:'Reaching 100% does not mean every item was read.',th:'เลื่อนถึง 100% ไม่ได้แปลว่าอ่านครบทุกรายการ'},
+  lim5:{en:'A session is a device. The same guest on two phones is two sessions.',th:'หนึ่งเซสชันคือหนึ่งเครื่อง ลูกค้าคนเดียวใช้สองเครื่องคือสองเซสชัน'},
+  lim6:{en:'Nothing here records who a guest is, or what they said.',th:'ไม่มีการบันทึกว่าลูกค้าเป็นใคร หรือพูดอะไร'},
+  activemenu:{en:'Active menu time',th:'เวลาที่ใช้กับเมนู'},
+  activemenu_d:{en:'Median per session',th:'ค่ากลางต่อเซสชัน'},
+  activedetail:{en:'Active dish-detail time',th:'เวลาที่ใช้ดูรายละเอียดจาน'},
+  activedetail_d:{en:'Median per detail view',th:'ค่ากลางต่อการเปิดดูหนึ่งครั้ง'},
+  funnel:{en:'From opening the menu to sending an order',th:'จากเปิดเมนูถึงส่งออเดอร์'},
+  f_base:{en:'Table sessions',th:'เซสชันที่โต๊ะ'},
+  f_saw:{en:'Saw a dish on screen',th:'เห็นจานบนจอ'},
+  f_details:{en:'Opened dish details',th:'เปิดรายละเอียดจาน'},
+  f_added:{en:'Added a dish to an order',th:'เพิ่มจานลงออเดอร์'},
+  f_sent:{en:'Sent an order',th:'ส่งออเดอร์'},
+  funnel_base:{en:'Base: table sessions. Browsing-only sessions cannot send an order, so they are left out.',
+               th:'ฐานคือเซสชันที่โต๊ะ เซสชันที่เปิดดูอย่างเดียวส่งออเดอร์ไม่ได้ จึงไม่นับ'},
+  straight:{en:'{n} sessions added a dish straight from the list without opening its details.',
+            th:'{n} เซสชันเพิ่มจานจากรายการเลย โดยไม่เปิดรายละเอียด'},
+  roundsmeas:{en:'Order rounds and measurement',th:'รอบออเดอร์กับการวัด'},
+  frommeasured:{en:'From measured phones',th:'จากเครื่องที่วัดได้'},
+  notlinked:{en:'Not linked to a session',th:'โยงกับเซสชันไม่ได้'},
+  notlinked_d:{en:'Staff-assisted, paper, opted-out or unmeasured rounds. Order stats still counts them in full.',
+               th:'รอบที่พนักงานช่วยสั่ง สั่งบนกระดาษ ปิดการวัด หรือวัดไม่ได้ สถิติออเดอร์ยังนับเต็มจำนวน'},
+  catexposure:{en:'Category exposure',th:'หมวดที่ลูกค้าเห็น'},
+  catexposure_d:{en:'A category counts once per session when it was clearly on screen.',th:'นับหมวดละหนึ่งครั้งต่อเซสชัน เมื่อหมวดนั้นอยู่บนจอชัดเจน'},
+  depth:{en:'How far down the menu',th:'เลื่อนลงไปได้ไกลแค่ไหน'},
+  depth_d:{en:'Approximate. Depth depends on screen size, photos and filters.',th:'เป็นค่าประมาณ ขึ้นกับขนาดจอ รูป และตัวกรอง'},
+  reached:{en:'Reached',th:'เลื่อนถึง'},
+  daybyday:{en:'Day by day',th:'รายวัน'},
+  sessions_w:{en:'Sessions',th:'เซสชัน'},
+  activemin:{en:'Active menu minutes',th:'นาทีที่ใช้กับเมนู'},
+  dishesonphones:{en:'Dishes on guests’ phones',th:'จานบนเครื่องของลูกค้า'},
+  seen:{en:'Seen',th:'เห็น'},
+  details:{en:'Details',th:'เปิดดู'},
+  adds:{en:'Adds',th:'กดเพิ่ม'},
+  addrate:{en:'Add rate',th:'อัตราการเพิ่ม'},
+  sent:{en:'Sent',th:'ส่งแล้ว'},
+  dishcount_d:{en:'Seen counts once per session. Adds counts every add tap. Sent counts quantities in rounds from measured phones.',
+               th:'เห็น นับหนึ่งครั้งต่อเซสชัน กดเพิ่ม นับทุกครั้งที่กด ส่งแล้ว นับจำนวนในรอบที่ส่งจากเครื่องที่วัดได้'},
+  secs:{en:'s',th:'วิ'},
+  mins:{en:'m',th:'น.'}
+};
+
+
+/* ===========================================================
+   3. State + helpers
+   =========================================================== */
+var LS = 'rg-admin-demo-v1';
+var state = {
+  lang:'en', nav:'menu',
+  mcat:'all', mgroup:'all', q:'', soldOnly:false, open:null,
+  soldOut:{}, verified:{}, edits:{},
+  rgroup:'none', rcat:'all', rlimit:10, rsort:'most',
+  billOpen:null, dishAll:false
+};
+try{
+  var raw = localStorage.getItem(LS);
+  if(raw){ var o = JSON.parse(raw); ['lang','nav','soldOut','verified','edits'].forEach(function(k){ if(o[k]!==undefined) state[k]=o[k]; }); }
+}catch(e){ /* private mode, blocked storage: carry on with defaults */ }
+function save(){
+  try{ localStorage.setItem(LS, JSON.stringify({ lang:state.lang, nav:state.nav, soldOut:state.soldOut, verified:state.verified, edits:state.edits })); }
+  catch(e){ /* nothing to do; the page works without it */ }
+}
+
+function t(k, vars){
+  var e = S[k]; var s = e ? (e[state.lang] || e.en) : k;
+  if(vars) Object.keys(vars).forEach(function(v){ s = s.split('{'+v+'}').join(vars[v]); });
+  return s;
+}
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function money(sat){
+  var neg = sat<0; sat = Math.abs(Math.round(sat));
+  var b = Math.floor(sat/100), c = sat%100;
+  var s = b.toLocaleString('en-US');
+  if(c) s += '.' + String(c).padStart(2,'0');
+  return (neg?'−':'') + '฿' + s;
+}
+function pct(n, d){ return d ? Math.round(n/d*100) : 0; }
+function dur(sec){
+  if(sec < 60) return '<span class="num">'+sec+'</span> '+t('secs');
+  var m = Math.floor(sec/60), s = sec%60;
+  return '<span class="num">'+m+'</span> '+t('mins')+(s?' <span class="num">'+s+'</span> '+t('secs'):'');
+}
+
+/* name resolution — `th` may be null for drinks: show `en` in both */
+function nmTh(it){ var e = state.edits[it.id]; if(e && e.th!=null) return e.th || (e.en!=null?e.en:it.en); return it.th || it.en; }
+function nmEn(it){ var e = state.edits[it.id]; if(e && e.en!=null && e.en!=='') return e.en; return it.en; }
+function nmPrimary(it){ return state.lang==='th' ? nmTh(it) : nmEn(it); }
+function nmSecondary(it){ return state.lang==='th' ? nmEn(it) : nmTh(it); }
+function catName(c){ return state.lang==='th' ? (c.th || c.en) : c.en; }
+function itPrice(it){ var e = state.edits[it.id]; return (e && 'price' in e) ? e.price : it.price; }
+function itRate(it){ var e = state.edits[it.id]; return (e && 'rate' in e) ? e.rate : it.rate; }
+function hasPrice(it){ return itPrice(it)!=null || itRate(it)!=null; }
+function isSoldOut(it){ return !!state.soldOut[it.id]; }
+function isVerified(it){ return !!state.verified[it.id]; }
+/* orderable in the real product: a price, in stock, and not held back for verification */
+function blockReason(it){
+  if(!hasPrice(it)) return 'no_price';
+  if(it.why==='unverified' && !isVerified(it)) return 'unverified';
+  return null;
+}
+function canOrder(it){ return !blockReason(it) && !isSoldOut(it); }
+function edited(it){
+  var e = state.edits[it.id]; if(!e) return false;
+  return Object.keys(e).some(function(k){ return e[k] !== it[k]; });
+}
+function priceLabel(it){
+  var r = itRate(it);
+  if(r!=null) return money(r) + ' <i>/ ' + it.basis + ' ' + t('g') + '</i>';
+  var p = itPrice(it);
+  return p==null ? '<span class="muted">—</span>' : money(p);
+}
+function plate(it, cls){
+  var ch = esc((nmEn(it)||'?').trim().charAt(0).toUpperCase());
+  return '<span class="plate'+(cls?' '+cls:'')+'" aria-hidden="true">'+ch+'</span>';
+}
+function counts(){
+  var c = { all:0, food:0, drinks:0, soldOut:0, order:0, noPrice:0, unver:0, verified:0, noThai:0, photo:0 };
+  ITEMS.forEach(function(it){
+    c.all++;
+    if(it.station==='kitchen') c.food++; else c.drinks++;
+    if(isSoldOut(it)) c.soldOut++;
+    if(canOrder(it)) c.order++;
+    var b = blockReason(it);
+    if(b==='no_price') c.noPrice++;
+    if(b==='unverified') c.unver++;
+    if(isVerified(it)) c.verified++;
+    if(!it.th) c.noThai++;
+  });
+  c.blocked = c.noPrice + c.unver;
+  return c;
+}
+
+/* ===========================================================
+   4. Icons
+   =========================================================== */
+function ico(name){
+  var d = {
+    menu:'M4 4h10M4 9h10M4 14h6M17 3v14',
+    review:'M4 5h12M4 10h12M4 15h7M14.5 14.5l2 2 3-4',
+    pay:'M2 5h16v10H2zM2 8h16M5 12h3',
+    chart:'M3 16V8M8 16V4M13 16v-6M18 16v-9',
+    list:'M3 5h2m3 0h9M3 10h2m3 0h9M3 15h2m3 0h9',
+    eye:'M1 10s3.5-5.5 9-5.5S19 10 19 10s-3.5 5.5-9 5.5S1 10 1 10zM10 12.2A2.2 2.2 0 1 0 10 7.8a2.2 2.2 0 0 0 0 4.4z',
+    info:'M10 1.6a8.4 8.4 0 1 0 0 16.8 8.4 8.4 0 0 0 0-16.8zM10 9v5M10 6.1h.01',
+    search:'M9 15.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM14 14l4 4'
+  }[name];
+  return '<svg class="ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+d+'"/></svg>';
+}
+
+/* ===========================================================
+   5. Rail + topbar
+   =========================================================== */
+var NAV = [
+  { k:'menu',       s:'nav_menu',     i:'menu'   },
+  { k:'review',     s:'nav_review',   i:'review' },
+  { k:'payments',   s:'nav_payments', i:'pay'    },
+  { k:'orders',     s:'nav_orders',   i:'chart'  },
+  { k:'dishes',     s:'nav_dishes',   i:'list'   },
+  { k:'engagement', s:'nav_eng',      i:'eye'    }
+];
+function renderRail(){
+  var c = counts();
+  var badge = { menu:c.all, review:c.blocked };
+  var h = '<div class="brand"><b lang="en">Rabbit Grill</b><span lang="en">'+esc(t('brand2'))+'</span></div>';
+  h += '<nav class="railnav" aria-label="'+esc(t('nav_menu'))+'">';
+  NAV.forEach(function(n){
+    h += '<button class="navbtn" data-nav="'+n.k+'"'+(state.nav===n.k?' aria-current="page"':'')+'>'
+       + ico(n.i) + '<span>'+esc(t(n.s))+'</span>'
+       + (badge[n.k]!=null ? '<span class="cnt num">'+badge[n.k]+'</span>' : '')
+       + '</button>';
+  });
+  h += '</nav>';
+  h += '<div class="railfoot">'
+     + '<div class="seg" role="group" aria-label="'+esc(t('langlabel'))+'">'
+     + '<button data-lang="th" aria-pressed="'+(state.lang==='th')+'" lang="th">ไทย</button>'
+     + '<button data-lang="en" aria-pressed="'+(state.lang==='en')+'" lang="en">EN</button>'
+     + '</div>'
+     + '<p class="when">'+esc(DEMO.todayLabel[state.lang])+' · '+DEMO.clock+'<br>'+esc(DEMO.tz)+'</p>'
+     + '</div>';
+  return h;
+}
+
+function renderTop(){
+  var title = { menu:'nav_menu', review:'nav_review', payments:'nav_payments',
+                orders:'nav_orders', dishes:'nav_dishes', engagement:'nav_eng' }[state.nav];
+  return '<h1>'+esc(t(title))+'</h1>'
+    + '<span class="demotag" lang="'+state.lang+'">'+esc(t('demodata'))+'</span>'
+    + '<div class="who">'
+    + '<span class="mode"><span class="dot"></span>'+esc(t('demomode'))+' · '+DEMO.clock+'</span>'
+    + '<span class="av" lang="en">DO</span>'
+    + '<span class="nm">'+esc(t('signedin'))+'<small>'+esc(t('role'))+'</small></span>'
+    + '</div>';
+}
+
+/* ===========================================================
+   6. Menu
+   =========================================================== */
+function filteredItems(){
+  var q = state.q.trim().toLowerCase();
+  return ITEMS.filter(function(it){
+    if(state.mgroup==='food' && it.station!=='kitchen') return false;
+    if(state.mgroup==='drinks' && it.station!=='bar') return false;
+    if(state.mcat!=='all' && it.cat!==state.mcat) return false;
+    if(state.soldOnly && !isSoldOut(it)) return false;
+    if(q){
+      var hay = [nmEn(it), nmTh(it), it.key, CATBY[it.cat].en].join(' ').toLowerCase();
+      if(hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+}
+function statusCell(it){
+  var h = '';
+  if(isSoldOut(it)) h += '<span class="chip alert">'+esc(t('soldout'))+'</span> ';
+  var b = blockReason(it);
+  if(b==='no_price') h += '<span class="chip hollow">'+esc(t('noprice_short'))+'</span>';
+  else if(b==='unverified') h += '<span class="chip hollow">'+esc(t('unver_short'))+'</span>';
+  else if(!isSoldOut(it)) h += '<span class="chip ok">'+esc(t('canorder'))+'</span>';
+  if(isVerified(it)) h += ' <span class="chip ink">'+esc(t('verified'))+'</span>';
+  if(edited(it)) h += ' <span class="chip heat">'+esc(t('changed_here'))+'</span>';
+  return h;
+}
+function viewMenu(){
+  var c = counts(), rows = filteredItems();
+  var h = '<p class="lede">'+esc(t('menu_lede'))+'</p>';
+
+  h += '<div class="filters">'
+    + '<div class="pillset" role="group">'
+    + '<button data-mg="all" aria-pressed="'+(state.mgroup==='all')+'">'+esc(t('all'))+' <span class="c">'+c.all+'</span></button>'
+    + '<button data-mg="food" aria-pressed="'+(state.mgroup==='food')+'">'+esc(t('food'))+' <span class="c">'+c.food+'</span></button>'
+    + '<button data-mg="drinks" aria-pressed="'+(state.mgroup==='drinks')+'">'+esc(t('drinks'))+' <span class="c">'+c.drinks+'</span></button>'
+    + '</div>'
+    + '<label class="field"><span class="srt">'+esc(t('category'))+'</span>'
+    + '<select data-fk="mcat" aria-label="'+esc(t('category'))+'">'
+    + '<option value="all"'+(state.mcat==='all'?' selected':'')+'>'+esc(t('allcats'))+'</option>'
+    + CATS.map(function(x){ return '<option value="'+x.id+'"'+(state.mcat===x.id?' selected':'')+'>'+esc(catName(x))+'</option>'; }).join('')
+    + '</select></label>'
+    + '<label class="field">'+ico('search')+'<span class="srt">'+esc(t('finddish'))+'</span>'
+    + '<input data-fk="q" type="search" value="'+esc(state.q)+'" placeholder="'+esc(t('finddish'))+'"></label>'
+    + '<label class="chkline"><input type="checkbox" data-fk="soldonly"'+(state.soldOnly?' checked':'')+'>'
+    + esc(t('soldoutonly'))+' <span class="num">'+c.soldOut+'</span></label>'
+    + '</div>';
+
+  if(c.soldOut === 0){
+    h += '<div class="banner"><span class="ico">'+ico('info')+'</span><span><b>'+esc(t('nothing_soldout'))+'</b> '+esc(t('soldout_rule'))+'</span></div>';
+  } else {
+    h += '<div class="banner"><span class="ico">'+ico('info')+'</span><span><b><span class="num">'+c.soldOut+'</span> '+esc(t('n_soldout'))+'.</b> '+esc(t('soldout_rule'))+'</span></div>';
+  }
+
+  h += '<div class="card"><div class="tablewrap"><table class="data"><thead><tr>'
+    + '<th>'+esc(t('dish'))+'</th><th>'+esc(t('category'))+'</th>'
+    + '<th class="n">'+esc(t('price'))+'</th><th>'+esc(t('station'))+'</th>'
+    + '<th>'+esc(t('status'))+'</th><th>'+esc(t('soldout'))+'</th>'
+    + '</tr></thead><tbody>';
+  if(!rows.length){
+    h += '<tr><td colspan="6"><div class="empty">'+esc(t('nomatch'))+'</div></td></tr>';
+  }
+  rows.forEach(function(it){
+    h += '<tr'+(canOrder(it)?'':' class="off"')+'>'
+      + '<td><button class="dishcell" data-edit="'+it.id+'" style="background:none;border:0;padding:0;text-align:left;width:100%">'
+        + plate(it)
+        + '<span class="nm"><span class="th">'+esc(nmPrimary(it))+'</span>'
+        + (nmSecondary(it)!==nmPrimary(it) ? '<span class="en" lang="'+(state.lang==='th'?'en':'th')+'">'+esc(nmSecondary(it))+'</span>' : '')
+        + '</span></button></td>'
+      + '<td class="sm muted">'+esc(catName(CATBY[it.cat]))+'</td>'
+      + '<td class="n">'+priceLabel(it)+(itRate(it)!=null?'':'')+'</td>'
+      + '<td class="sm muted">'+esc(it.station==='kitchen'?t('kitchen'):t('bar'))+'</td>'
+      + '<td>'+statusCell(it)+'</td>'
+      + '<td><button class="sw" data-sold="'+it.id+'" aria-pressed="'+isSoldOut(it)+'">'
+        + '<span class="track" aria-hidden="true"><span class="knob"></span></span>'
+        + '<span class="lbl">'+esc(isSoldOut(it)?t('soldout'):t('instock'))+'</span></button></td>'
+      + '</tr>';
+  });
+  h += '</tbody></table></div>'
+    + '<div class="pad tiny muted" style="border-top:1px solid var(--rule)">'
+    + esc(t('showing'))+' <span class="num">'+rows.length+'</span> '+esc(t('of'))+' <span class="num">'+c.all+'</span> '+esc(t('dishes'))
+    + ' · <span class="num">'+c.order+'</span> '+esc(t('canorder'))
+    + ' · <span class="num">'+c.blocked+'</span> '+esc(t('cannotorder'))
+    + ' · <span class="num">'+c.soldOut+'</span> '+esc(t('soldout'))
+    + '</div></div>';
+  return h;
+}
+
+
+/* ===========================================================
+   7. Needs review
+   =========================================================== */
+S.noprice_d = { en:'Whole categories the printed menu leaves unpriced', th:'ทั้งหมวดที่เมนูพิมพ์ไม่ได้ลงราคา' };
+S.unver_d   = { en:'Has a price, but nobody has checked it', th:'มีราคาแล้ว แต่ยังไม่มีใครตรวจ' };
+function statCard(label, value, desc, tone){
+  return '<div class="card stat">'
+    + '<div class="h kicker">'+esc(label)+'</div>'
+    + '<strong class="v num big'+(tone?' '+tone:'')+'">'+value+'</strong>'
+    + '<div class="d">'+esc(desc)+'</div></div>';
+}
+function reviewRow(it){
+  var b = blockReason(it);
+  return '<tr>'
+    + '<td><button class="dishcell" data-edit="'+it.id+'" style="background:none;border:0;padding:0;text-align:left;width:100%">'
+      + plate(it)
+      + '<span class="nm"><span class="th">'+esc(nmPrimary(it))+'</span>'
+      + (nmSecondary(it)!==nmPrimary(it) ? '<span class="en" lang="'+(state.lang==='th'?'en':'th')+'">'+esc(nmSecondary(it))+'</span>' : '')
+      + '</span></button></td>'
+    + '<td class="sm muted">'+esc(catName(CATBY[it.cat]))+'</td>'
+    + '<td class="n">'+priceLabel(it)+'</td>'
+    + '<td>'+(isVerified(it)
+        ? '<span class="chip ok">'+esc(t('verified'))+'</span>'+(b?' <span class="chip hollow">'+esc(t('cannotorder'))+'</span>':'')
+        : '<span class="chip hollow">'+esc(t('notreviewed'))+'</span>')+'</td>'
+    + '<td style="text-align:right"><button class="btn sm'+(isVerified(it)?'':' primary')+'" data-verify="'+it.id+'">'
+      + esc(isVerified(it)?t('unmark'):t('markverified'))+'</button></td>'
+    + '</tr>';
+}
+function reviewGroup(title, why, list, extra){
+  var h = '<section class="sec"><div class="sechead"><h2>'+esc(title)+'</h2>'
+    + '<span class="note"><span class="num">'+list.length+'</span> '+esc(t('remaining'))+'</span></div>'
+    + '<p class="lede">'+esc(why)+'</p>';
+  if(extra) h += extra;
+  if(!list.length){
+    h += '<div class="card"><div class="empty">'+esc(t('queue_clear'))+'</div></div>';
+  } else {
+    h += '<div class="card"><div class="tablewrap"><table class="data"><thead><tr>'
+      + '<th>'+esc(t('dish'))+'</th><th>'+esc(t('category'))+'</th><th class="n">'+esc(t('price'))+'</th>'
+      + '<th>'+esc(t('reviewstate'))+'</th><th></th></tr></thead><tbody>'
+      + list.map(reviewRow).join('') + '</tbody></table></div></div>';
+  }
+  return h + '</section>';
+}
+function viewReview(){
+  var c = counts();
+  var noPrice = ITEMS.filter(function(it){ return blockReason(it)==='no_price'; });
+  var unver   = ITEMS.filter(function(it){ return blockReason(it)==='unverified'; });
+
+  /* which categories are wholly without a price, computed from the data */
+  var whole = CATS.filter(function(cat){
+    var inCat = ITEMS.filter(function(i){ return i.cat===cat.id; });
+    return inCat.length && inCat.every(function(i){ return blockReason(i)==='no_price'; });
+  });
+
+  var h = '<p class="lede">'+esc(t('rev_lede'))+'</p>';
+  h += '<div class="banner ink"><span class="ico">'+ico('info')+'</span><span><b>'
+     + esc(c.verified===0 ? t('rev_none_verified') : t('demo_signoff'))+'</b>'
+     + (c.verified>0 ? ' <span class="num">'+c.verified+'</span> '+esc(t('verified'))+'.' : '')
+     + '</span></div>';
+
+  h += '<div class="statgrid">'
+    + statCard(t('published'), c.all, t('published_d'))
+    + statCard(t('orderable_now'), c.order, t('orderable_d'))
+    + statCard(t('blocked'), c.blocked, t('blocked_d'), c.blocked?'':'')
+    + statCard(t('ownerver'), c.verified, t('ownerver_d'))
+    + '</div>';
+  h += '<div class="statgrid" style="margin-top:12px">'
+    + statCard(t('noprice_group'), c.noPrice, t('noprice_d'))
+    + statCard(t('unver_group'), c.unver, t('unver_d'))
+    + statCard(t('thainames_missing'), c.noThai, t('thainames_d'))
+    + statCard(t('photos_missing'), 0, t('photos_d'))
+    + '</div>';
+
+  var catsLine = whole.length
+    ? '<div class="banner"><span class="ico">'+ico('info')+'</span><span>'
+      + whole.map(function(x){ return '<b>'+esc(catName(x))+'</b>'; }).join(' · ')
+      + ' — <span class="num">'+whole.reduce(function(n,x){ return n+ITEMS.filter(function(i){return i.cat===x.id;}).length; },0)+'</span> '
+      + esc(t('dishes'))+'. '+esc(t('noprice_why'))+'</span></div>'
+    : '';
+
+  h += reviewGroup(t('noprice_group'), t('noprice_why'), noPrice, catsLine);
+  h += reviewGroup(t('unver_group'), t('unver_why'), unver, '');
+  h += '<p class="lede" style="margin-top:22px">'+esc(t('demo_signoff'))+'</p>';
+  return h;
+}
+
+/* ===========================================================
+   8. Item editor (drawer)
+   =========================================================== */
+function viewEditor(it){
+  var b = blockReason(it), e = state.edits[it.id] || {};
+  var rate = itRate(it), price = itPrice(it);
+  var checks = [
+    { ok: !!nmEn(it), lab: t('chk_name') },
+    rate!=null ? { ok:true, lab: t('chk_rate')+' · '+money(rate)+' / '+it.basis+' '+t('g') }
+               : { ok: price!=null, lab: t('chk_price') },
+    { ok: isVerified(it), lab: t('chk_ver') },
+    { ok: !isSoldOut(it), lab: t('chk_stock') },
+    { ok: false, lab: t('chk_photo') }
+  ];
+  var h = '<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="'+esc(t('editdish'))+'">';
+  h += '<header>'+plate(it,'lg')+'<div style="min-width:0">'
+    + '<div class="kicker">'+esc(t('editdish'))+'</div>'
+    + '<h2 style="font:600 1.125rem/1.4 var(--font-ui);margin-top:3px">'+esc(nmPrimary(it))+'</h2>'
+    + '<div class="sm muted">'+esc(catName(CATBY[it.cat]))+' · <span lang="en">'+esc(it.key)+'</span></div>'
+    + '</div><button class="closeb" data-close="1" aria-label="'+esc(t('close'))+'">✕</button></header>';
+
+  h += '<div class="body">';
+
+  /* names + price */
+  h += '<div class="block"><h3>'+esc(t('names'))+'</h3>'
+    + '<div class="fgrid two">'
+    + '<label class="f"><span class="lab">'+esc(t('th_name'))+'</span>'
+      + '<input data-fk="e-th" data-id="'+it.id+'" lang="th" value="'+esc(nmTh(it))+'">'
+      + (it.th==null ? '<span class="hint">'+esc(t('noThaiName'))+'</span>' : '')
+      + '</label>'
+    + '<label class="f"><span class="lab">'+esc(t('en_name'))+'</span>'
+      + '<input data-fk="e-en" data-id="'+it.id+'" lang="en" value="'+esc(nmEn(it))+'"></label>'
+    + '</div>'
+    + '<p class="hint sm muted" style="margin-top:8px">'+esc(t('spellhint'))+'</p>';
+  if(rate!=null || it.kind==='measured_weight'){
+    h += '<div class="fgrid" style="margin-top:12px"><label class="f"><span class="lab">'+esc(t('ratebaht'))
+      + ' <i>/ '+it.basis+' '+esc(t('g'))+'</i></span>'
+      + '<input data-fk="e-rate" data-id="'+it.id+'" type="number" min="0" step="1" inputmode="numeric" value="'+(rate!=null?Math.round(rate/100):'')+'">'
+      + '<span class="hint">'+esc(t('weighthint'))+' '+esc(t('pricehint'))+'</span></label></div>';
+  } else {
+    h += '<div class="fgrid" style="margin-top:12px"><label class="f"><span class="lab">'+esc(t('pricebaht'))+'</span>'
+      + '<input data-fk="e-price" data-id="'+it.id+'" type="number" min="0" step="1" inputmode="numeric" value="'+(price!=null?Math.round(price/100):'')+'">'
+      + '<span class="hint">'+esc(t('pricehint'))+'</span></label></div>';
+  }
+  h += '</div>';
+
+  /* publishing */
+  h += '<div class="block"><h3>'+esc(t('publishing'))+'</h3>'
+    + '<p><span class="chip ink">'+esc(t('published'))+'</span> '
+    + (isVerified(it) ? '<span class="chip ok">'+esc(t('verified'))+'</span>' : '<span class="chip hollow">'+esc(t('notreviewed'))+'</span>')
+    + (isSoldOut(it) ? ' <span class="chip alert">'+esc(t('soldout'))+'</span>' : '')
+    + '</p>'
+    + '<p class="sm" style="margin-top:9px">'+esc(canOrder(it) ? t('guestsee_yes') : t('guestsee_no'))+'</p>'
+    + (isVerified(it) && b ? '<p class="sm" style="margin-top:6px;color:var(--alert)">'+esc(t('still_blocked'))+'</p>' : '')
+    + '<ul class="checklist" style="margin-top:10px">'
+    + checks.map(function(x){ return '<li class="'+(x.ok?'yes':'no')+'"><span class="mk">'+(x.ok?'✓':'○')+'</span><span>'+esc(x.lab)+'</span></li>'; }).join('')
+    + '</ul>'
+    + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">'
+    + '<button class="btn sm'+(isVerified(it)?'':' primary')+'" data-verify="'+it.id+'">'+esc(isVerified(it)?t('unmark'):t('markverified'))+'</button>'
+    + '<button class="sw" data-sold="'+it.id+'" aria-pressed="'+isSoldOut(it)+'">'
+      + '<span class="track" aria-hidden="true"><span class="knob"></span></span>'
+      + '<span class="lbl">'+esc(isSoldOut(it)?t('soldout'):t('instock'))+'</span></button>'
+    + '</div>'
+    + '<p class="tiny muted" style="margin-top:10px">'+esc(t('demo_signoff'))+'</p>'
+    + '</div>';
+
+  /* source */
+  h += '<div class="block"><h3>'+esc(t('source'))+'</h3>'
+    + '<p class="sm muted">'+esc(t('source_body'))+'</p>'
+    + '<dl class="kv" style="margin-top:10px">'
+    + '<dt>'+esc(t('recordkey'))+'</dt><dd lang="en">'+esc(it.key)+'</dd>'
+    + '<dt>'+esc(t('category'))+'</dt><dd>'+esc(catName(CATBY[it.cat]))+'</dd>'
+    + '<dt>'+esc(t('station'))+'</dt><dd>'+esc(it.station==='kitchen'?t('kitchen'):t('bar'))+'</dd>'
+    + '<dt>'+esc(t('photoref'))+'</dt><dd lang="en">'+(it.img ? esc(it.img)+' <span class="muted">— '+esc(t('photonotbundled'))+'</span>' : '<span class="muted">'+esc(t('nophotoref'))+'</span>')+'</dd>'
+    + '<dt>'+esc(t('notes_on'))+'</dt><dd>'+(it.notes?'✓':'—')+'</dd>'
+    + '<dt>'+esc(t('maxqty'))+'</dt><dd class="num">'+esc(it.maxQty)+'</dd>'
+    + '</dl></div>';
+
+  h += '</div>';
+  h += '<footer><span class="sm muted">'+esc(edited(it)?t('saved'):t('nochanges'))+'</span>'
+     + (edited(it)?'<button class="btn sm" data-revert="'+it.id+'">'+esc(t('revert'))+'</button>':'')
+     + '<button class="btn sm primary" data-close="1" style="margin-left:auto">'+esc(t('close'))+'</button></footer>';
+  h += '</aside>';
+  return h;
+}
+
+
+/* ===========================================================
+   9. Payments — every amount is summed from catalog prices
+   =========================================================== */
+function billTotal(b){
+  var sum = 0;
+  (b.lines||[]).forEach(function(l){
+    var it = ITEMKEY[l[0]];
+    if(it && it.price!=null) sum += it.price * l[1];
+  });
+  (b.weighed||[]).forEach(function(w){
+    var it = ITEMKEY[w[0]];
+    if(it && it.rate!=null) sum += Math.round(it.rate * w[1] / it.basis);
+  });
+  return b.kind==='reversal' ? -sum : sum;
+}
+function billLinesHtml(b){
+  var h = '<table class="data" style="min-width:0;font-size:.8125rem"><tbody>';
+  (b.lines||[]).forEach(function(l){
+    var it = ITEMKEY[l[0]]; if(!it) return;
+    h += '<tr><td>'+esc(nmPrimary(it))+'</td><td class="n"><span class="num">'+l[1]+'</span> × '+money(it.price)+'</td>'
+       + '<td class="n">'+money(it.price*l[1])+'</td></tr>';
+  });
+  (b.weighed||[]).forEach(function(w){
+    var it = ITEMKEY[w[0]]; if(!it) return;
+    h += '<tr><td>'+esc(nmPrimary(it))+'</td><td class="n"><span class="num">'+w[1]+'</span> '+esc(t('g'))+' × '+money(it.rate)+' / '+it.basis+' '+esc(t('g'))+'</td>'
+       + '<td class="n">'+money(Math.round(it.rate*w[1]/it.basis))+'</td></tr>';
+  });
+  return h + '</tbody></table>';
+}
+function viewPayments(){
+  var total = DEMO.bills.reduce(function(n,b){ return n + billTotal(b); }, 0);
+  var unpaidAmt = billTotal(DEMO.unpaid);
+  var revAmt = DEMO.bills.filter(function(b){ return b.kind==='reversal'; }).reduce(function(n,b){ return n + Math.abs(billTotal(b)); }, 0);
+
+  var h = '<p class="lede">'+esc(t('pay_lede'))+'</p>';
+  h += '<div class="banner"><span class="ico">'+ico('info')+'</span><span><b>'+esc(t('today'))+' · '
+     + esc(DEMO.todayLabel[state.lang])+' · '+esc(DEMO.tz)+'.</b> '+esc(t('demodata'))+'.</span></div>';
+
+  h += '<div class="statgrid">'
+    + statCard(t('confirmed'), money(total), t('records')+': '+DEMO.bills.length)
+    + statCard(t('exceptions'), 2, t('exc_notpaid')+' · '+t('reversal'))
+    + statCard(t('exc_notpaid'), money(unpaidAmt), t('exc_notpaid_d'))
+    + statCard(t('reversal'), money(revAmt), t('exc_rev_d'))
+    + '</div>';
+
+  h += '<section class="sec"><div class="sechead"><h2>'+esc(t('payrecords'))+'</h2>'
+    + '<span class="note">'+esc(t('payrecords_d'))+'</span></div>'
+    + '<div class="card"><div class="tablewrap"><table class="data"><thead><tr>'
+    + '<th>'+esc(t('time'))+'</th><th>'+esc(t('table'))+'</th><th>'+esc(t('method'))+'</th>'
+    + '<th class="n">'+esc(t('amount'))+'</th><th class="n">'+esc(t('tender'))+'</th>'
+    + '<th>'+esc(t('reference'))+'</th><th>'+esc(t('confirmedby'))+'</th><th>'+esc(t('status'))+'</th>'
+    + '</tr></thead><tbody>';
+
+  DEMO.bills.forEach(function(b, idx){
+    var amt = billTotal(b), rev = b.kind==='reversal';
+    var tender = '<span class="muted">—</span>';
+    if(b.tender) tender = money(b.tender)+' <i class="muted" style="font-style:normal">/ '+money(b.tender-amt)+'</i>';
+    h += '<tr'+(rev?' class="off"':'')+'>'
+      + '<td class="n">'+esc(b.time)+'</td>'
+      + '<td class="n">'+esc(b.table)+'</td>'
+      + '<td>'+(rev ? '<span class="chip alert">'+esc(t('reversal'))+'</span>' : esc(t(b.method)))+'</td>'
+      + '<td class="n"'+(rev?' style="color:var(--alert)"':'')+'>'+money(amt)+'</td>'
+      + '<td class="n sm">'+tender+'</td>'
+      + '<td class="sm" lang="en">'+esc(b.ref)+'</td>'
+      + '<td class="sm muted" lang="en">'+esc(b.by)+'</td>'
+      + '<td class="sm">'+(rev
+          ? '<span class="muted">'+esc(b.reason[state.lang])+'</span>'
+          : (b.reversed ? '<span class="chip alert">'+esc(t('reversed'))+'</span>' : '<span class="chip ok">'+esc(t('recorded'))+'</span>'))
+      + ' <button class="link" style="font-size:.75rem" data-bill="'+idx+'">'+esc(state.billOpen===idx?t('hide'):t('show'))+'</button></td>'
+      + '</tr>';
+    if(state.billOpen===idx){
+      h += '<tr><td colspan="8" style="background:var(--sunken)"><div class="kicker" style="margin-bottom:6px">'+esc(t('billlines'))+'</div>'+billLinesHtml(b)+'</td></tr>';
+    }
+  });
+  h += '</tbody><tfoot><tr>'
+    + '<td colspan="3" style="font-weight:600">'+esc(t('total_day'))+'</td>'
+    + '<td class="n" style="font-weight:600;font-size:1.0625rem">'+money(total)+'</td>'
+    + '<td colspan="4" class="tiny muted">'+esc(t('total_rule'))+'</td>'
+    + '</tr></tfoot></table></div></div></section>';
+
+  h += '<section class="sec"><div class="sechead"><h2>'+esc(t('exceptions'))+'</h2></div>'
+    + '<div class="cols b">'
+    + '<div class="card pad"><div class="kicker">'+esc(t('exc_notpaid'))+'</div>'
+      + '<p class="num mid" style="margin:8px 0 6px">'+money(unpaidAmt)+'</p>'
+      + '<p class="sm"><span lang="en">'+esc(DEMO.unpaid.ref)+'</span> · '+esc(t('table'))+' <span class="num">'+esc(DEMO.unpaid.table)+'</span> · <span class="num">'+esc(DEMO.unpaid.time)+'</span> · <span lang="en">'+esc(DEMO.unpaid.by)+'</span></p>'
+      + '<p class="sm muted" style="margin-top:8px">'+esc(t('exc_notpaid_d'))+'</p>'
+      + '<div style="margin-top:10px">'+billLinesHtml(DEMO.unpaid)+'</div></div>'
+    + '<div class="card pad"><div class="kicker">'+esc(t('reversal'))+'</div>'
+      + '<p class="num mid" style="margin:8px 0 6px">'+money(revAmt)+'</p>'
+      + '<p class="sm"><span lang="en">RG-8QD2</span> · <span class="num">20:05</span> → <span class="num">20:09</span></p>'
+      + '<p class="sm" style="margin-top:8px"><b>'+esc(t('reason'))+':</b> '+esc(DEMO.bills[2].reason[state.lang])+'</p>'
+      + '<p class="sm muted" style="margin-top:8px">'+esc(t('exc_rev_d'))+'</p></div>'
+    + '</div></section>';
+  return h;
+}
+
+/* ===========================================================
+   10. Order stats — SVG bar chart, drawn to scale
+   =========================================================== */
+function axisMax(v){
+  var steps = [5,10,15,20,25,30,40,50,75,100];
+  for(var i=0;i<steps.length;i++) if(v <= steps[i]) return steps[i];
+  return Math.ceil(v/50)*50;
+}
+function roundsChart(){
+  var days = DEMO.days;
+  var maxV = Math.max.apply(null, days.map(function(d){ return d.rounds||0; }));
+  var top = axisMax(maxV);
+  var W = 720, H = 300, L = 42, R = 10, T = 18, B = 52;
+  var pw = W-L-R, ph = H-T-B;
+  var n = days.length, slot = pw/n, bw = Math.min(58, slot*0.56);
+  var ticks = [0, top/3, top*2/3, top].map(function(v){ return Math.round(v); });
+
+  var s = '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(t('roundsperday'))+'">';
+  s += '<defs><pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'
+     + '<line x1="0" y1="0" x2="0" y2="7" stroke="var(--chart-missing)" stroke-width="1.6"/></pattern></defs>';
+  /* grid + y labels */
+  ticks.forEach(function(v){
+    var y = T + ph - (v/top)*ph;
+    s += '<line x1="'+L+'" y1="'+y.toFixed(1)+'" x2="'+(W-R)+'" y2="'+y.toFixed(1)+'" stroke="var(--chart-grid)" stroke-width="1"/>';
+    s += '<text x="'+(L-9)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" font-family="var(--font-display)" font-size="12" fill="var(--chart-axis)">'+v+'</text>';
+  });
+  s += '<line x1="'+L+'" y1="'+(T+ph)+'" x2="'+(W-R)+'" y2="'+(T+ph)+'" stroke="var(--chart-axis)" stroke-width="1.2"/>';
+
+  days.forEach(function(d, i){
+    var cx = L + slot*i + slot/2, x = cx - bw/2;
+    if(d.state==='upcoming'){
+      s += '<rect x="'+x.toFixed(1)+'" y="'+T+'" width="'+bw.toFixed(1)+'" height="'+ph+'" fill="url(#hatch)" opacity=".5"/>'
+         + '<rect x="'+x.toFixed(1)+'" y="'+T+'" width="'+bw.toFixed(1)+'" height="'+ph+'" fill="none" stroke="var(--chart-missing)" stroke-width="1" stroke-dasharray="3 3"/>';
+    } else {
+      var bh = (d.rounds/top)*ph, y = T + ph - bh;
+      var partial = d.state==='partial';
+      s += '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" '
+         + (partial ? 'fill="var(--canvas)" stroke="var(--chart-today)" stroke-width="2.5"' : 'fill="var(--chart-bar)"')+'/>';
+      s += '<text x="'+cx.toFixed(1)+'" y="'+(y-7).toFixed(1)+'" text-anchor="middle" font-family="var(--font-display)" font-size="14" font-weight="500" fill="var(--text)">'+d.rounds+'</text>';
+    }
+    s += '<text x="'+cx.toFixed(1)+'" y="'+(T+ph+20)+'" text-anchor="middle" font-size="13" fill="'+(d.state==='partial'?'var(--now-text)':'var(--text)')+'" font-weight="'+(d.state==='partial'?600:400)+'">'+esc(d.dn[state.lang])+' '+d.dd+'</text>';
+    s += '<text x="'+cx.toFixed(1)+'" y="'+(T+ph+38)+'" text-anchor="middle" font-size="11" fill="var(--text-2)">'
+       + esc(d.state==='partial'?t('lg_partial'):(d.state==='upcoming'?t('lg_upcoming').split('—')[0].trim():t('lg_complete')))+'</text>';
+  });
+  s += '</svg>';
+  return s;
+}
+function hourChart(){
+  var hs = DEMO.hoursToday, top = axisMax(Math.max.apply(null, hs.map(function(x){return x.n;})));
+  var W=260,H=120,L=22,B=26,T=14,R=6, pw=W-L-R, ph=H-T-B, slot=pw/hs.length, bw=Math.min(26,slot*0.5);
+  var s = '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(t('roundsbyhour'))+'">';
+  s += '<line x1="'+L+'" y1="'+(T+ph)+'" x2="'+(W-R)+'" y2="'+(T+ph)+'" stroke="var(--chart-axis)" stroke-width="1"/>';
+  s += '<text x="'+(L-6)+'" y="'+(T+5)+'" text-anchor="end" font-family="var(--font-display)" font-size="10" fill="var(--chart-axis)">'+top+'</text>';
+  hs.forEach(function(x,i){
+    var cx = L+slot*i+slot/2, bh = (x.n/top)*ph, y = T+ph-bh;
+    s += '<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+bh.toFixed(1)+'" fill="var(--chart-bar)"/>';
+    s += '<text x="'+cx.toFixed(1)+'" y="'+(y-4).toFixed(1)+'" text-anchor="middle" font-family="var(--font-display)" font-size="11" fill="var(--text)">'+x.n+'</text>';
+    s += '<text x="'+cx.toFixed(1)+'" y="'+(T+ph+15)+'" text-anchor="middle" font-family="var(--font-display)" font-size="11" fill="var(--text-2)">'+x.h+'</text>';
+  });
+  return s + '</svg>';
+}
+function viewOrders(){
+  var done = DEMO.days.filter(function(d){ return d.rounds!=null; });
+  var today = DEMO.days.filter(function(d){ return d.state==='partial'; })[0];
+  var sum = function(k){ return done.reduce(function(n,d){ return n + (d[k]||0); }, 0); };
+
+  var h = '<p class="lede">'+esc(t('ord_lede'))+'</p>';
+  h += '<div class="banner"><span class="ico">'+ico('info')+'</span><span>'
+     + '<b>'+esc(t('thisweek'))+' · '+esc(DEMO.weekLabel[state.lang])+'.</b> '
+     + esc(t('dataasof'))+' <span class="num">'+DEMO.clock+'</span> · '+esc(DEMO.tz)+' · '+esc(t('demodata'))+'.</span></div>';
+
+  h += '<div class="cols a">';
+  h += '<div class="card pad">'
+    + '<div class="kicker">'+esc(t('submitted_rounds'))+' · '+esc(t('so_far'))+'</div>'
+    + '<p class="num big" style="margin:10px 0 4px">'+sum('rounds')+'</p>'
+    + '<p class="sm muted">'+esc(DEMO.weekLabel[state.lang])+'</p>'
+    + '<div class="block" style="margin-top:16px">'
+      + '<h3>'+esc(t('wow'))+'</h3>'
+      + '<p><span class="chip hollow">'+esc(t('wow_none'))+'</span></p>'
+      + '<p class="sm muted" style="margin-top:8px">'+esc(t('wow_why',{d:DEMO.recordsBegin[state.lang]}))+'</p>'
+    + '</div>'
+    + '<div class="block">'
+      + '<h3>'+esc(DEMO.todayLabel[state.lang])+' · '+esc(t('todaysofar'))+'</h3>'
+      + '<dl class="kv"><dt>'+esc(t('submitted'))+'</dt><dd class="num">'+today.rounds+'</dd>'
+      + '<dt>'+esc(t('accepted'))+'</dt><dd class="num">'+DEMO.acceptedToday+'</dd>'
+      + '<dt>'+esc(t('waiting'))+'</dt><dd class="num">'+DEMO.waitingToday+'</dd>'
+      + '<dt>'+esc(t('rejected'))+'</dt><dd class="num">'+DEMO.rejectedToday+'</dd>'
+      + '<dt>'+esc(t('orderingvisits'))+'</dt><dd class="num">'+today.visits+'</dd></dl>'
+    + '</div></div>';
+
+  h += '<div class="card chartbox">'
+    + '<div class="sechead" style="border:0;padding:0;margin-bottom:10px"><h2 style="font-size:1rem">'+esc(t('roundsperday'))+'</h2></div>'
+    + roundsChart()
+    + '<div class="legend">'
+      + '<span><i style="background:var(--chart-bar)"></i>'+esc(t('lg_complete'))+'</span>'
+      + '<span><i style="background:var(--canvas);box-shadow:inset 0 0 0 2px var(--chart-today)"></i>'+esc(t('lg_partial'))+'</span>'
+      + '<span><i style="background:var(--chart-track);box-shadow:inset 0 0 0 1px var(--chart-missing)"></i>'+esc(t('lg_upcoming'))+'</span>'
+    + '</div>'
+    + '<p class="tiny muted" style="margin-top:10px">'+esc(t('upcoming_why'))+'</p>'
+    + '</div>';
+  h += '</div>';
+
+  h += '<div class="statgrid" style="margin-top:14px">'
+    + statCard(t('orderingvisits'), sum('visits'), t('visits_d'))
+    + statCard(t('devices'), sum('devices'), t('devices_d'))
+    + statCard(t('itemsordered'), sum('items'), t('items_d'))
+    + statCard(t('medianaccept'), Math.floor(DEMO.medianAcceptSec/60)+'<span class="tiny"> '+t('mins')+' </span>'+(DEMO.medianAcceptSec%60)+'<span class="tiny"> '+t('secs')+'</span>', t('medianaccept_d'))
+    + statCard(t('unresolved'), DEMO.unresolvedToday, t('unresolved_d'))
+    + '</div>';
+
+  h += '<section class="sec"><div class="sechead"><h2>'+esc(t('roundsbyhour'))+'</h2>'
+    + '<span class="note">'+esc(DEMO.todayLabel[state.lang])+'</span></div>'
+    + '<div class="card chartbox" style="max-width:420px">'+hourChart()
+    + '<p class="tiny muted" style="margin-top:8px">'+esc(t('bkkhours'))+'</p></div></section>';
+  return h;
+}
+
+
+/* ===========================================================
+   11. Menu stats
+   =========================================================== */
+function servingsOf(it){ return DEMO.servings[it.key] || 0; }
+function availOf(it){
+  var a = DEMO.availDays[it.key];
+  return a==null ? DEMO.elapsedDays : a;
+}
+function rankable(it){
+  /* an item nobody could ever add this week is not a ranking result */
+  return it.orderable && availOf(it) > 0;
+}
+function viewDishes(){
+  var group = state.rgroup==='drinks' ? 'bar' : 'kitchen';
+  var pool = ITEMS.filter(function(it){ return it.station===group; });
+  var ranked = pool.filter(rankable);
+  var soldOutAll = pool.filter(function(it){ return it.orderable && availOf(it)===0; });
+  var neverOrderable = pool.filter(function(it){ return !it.orderable; });
+
+  var totalServ = ranked.reduce(function(n,it){ return n + servingsOf(it); }, 0);
+  var maxServ = Math.max(1, Math.max.apply(null, ranked.map(servingsOf)));
+
+  var sorted = ranked.slice().sort(function(a,b){
+    var d = servingsOf(b) - servingsOf(a);
+    if(state.rsort==='least') d = -d;
+    return d || nmEn(a).localeCompare(nmEn(b));
+  });
+  var shown = state.dishAll ? sorted : sorted.slice(0, 10);
+
+  /* dense ranks, ties share a rank */
+  var ranks = {}, last = null, lastRank = 0;
+  sorted.forEach(function(it, i){
+    var v = servingsOf(it);
+    if(v !== last){ lastRank = i+1; last = v; }
+    ranks[it.id] = lastRank;
+  });
+
+  var h = '<p class="lede">'+esc(t('dish_lede'))+'</p>';
+  h += '<div class="banner"><span class="ico">'+ico('info')+'</span><span><b>'+esc(t('thisweek'))+' · '
+     + esc(DEMO.weekLabel[state.lang])+'.</b> '+esc(t('dataasof'))+' <span class="num">'+DEMO.clock+'</span> · '+esc(t('demodata'))+'.</span></div>';
+
+  h += '<div class="filters">'
+    + '<div class="pillset" role="group">'
+    + '<button data-rg="food" aria-pressed="'+(state.rgroup!=='drinks')+'">'+esc(t('foodonly'))+'</button>'
+    + '<button data-rg="drinks" aria-pressed="'+(state.rgroup==='drinks')+'">'+esc(t('drinksonly'))+'</button>'
+    + '</div>'
+    + '<div class="pillset" role="group">'
+    + '<button data-rs="most" aria-pressed="'+(state.rsort!=='least')+'">'+esc(t('most'))+'</button>'
+    + '<button data-rs="least" aria-pressed="'+(state.rsort==='least')+'">'+esc(t('least'))+'</button>'
+    + '</div>'
+    + '<button class="btn sm" data-dishall="1">'+esc(state.dishAll?t('showless'):t('showall'))+' <span class="num">'+sorted.length+'</span></button>'
+    + '</div>';
+
+  h += '<div class="card"><div class="tablewrap"><table class="data"><thead><tr>'
+    + '<th class="n">'+esc(t('rank'))+'</th><th>'+esc(t('dish'))+'</th>'
+    + '<th class="n">'+esc(t('servings'))+' · '+esc(t('share'))+'</th>'
+    + '<th>'+esc(t('availdays'))+'</th><th>'+esc(t('vslast'))+'</th>'
+    + '</tr></thead><tbody>';
+  shown.forEach(function(it){
+    var v = servingsOf(it), a = availOf(it);
+    var w = Math.round(v/maxServ*100);
+    h += '<tr>'
+      + '<td class="n" style="font-size:1.125rem">'+String(ranks[it.id]).padStart(2,'0')+'</td>'
+      + '<td><button class="dishcell" data-edit="'+it.id+'" style="background:none;border:0;padding:0;text-align:left;width:100%">'
+        + plate(it)+'<span class="nm"><span class="th">'+esc(nmPrimary(it))+'</span>'
+        + (nmSecondary(it)!==nmPrimary(it)?'<span class="en" lang="'+(state.lang==='th'?'en':'th')+'">'+esc(nmSecondary(it))+'</span>':'')
+        + '</span></button></td>'
+      + '<td style="min-width:170px"><div class="barrow" style="margin:0">'
+        + '<span class="vv"><span style="font-size:1.0625rem">'+v+'</span><i>'+pct(v,totalServ)+'%</i></span>'
+        + '<span></span><span class="tr"><span class="fl" style="width:'+w+'%"></span></span></div></td>'
+      + '<td class="sm'+(a<DEMO.elapsedDays?' ':'')+'">'+(a<DEMO.elapsedDays
+          ? '<span class="chip heat">'+esc(t('availfrag',{a:a,b:DEMO.elapsedDays}))+'</span>'
+          : '<span class="muted">'+esc(t('availfrag',{a:a,b:DEMO.elapsedDays}))+'</span>')+'</td>'
+      + '<td class="sm muted">'+esc(t('nobaseline'))+'</td>'
+      + '</tr>';
+  });
+  h += '</tbody></table></div>'
+    + '<div class="pad tiny muted" style="border-top:1px solid var(--rule)">'
+    + esc(t('showing'))+' <span class="num">'+shown.length+'</span> '+esc(t('of'))+' <span class="num">'+sorted.length+'</span> · '
+    + esc(t('ties'))+' '+esc(t('wow_why',{d:DEMO.recordsBegin[state.lang]}))
+    + '</div></div>';
+
+  if(soldOutAll.length){
+    h += '<section class="sec"><div class="sechead"><h2>'+esc(t('soldout_block_h'))+'</h2>'
+      + '<span class="note"><span class="num">'+soldOutAll.length+'</span> '+esc(t('dishes'))+'</span></div>'
+      + '<p class="lede">'+esc(t('soldout_block_d'))+'</p><div class="card"><div class="tablewrap"><table class="data"><tbody>'
+      + soldOutAll.map(function(it){
+          return '<tr><td><button class="dishcell" data-edit="'+it.id+'" style="background:none;border:0;padding:0;text-align:left;width:100%">'
+            + plate(it)+'<span class="nm"><span class="th">'+esc(nmPrimary(it))+'</span>'
+            + (nmSecondary(it)!==nmPrimary(it)?'<span class="en" lang="'+(state.lang==='th'?'en':'th')+'">'+esc(nmSecondary(it))+'</span>':'')
+            + '</span></button></td>'
+            + '<td class="sm muted">'+esc(catName(CATBY[it.cat]))+'</td>'
+            + '<td><span class="chip alert">'+esc(t('soldout_allweek'))+'</span></td>'
+            + '<td class="n sm muted">'+esc(t('availfrag',{a:0,b:DEMO.elapsedDays}))+'</td></tr>';
+        }).join('')
+      + '</tbody></table></div></div></section>';
+  }
+  if(neverOrderable.length){
+    h += '<section class="sec"><div class="sechead"><h2>'+esc(t('blocked_block_h'))+'</h2>'
+      + '<span class="note"><span class="num">'+neverOrderable.length+'</span> '+esc(t('dishes'))+'</span></div>'
+      + '<p class="lede">'+esc(t('blocked_block_d',{n:neverOrderable.length}))+'</p>'
+      + '<div class="card pad"><div style="display:flex;flex-wrap:wrap;gap:7px">'
+      + neverOrderable.map(function(it){
+          return '<button class="chip hollow" data-edit="'+it.id+'" style="cursor:pointer">'+esc(nmPrimary(it))+'</button>';
+        }).join('')
+      + '</div></div></section>';
+  }
+  return h;
+}
+
+/* ===========================================================
+   12. Engagement
+   =========================================================== */
+function bar(label, value, denom, suffix, cls){
+  return '<div class="barrow">'
+    + '<span class="lb">'+label+'</span>'
+    + '<span class="vv">'+value+(suffix!=null?'<i>'+suffix+'</i>':'')+'</span>'
+    + '<span class="tr"><span class="fl'+(cls?' '+cls:'')+'" style="width:'+(denom?Math.max(0,Math.min(100,value/denom*100)):0)+'%"></span></span>'
+    + '</div>';
+}
+function engDishRows(){
+  var pool = ITEMS.filter(function(it){ return it.station==='kitchen' && it.orderable; });
+  var rows = pool.map(function(it){
+    var sv = servingsOf(it);
+    var seen = Math.min(DEMO.eng.sessions, 6 + sv*2);
+    var adds = sv + Math.floor(sv/5);
+    var det  = Math.max(adds, Math.round(seen*0.45));
+    return { it:it, seen:seen, det:det, adds:adds, sent:sv, rate: seen?Math.round(adds/seen*100):0 };
+  }).sort(function(a,b){ return b.seen-a.seen || nmEn(a.it).localeCompare(nmEn(b.it)); });
+  return state.dishAll ? rows : rows.slice(0,10);
+}
+function viewEngagement(){
+  var E = DEMO.eng;
+  var h = '<p class="lede">'+esc(t('eng_lede'))+'</p>';
+  h += '<div class="banner"><span class="ico">'+ico('info')+'</span><span><b>'+esc(t('period'))+' · '
+     + esc(DEMO.weekLabel[state.lang])+'.</b> '+esc(t('demodata'))+' · '+esc(t('session_is'))+'</span></div>';
+
+  h += '<div class="cols b">';
+  /* coverage */
+  h += '<div class="card pad"><div class="kicker">'+esc(t('coverage'))+'</div>'
+    + '<p class="num big" style="margin:10px 0 2px">'+E.sessions+'</p>'
+    + '<p class="sm muted">'+esc(t('meas_sessions'))+'</p>'
+    + '<div style="margin-top:14px">'
+      + bar(esc(t('attable')), E.atTable, E.sessions, pct(E.atTable,E.sessions)+'%')
+      + bar(esc(t('browsing')), E.browsingOnly, E.sessions, pct(E.browsingOnly,E.sessions)+'%')
+    + '</div>'
+    + '<dl class="kv" style="margin-top:12px">'
+      + '<dt>'+esc(t('optedout'))+'</dt><dd class="num">'+E.optedOut+'</dd>'
+      + '<dt>'+esc(t('measuredsince'))+'</dt><dd>'+esc(E.measuredSince[state.lang])+'</dd>'
+      + '<dt>'+esc(t('period'))+'</dt><dd>'+esc(DEMO.weekLabel[state.lang])+'</dd>'
+    + '</dl></div>';
+  /* limits */
+  h += '<div class="card pad" style="background:var(--sunken)"><div class="kicker">'+esc(t('limits'))+'</div>'
+    + '<ul class="limits" style="margin-top:10px">'
+    + ['lim1','lim2','lim3','lim4','lim5','lim6'].map(function(k){ return '<li>'+esc(t(k))+'</li>'; }).join('')
+    + '</ul></div>';
+  h += '</div>';
+
+  h += '<div class="cols b" style="margin-top:14px">';
+  h += '<div>'
+    + '<div class="card pad"><div class="kicker">'+esc(t('activemenu'))+'</div>'
+      + '<p class="big num" style="margin:8px 0 4px">'+dur(E.medianMenuSec)+'</p>'
+      + '<p class="sm muted">'+esc(t('activemenu_d'))+' · p90 '+dur(E.p90MenuSec)+' · <span class="num">'+E.menuSessions+'</span> '+esc(t('sessions_w'))+'</p></div>'
+    + '<div class="card pad" style="margin-top:14px"><div class="kicker">'+esc(t('activedetail'))+'</div>'
+      + '<p class="big num" style="margin:8px 0 4px">'+dur(E.medianDetailSec)+'</p>'
+      + '<p class="sm muted">'+esc(t('activedetail_d'))+' · p90 '+dur(E.p90DetailSec)+' · <span class="num">'+E.detailViews+'</span> '+esc(t('details'))+'</p></div>'
+    + '<div class="card pad" style="margin-top:14px"><div class="kicker">'+esc(t('roundsmeas'))+'</div>'
+      + '<p class="mid num" style="margin:8px 0 10px">'+E.roundsPeriod+'</p>'
+      + bar(esc(t('frommeasured')), E.roundsMeasured, E.roundsPeriod, pct(E.roundsMeasured,E.roundsPeriod)+'%')
+      + bar(esc(t('notlinked')), E.roundsUnlinked, E.roundsPeriod, pct(E.roundsUnlinked,E.roundsPeriod)+'%')
+      + '<p class="tiny muted" style="margin-top:8px">'+esc(t('notlinked_d'))+'</p></div>'
+    + '</div>';
+  /* funnel */
+  var base = E.funnel[0].v;
+  h += '<div class="card pad"><div class="kicker">'+esc(t('funnel'))+'</div>'
+    + '<div style="margin-top:12px">'
+    + E.funnel.map(function(f){
+        var lab = { base:'f_base', saw:'f_saw', details:'f_details', added:'f_added', sent:'f_sent' }[f.k];
+        return bar(esc(t(lab)), f.v, base, f.k==='base' ? esc(t('f_base')) : pct(f.v,base)+'%', f.k==='sent'?'ok':'');
+      }).join('')
+    + '</div>'
+    + '<p class="sm muted" style="margin-top:10px">'+esc(t('funnel_base'))+'</p>'
+    + '<div class="banner" style="margin:12px 0 0"><span>'+esc(t('straight',{n:E.straightFromList}))+'</span></div>'
+    + '</div>';
+  h += '</div>';
+
+  /* exposure + depth */
+  h += '<div class="cols b" style="margin-top:14px">';
+  h += '<div class="card pad"><div class="kicker">'+esc(t('catexposure'))+'</div><div style="margin-top:12px">'
+    + CATS.map(function(c){
+        var v = E.exposure[c.key] || 0;
+        return bar(esc(catName(c)), v, E.sessions, pct(v,E.sessions)+'%', v?'':'zero');
+      }).join('')
+    + '</div><p class="tiny muted" style="margin-top:6px">'+esc(t('catexposure_d'))+'</p></div>';
+  h += '<div><div class="card pad"><div class="kicker">'+esc(t('depth'))+'</div><div style="margin-top:12px">'
+    + E.depth.map(function(d){ return bar(esc(t('reached'))+' '+d.p+'%', d.v, E.sessions, pct(d.v,E.sessions)+'%'); }).join('')
+    + '</div><p class="tiny muted" style="margin-top:6px">'+esc(t('depth_d'))+'</p></div>'
+    + '<div class="card pad" style="margin-top:14px"><div class="kicker">'+esc(t('daybyday'))+'</div>'
+      + '<div style="margin-top:12px">'
+      + E.byDay.map(function(d){
+          var day = DEMO.days.filter(function(x){ return x.k===d.k; })[0];
+          return bar(esc(day.dn[state.lang]+' '+day.dd), d.s, Math.max.apply(null,E.byDay.map(function(x){return x.s;})), esc(t('sessions_w')));
+        }).join('')
+      + '</div></div></div>';
+  h += '</div>';
+
+  /* dish table */
+  var rows = engDishRows();
+  h += '<section class="sec"><div class="sechead"><h2>'+esc(t('dishesonphones'))+'</h2>'
+    + '<span class="note">'+esc(t('dishcount_d'))+'</span></div>'
+    + '<div class="card"><div class="tablewrap"><table class="data"><thead><tr>'
+    + '<th>'+esc(t('dish'))+'</th><th class="n">'+esc(t('seen'))+'</th><th class="n">'+esc(t('details'))+'</th>'
+    + '<th class="n">'+esc(t('adds'))+'</th><th class="n">'+esc(t('addrate'))+'</th><th class="n">'+esc(t('sent'))+'</th>'
+    + '</tr></thead><tbody>'
+    + rows.map(function(r){
+        return '<tr><td><div class="dishcell"><span class="nm"><span class="th">'+esc(nmPrimary(r.it))+'</span>'
+          + (nmSecondary(r.it)!==nmPrimary(r.it)?'<span class="en" lang="'+(state.lang==='th'?'en':'th')+'">'+esc(nmSecondary(r.it))+'</span>':'')
+          + '</span></div></td>'
+          + '<td class="n">'+r.seen+'</td><td class="n">'+r.det+'</td><td class="n">'+r.adds+'</td>'
+          + '<td class="n">'+r.rate+'%</td><td class="n">'+r.sent+'</td></tr>';
+      }).join('')
+    + '</tbody></table></div>'
+    + '<div class="pad"><button class="btn sm" data-dishall="1">'+esc(state.dishAll?t('showless'):t('showall'))+'</button></div>'
+    + '</div></section>';
+  return h;
+}
+
+
+/* ===========================================================
+   13. Render loop
+   =========================================================== */
+var $rail = document.getElementById('rail'),
+    $top  = document.getElementById('topbar'),
+    $view = document.getElementById('view'),
+    $ov   = document.getElementById('overlay'),
+    $toast= document.getElementById('toast');
+
+function render(){
+  var a = document.activeElement;
+  var fk = a && a.getAttribute ? a.getAttribute('data-fk') : null;
+  var fid = a && a.getAttribute ? a.getAttribute('data-id') : null;
+  var selS = null, selE = null;
+  try{ selS = a.selectionStart; selE = a.selectionEnd; }catch(e){}
+
+  document.documentElement.lang = state.lang;
+  $rail.innerHTML = renderRail();
+  $top.innerHTML  = renderTop();
+  $view.innerHTML = ({
+    menu:viewMenu, review:viewReview, payments:viewPayments,
+    orders:viewOrders, dishes:viewDishes, engagement:viewEngagement
+  })[state.nav]();
+  $ov.innerHTML = state.open && ITEMBY[state.open] ? viewEditor(ITEMBY[state.open]) : '';
+  document.body.style.overflow = state.open ? 'hidden' : '';
+
+  if(fk){
+    var sel = '[data-fk="'+fk+'"]' + (fid ? '[data-id="'+fid+'"]' : '');
+    var el = document.querySelector(sel);
+    if(el){
+      el.focus();
+      if(selS!=null && el.setSelectionRange){ try{ el.setSelectionRange(selS, selE); }catch(e){} }
+    }
+  }
+  save();
+}
+var toastTimer = null;
+function toast(msg){
+  $toast.innerHTML = '<div class="toast" role="status">'+esc(msg)+'</div>';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ $toast.innerHTML = ''; }, 2600);
+}
+
+/* ===========================================================
+   14. Events
+   =========================================================== */
+document.addEventListener('click', function(ev){
+  var el = ev.target.closest ? ev.target.closest('[data-nav],[data-lang],[data-mg],[data-sold],[data-edit],[data-close],[data-verify],[data-revert],[data-bill],[data-rg],[data-rs],[data-dishall]') : null;
+  if(!el) return;
+  var g = function(k){ return el.getAttribute(k); };
+
+  if(g('data-nav')){ state.nav = g('data-nav'); state.open = null; state.dishAll = false; render(); window.scrollTo(0,0); return; }
+  if(g('data-lang')){ state.lang = g('data-lang'); render(); return; }
+  if(g('data-mg')){ state.mgroup = g('data-mg'); render(); return; }
+  if(g('data-rg')){ state.rgroup = g('data-rg'); state.dishAll = false; render(); return; }
+  if(g('data-rs')){ state.rsort = g('data-rs'); render(); return; }
+  if(g('data-dishall')){ state.dishAll = !state.dishAll; render(); return; }
+  if(g('data-bill')){ var i = +g('data-bill'); state.billOpen = (state.billOpen===i ? null : i); render(); return; }
+  if(g('data-edit')){ state.open = g('data-edit'); render(); return; }
+  if(g('data-close')){ state.open = null; render(); return; }
+
+  if(g('data-sold')){
+    var id = g('data-sold'), it = ITEMBY[id];
+    if(state.soldOut[id]) delete state.soldOut[id]; else state.soldOut[id] = true;
+    render();
+    toast(nmPrimary(it) + ' · ' + (state.soldOut[id] ? t('soldout') : t('instock')));
+    return;
+  }
+  if(g('data-verify')){
+    var vid = g('data-verify'), vit = ITEMBY[vid];
+    if(state.verified[vid]) delete state.verified[vid]; else state.verified[vid] = true;
+    render();
+    toast(nmPrimary(vit) + ' · ' + (state.verified[vid] ? t('verified') : t('notreviewed')));
+    return;
+  }
+  if(g('data-revert')){
+    delete state.edits[g('data-revert')];
+    render();
+    return;
+  }
+});
+
+document.addEventListener('input', function(ev){
+  var el = ev.target, fk = el.getAttribute && el.getAttribute('data-fk');
+  if(!fk) return;
+  if(fk === 'q'){ state.q = el.value; render(); return; }
+  if(fk === 'soldonly'){ state.soldOnly = el.checked; render(); return; }
+  if(fk.indexOf('e-') === 0){
+    var id = el.getAttribute('data-id'), it = ITEMBY[id];
+    if(!it) return;
+    var e = state.edits[id] || (state.edits[id] = {});
+    if(fk === 'e-th') e.th = el.value;
+    if(fk === 'e-en') e.en = el.value;
+    if(fk === 'e-price'){ var v = el.value.trim(); e.price = v==='' ? null : Math.max(0, Math.round(parseFloat(v)*100)) || 0; }
+    if(fk === 'e-rate'){ var r = el.value.trim(); e.rate = r==='' ? null : Math.max(0, Math.round(parseFloat(r)*100)) || 0; }
+    render();
+    return;
+  }
+});
+document.addEventListener('change', function(ev){
+  var el = ev.target, fk = el.getAttribute && el.getAttribute('data-fk');
+  if(fk === 'mcat'){ state.mcat = el.value; render(); }
+});
+document.addEventListener('keydown', function(ev){
+  if(ev.key === 'Escape' && state.open){ state.open = null; render(); }
+});
+
+render();
+})();
+
+</script>
+</body>
+</html>

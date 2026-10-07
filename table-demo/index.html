@@ -1,0 +1,1740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Order from your table at Rabbit Grill Khao Yai: scan, browse in Thai or English, send the order and follow it to the bill.">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; background: #faf9f7; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<title>Rabbit Grill Table Demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Noto+Sans+Thai:wght@400;500;600;700&family=Oswald:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --paper:#F3ECDD; --paper-2:#E9E0CB; --bone:#F8F4EA; --ink:#17150F; --ink-2:#221E16; --ink-3:#2E2921;
+  --forest:#1E4230; --forest-2:#2C5A40; --oxblood:#6E1621; --taupe:#6B5E4B; --ember:#CB6234;
+  --ember-ink:#A8441E; --steel:#8E8B82; --ink-soft:#5D574A; --ink-edge:#7A7264; --ink-numeral:#857D6F;
+  --paper-hover:#EFE8D8; --forest-tint:#E3EAE2; --oxblood-tint:#EEE4DC; --ember-tint:#F3E2D4;
+  --sage:#D5DDD4; --ash:#B9B2A2; --ash-2:#8F8878; --smoke:#37342E; --sage-light:#9FC4AA;
+  --rose-light:#E59C90; --ember-light:#E08A5E; --forest-night:#223127; --oxblood-night:#3A1B1C; --ember-night:#3A2419;
+
+  --canvas:var(--paper); --surface:var(--bone); --sunken:var(--paper-2); --hover:var(--paper-hover);
+  --text:var(--ink); --text-2:var(--ink-soft); --text-3:var(--taupe); --numeral:var(--ink-numeral);
+  --rule:rgba(23,21,15,.14); --rule-soft:rgba(23,21,15,.08); --rule-strong:rgba(23,21,15,.26);
+  --rule-ink:var(--ink); --edge:var(--ink-edge); --leader:var(--steel);
+  --action:var(--forest); --action-hover:var(--forest-2); --on-action:var(--bone); --on-action-2:var(--sage);
+  --action-text:var(--forest); --selected:var(--forest-tint); --selected-edge:var(--forest);
+  --ok:var(--forest); --ok-tint:var(--forest-tint); --alert:var(--oxblood); --alert-tint:var(--oxblood-tint);
+  --on-alert:var(--bone); --heat-text:var(--ember-ink); --heat-tint:var(--ember-tint);
+  --now:var(--ember); --now-text:var(--ember-ink);
+  --inverse:var(--ink); --on-inverse:var(--bone); --on-inverse-2:var(--ash);
+  --focus:var(--ember); --scrim:rgba(23,21,15,.56); --image-mat:var(--bone);
+
+  --plate-a1:#D9C6AC; --plate-b1:#B99C78; --plate-a2:#CFC0A6; --plate-b2:#A98F6E;
+  --plate-a3:#D8C7B4; --plate-b3:#AE8D74; --plate-a4:#CEC7AE; --plate-b4:#9E9472;
+  --plate-a5:#DCC9B6; --plate-b5:#B08A6D; --plate-a6:#C8C3B2; --plate-b6:#9A907A;
+  --plate-ink:#3A2E22;
+
+  --font-ui:"Noto Sans Thai","Leelawadee UI",Thonburi,"Helvetica Neue",Arial,sans-serif;
+  --font-display:"Oswald","Noto Sans Thai","Arial Narrow",sans-serif;
+  --font-serif:"Cormorant Garamond","Noto Sans Thai",Georgia,"Times New Roman",serif;
+  --num:"tnum" 1,"lnum" 1;
+
+  --fs-12:.75rem; --fs-13:.8125rem; --fs-14:.875rem; --fs-15:.9375rem; --fs-16:1rem; --fs-17:1.0625rem;
+  --fs-18:1.125rem; --fs-20:1.25rem; --fs-22:1.375rem; --fs-24:1.5rem; --fs-26:1.625rem; --fs-28:1.75rem;
+  --fs-32:2rem; --fs-40:2.5rem; --fs-48:3rem;
+  --lh-thai:1.6; --lh-thai-min:1.55; --lh-latin:1.45;
+
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px;
+  --gutter:16px; --radius-hair:2px; --radius-sm:4px; --radius-ctl:6px; --radius-card:8px; --radius-sheet:16px; --radius-pill:999px;
+  --shadow-card:0 1px 0 rgba(23,21,15,.04),0 1px 3px rgba(23,21,15,.06);
+  --shadow-sheet:0 -10px 30px rgba(23,21,15,.22);
+  --shadow-float:0 6px 18px -4px rgba(23,21,15,.24);
+  --tap:44px; --control-h:44px; --control-h-lg:52px; --nav-h:64px;
+  --ease-out:cubic-bezier(.2,.7,.3,1); --ease-sheet:cubic-bezier(.32,.72,0,1);
+  --dur-fast:160ms; --dur-base:200ms; --dur-sheet:240ms; --sheet-travel:24px; --press-scale:.97;
+  --col:440px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --canvas:var(--ink); --surface:var(--ink-2); --sunken:var(--ink-3); --hover:var(--smoke);
+    --text:var(--bone); --text-2:var(--ash); --text-3:var(--ash-2); --numeral:var(--ash-2);
+    --rule:rgba(248,244,234,.14); --rule-soft:rgba(248,244,234,.08); --rule-strong:rgba(248,244,234,.28);
+    --rule-ink:var(--bone); --edge:var(--ash-2); --leader:var(--steel);
+    --action-text:var(--sage-light); --selected:var(--forest-night); --selected-edge:var(--sage-light);
+    --ok:var(--sage-light); --ok-tint:var(--forest-night); --alert:var(--rose-light); --alert-tint:var(--oxblood-night);
+    --heat-text:var(--ember-light); --heat-tint:var(--ember-night); --now-text:var(--ember-light);
+    --inverse:var(--bone); --on-inverse:var(--ink); --on-inverse-2:var(--ink-soft);
+    --image-mat:var(--ink-3); --scrim:rgba(0,0,0,.66);
+    --shadow-card:0 0 0 1px rgba(248,244,234,.06);
+    --plate-a1:#4A3B2C; --plate-b1:#2E2419; --plate-a2:#473C2C; --plate-b2:#2B2318;
+    --plate-a3:#4C3C30; --plate-b3:#2F241C; --plate-a4:#44412F; --plate-b4:#29271B;
+    --plate-a5:#4E3B2E; --plate-b5:#30231A; --plate-a6:#413E33; --plate-b6:#27251E;
+    --plate-ink:#E3D6C4;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --canvas:var(--ink); --surface:var(--ink-2); --sunken:var(--ink-3); --hover:var(--smoke);
+  --text:var(--bone); --text-2:var(--ash); --text-3:var(--ash-2); --numeral:var(--ash-2);
+  --rule:rgba(248,244,234,.14); --rule-soft:rgba(248,244,234,.08); --rule-strong:rgba(248,244,234,.28);
+  --rule-ink:var(--bone); --edge:var(--ash-2); --leader:var(--steel);
+  --action-text:var(--sage-light); --selected:var(--forest-night); --selected-edge:var(--sage-light);
+  --ok:var(--sage-light); --ok-tint:var(--forest-night); --alert:var(--rose-light); --alert-tint:var(--oxblood-night);
+  --heat-text:var(--ember-light); --heat-tint:var(--ember-night); --now-text:var(--ember-light);
+  --inverse:var(--bone); --on-inverse:var(--ink); --on-inverse-2:var(--ink-soft);
+  --image-mat:var(--ink-3); --scrim:rgba(0,0,0,.66);
+  --shadow-card:0 0 0 1px rgba(248,244,234,.06);
+  --plate-a1:#4A3B2C; --plate-b1:#2E2419; --plate-a2:#473C2C; --plate-b2:#2B2318;
+  --plate-a3:#4C3C30; --plate-b3:#2F241C; --plate-a4:#44412F; --plate-b4:#29271B;
+  --plate-a5:#4E3B2E; --plate-b5:#30231A; --plate-a6:#413E33; --plate-b6:#27251E;
+  --plate-ink:#E3D6C4;
+}
+@media (prefers-reduced-motion: reduce){
+  :root{--dur-fast:1ms; --dur-base:1ms; --dur-sheet:1ms; --sheet-travel:0px; --press-scale:1;}
+}
+
+*{box-sizing:border-box}
+body{background:var(--canvas); color:var(--text); font:400 var(--fs-16)/var(--lh-thai) var(--font-ui);
+  margin:0; -webkit-text-size-adjust:100%; overflow-x:hidden;}
+button,input,textarea{font:inherit; color:inherit}
+button{background:none; border:0; cursor:pointer; text-align:left}
+:focus-visible{outline:2px solid var(--focus); outline-offset:2px; border-radius:var(--radius-sm)}
+.sr{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
+
+/* ---------- shell ---------- */
+#col{max-width:var(--col); margin:0 auto; min-height:100vh; background:var(--canvas); position:relative;
+  box-shadow:0 0 0 1px var(--rule-soft);}
+@media (min-width:600px){ body{background:var(--sunken)} #col{box-shadow:0 0 40px -12px rgba(23,21,15,.25),0 0 0 1px var(--rule)} }
+#main{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 28px)}
+.gut{padding-left:var(--gutter); padding-right:var(--gutter)}
+
+.mast{position:sticky; top:0; z-index:20; background:var(--canvas);
+  box-shadow:0 1px 0 var(--rule-ink),0 4px 0 var(--canvas),0 5px 0 var(--rule-strong),0 5px 0 var(--canvas);}
+.mast-in{display:flex; align-items:center; gap:var(--space-2); min-height:60px; padding:0 var(--gutter)}
+.tag{border:1px solid var(--rule-ink); border-radius:var(--radius-hair); padding:4px 8px 5px; line-height:1;
+  display:flex; flex-direction:column; gap:2px; align-items:center; flex:0 0 auto}
+.tag b{font:500 var(--fs-20)/1 var(--font-display); font-feature-settings:var(--num); letter-spacing:.01em}
+.tag i{font-style:normal; font-size:var(--fs-12); color:var(--text-2); line-height:1}
+.mark{flex:1 1 auto; text-align:center; min-width:0}
+.mark b{display:block; font:600 var(--fs-16)/1 var(--font-serif); letter-spacing:.18em; text-transform:uppercase; white-space:nowrap}
+.mark i{display:block; font:500 var(--fs-12)/1 var(--font-display); letter-spacing:.3em; color:var(--text-2); margin-top:4px; font-style:normal}
+.lang{display:flex; border:1px solid var(--rule-ink); border-radius:var(--radius-hair); overflow:hidden; flex:0 0 auto}
+.lang button{padding:9px 11px; font:500 var(--fs-14)/1 var(--font-ui); color:var(--text-2); min-height:40px}
+.lang button[aria-pressed="true"]{background:var(--inverse); color:var(--on-inverse)}
+
+.demo{display:flex; gap:var(--space-3); padding:var(--space-3) var(--gutter); background:var(--sunken);
+  border-bottom:1px dashed var(--rule-strong); align-items:flex-start}
+.demo svg{flex:0 0 auto; margin-top:2px; color:var(--text-2)}
+.demo p{margin:0; font-size:var(--fs-14); line-height:var(--lh-thai); color:var(--text-2)}
+.demo b{color:var(--text); font-weight:600}
+
+.kick{font:500 var(--fs-13)/1.3 var(--font-display); letter-spacing:.06em; color:var(--text-3); text-transform:none}
+.ptitle{font:600 var(--fs-26)/var(--lh-thai-min) var(--font-ui); margin:var(--space-1) 0 0}
+.ptitle .en{font:italic 500 var(--fs-20)/1.2 var(--font-serif); color:var(--text-3); margin-left:8px}
+.lede{color:var(--text-2); font-size:var(--fs-15); margin:var(--space-2) 0 0}
+.head{padding-top:var(--space-5); padding-bottom:var(--space-4)}
+
+/* ---------- nav ---------- */
+#nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:min(var(--col),100%); z-index:30;
+  background:var(--surface); border-top:1px solid var(--rule); padding-bottom:env(safe-area-inset-bottom,0px);
+  display:grid; grid-template-columns:repeat(4,1fr)}
+#nav button{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  min-height:var(--nav-h); color:var(--text-2); font:500 var(--fs-13)/1.4 var(--font-ui); position:relative; padding:6px 2px}
+#nav button[aria-current="page"]{color:var(--text)}
+#nav button[aria-current="page"]::after{content:""; position:absolute; top:6px; left:50%; transform:translateX(-50%);
+  width:26px; height:3px; border-radius:2px; background:var(--now)}
+.badge{position:absolute; top:6px; left:calc(50% + 10px); min-width:20px; height:20px; padding:0 5px;
+  border-radius:var(--radius-pill); background:var(--inverse); color:var(--on-inverse);
+  font:500 var(--fs-12)/20px var(--font-display); font-feature-settings:var(--num); text-align:center}
+
+/* ---------- cards, rules ---------- */
+.card{background:var(--surface); border:1px solid var(--rule); border-radius:var(--radius-card);
+  box-shadow:var(--shadow-card); padding:var(--space-4); margin-top:var(--space-4)}
+.card h3{margin:0 0 var(--space-3); font:600 var(--fs-18)/var(--lh-thai) var(--font-ui)}
+.secthead{display:flex; align-items:baseline; gap:var(--space-3); margin-top:var(--space-6)}
+.secthead h2{margin:0; font:600 var(--fs-24)/var(--lh-thai-min) var(--font-ui); flex:0 0 auto}
+.secthead .en{font:italic 500 var(--fs-20)/1.2 var(--font-serif); color:var(--text-3); margin-left:auto; text-align:right}
+.sectno{display:flex; align-items:center; gap:var(--space-3); margin-top:var(--space-8)}
+.sectno span{font:500 var(--fs-12)/1.2 var(--font-display); letter-spacing:.14em; color:var(--text-2)}
+.sectno hr{flex:1; border:0; border-top:1px solid var(--rule); margin:0}
+.note{color:var(--text-2); font-size:var(--fs-14); margin:var(--space-2) 0 0}
+.hint{color:var(--text-3); font-size:var(--fs-13); margin:var(--space-2) 0 0}
+
+/* ---------- leader line ---------- */
+.lead{display:flex; align-items:baseline; gap:0; width:100%; min-width:0}
+.lead .nm{flex:0 1 auto; min-width:0; overflow-wrap:anywhere}
+.lead .dots{flex:1 1 auto; min-width:14px; border-bottom:2px dotted var(--leader); margin:0 6px; transform:translateY(-5px); align-self:flex-end; height:0}
+.lead .amt{flex:0 0 auto; font:500 var(--fs-20)/1 var(--font-display); font-feature-settings:var(--num); white-space:nowrap}
+.amt-sm{font:500 var(--fs-16)/1 var(--font-display); font-feature-settings:var(--num)}
+.amt-lg{font:500 var(--fs-26)/1 var(--font-display); font-feature-settings:var(--num)}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:var(--control-h);
+  padding:0 var(--space-4); border-radius:var(--radius-ctl); font:600 var(--fs-15)/1.3 var(--font-ui);
+  transition:background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out)}
+.btn:active{transform:scale(var(--press-scale))}
+.btn-p{background:var(--action); color:var(--on-action); width:100%; min-height:var(--control-h-lg)}
+.btn-p:hover{background:var(--action-hover)}
+.btn-o{border:1px solid var(--edge); color:var(--action-text); background:var(--surface)}
+.btn-o:hover{background:var(--hover)}
+.btn-g{border:1px solid var(--edge); color:var(--text); background:var(--surface); width:100%}
+.btn[disabled]{opacity:.55; cursor:default; transform:none}
+.btn-txt{color:var(--action-text); font-weight:600; font-size:var(--fs-15); text-decoration:underline; text-underline-offset:3px; padding:8px 0; min-height:var(--tap)}
+
+.pill{display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:var(--radius-pill);
+  font:600 var(--fs-13)/1.4 var(--font-ui)}
+.pill-n{background:var(--sunken); color:var(--text)}
+.pill-ok{background:var(--ok-tint); color:var(--ok)}
+.pill-h{background:var(--heat-tint); color:var(--heat-text)}
+.pill-a{background:var(--alert-tint); color:var(--alert)}
+.chip-ink{background:var(--inverse); color:var(--on-inverse); border-radius:var(--radius-sm); padding:3px 8px; font:600 var(--fs-13)/1.4 var(--font-ui)}
+.dot{width:8px; height:8px; border-radius:50%; background:currentColor; flex:0 0 auto}
+
+/* ---------- search + tabs ---------- */
+.srow{display:flex; gap:var(--space-2); padding:var(--space-3) var(--gutter) var(--space-2); background:var(--canvas)}
+.sbox{flex:1 1 auto; display:flex; align-items:center; gap:8px; border:1px solid var(--edge);
+  border-radius:var(--radius-ctl); background:var(--surface); padding:0 10px; min-height:var(--control-h); min-width:0}
+.sbox svg{flex:0 0 auto; color:var(--text-2)}
+.sbox input{flex:1 1 auto; min-width:0; border:0; background:none; outline:none; font-size:var(--fs-16); padding:10px 0}
+.seg{display:flex; border:1px solid var(--edge); border-radius:var(--radius-ctl); background:var(--sunken); overflow:hidden; flex:0 0 auto}
+.seg button{padding:0 12px; min-height:var(--control-h); font:600 var(--fs-15)/1 var(--font-ui); color:var(--text-2); white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface); color:var(--text); box-shadow:0 0 0 1px var(--edge)}
+
+.tabs{position:sticky; top:60px; z-index:19; background:var(--canvas); border-bottom:1px solid var(--rule)}
+.tabs-in{display:flex; align-items:stretch; gap:0; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch}
+.tabs-in::-webkit-scrollbar{display:none}
+.tabs button{display:flex; align-items:center; gap:7px; padding:0 13px; min-height:52px; white-space:nowrap;
+  font:500 var(--fs-15)/1 var(--font-ui); color:var(--text-2); position:relative}
+.tabs button:first-child{padding-left:var(--gutter)}
+.tabs button[aria-current="true"]{color:var(--text); font-weight:600}
+.tabs button[aria-current="true"]::after{content:""; position:absolute; left:13px; right:13px; bottom:0; height:3px; background:var(--now)}
+.tabs .no{font:500 var(--fs-13)/1 var(--font-display); letter-spacing:.06em; color:var(--numeral); font-feature-settings:var(--num)}
+.catlist{border-bottom:1px solid var(--rule); background:var(--surface); padding:var(--space-2) 0}
+.catlist button{display:flex; width:100%; align-items:baseline; gap:10px; padding:10px var(--gutter); min-height:var(--tap)}
+.catlist button:hover{background:var(--hover)}
+.catlist .n{font:500 var(--fs-13)/1 var(--font-display); color:var(--numeral); font-feature-settings:var(--num); flex:0 0 22px}
+.catlist .c{margin-left:auto; color:var(--text-3); font-size:var(--fs-13)}
+
+/* ---------- dish rows ---------- */
+.rows{margin-top:var(--space-3)}
+.row{display:flex; gap:12px; padding:var(--space-5) 0; border-top:1px solid var(--rule); align-items:flex-start; width:100%}
+.rows .row:first-child{border-top:0}
+.row:hover{background:var(--hover)}
+.plate{flex:0 0 auto; width:clamp(96px,28vw,112px); aspect-ratio:4/3; border-radius:var(--radius-hair);
+  display:grid; place-items:center; box-shadow:0 0 0 3px var(--image-mat),0 0 0 4px var(--rule); margin:4px}
+.plate span{font:italic 600 var(--fs-28)/1 var(--font-serif); color:var(--plate-ink); opacity:.5}
+.pl1{background:linear-gradient(135deg,var(--plate-a1),var(--plate-b1))}
+.pl2{background:linear-gradient(135deg,var(--plate-a2),var(--plate-b2))}
+.pl3{background:linear-gradient(135deg,var(--plate-a3),var(--plate-b3))}
+.pl4{background:linear-gradient(135deg,var(--plate-a4),var(--plate-b4))}
+.pl5{background:linear-gradient(135deg,var(--plate-a5),var(--plate-b5))}
+.pl6{background:linear-gradient(135deg,var(--plate-a6),var(--plate-b6))}
+.rbody{flex:1 1 auto; min-width:0}
+.rkick{display:flex; align-items:center; gap:6px; color:var(--text-2); font-size:var(--fs-13); margin-bottom:3px}
+.rname{font:600 var(--fs-17)/var(--lh-thai) var(--font-ui)}
+.ren{font:italic 500 var(--fs-17)/1.25 var(--font-serif); color:var(--text-3); margin-top:2px}
+.rper{font:400 var(--fs-13)/1.4 var(--font-ui); color:var(--text-2); text-align:right; margin-top:2px}
+.ract{display:flex; justify-content:flex-end; margin-top:var(--space-3)}
+.row.off .rname,.row.off .lead .amt{color:var(--text-2)}
+.row.off .plate{opacity:.55}
+.rwhy{display:flex; gap:7px; align-items:flex-start; margin-top:var(--space-2); color:var(--alert); font-size:var(--fs-13); line-height:var(--lh-thai)}
+.rwhy svg{flex:0 0 auto; margin-top:2px}
+
+/* ---------- stepper ---------- */
+.step{display:inline-flex; align-items:center; border:1px solid var(--edge); border-radius:var(--radius-ctl);
+  background:var(--selected); overflow:hidden; flex:0 0 auto}
+.step button{width:46px; min-height:var(--control-h); display:grid; place-items:center; font-size:var(--fs-20); color:var(--text)}
+.step button[disabled]{color:var(--text-3)}
+.step b{min-width:34px; text-align:center; font:500 var(--fs-18)/1 var(--font-display); font-feature-settings:var(--num)}
+
+/* ---------- sheet ---------- */
+#scrim{position:fixed; inset:0; background:var(--scrim); z-index:49; opacity:0; pointer-events:none; transition:opacity var(--dur-sheet) var(--ease-out)}
+#scrim.on{opacity:1; pointer-events:auto}
+#sheet{position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%); width:min(var(--col),100%);
+  max-height:92vh; z-index:50; background:var(--surface); border-radius:var(--radius-sheet) var(--radius-sheet) 0 0;
+  box-shadow:var(--shadow-sheet); display:flex; flex-direction:column; transition:transform var(--dur-sheet) var(--ease-sheet);
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+#sheet.on{transform:translateX(-50%) translateY(0)}
+.grab{width:44px; height:4px; border-radius:2px; background:var(--rule-strong); margin:10px auto 0; flex:0 0 auto}
+.sh-h{display:flex; align-items:center; gap:var(--space-2); padding:var(--space-3) var(--gutter); flex:0 0 auto}
+.sh-h .t{flex:1 1 auto; min-width:0; font:600 var(--fs-24)/var(--lh-thai-min) var(--font-ui)}
+.sh-h .k{flex:1 1 auto; min-width:0; font-size:var(--fs-14); color:var(--text-2)}
+.iconbtn{width:44px; height:44px; display:grid; place-items:center; border:1px solid var(--edge); border-radius:var(--radius-hair); flex:0 0 auto; background:var(--surface)}
+.iconbtn.x{border-color:var(--now); color:var(--text)}
+.sh-b{overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 var(--gutter) var(--space-4); flex:1 1 auto}
+.sh-f{flex:0 0 auto; padding:var(--space-3) var(--gutter) var(--space-4); border-top:1px solid var(--rule);
+  background:var(--surface); display:flex; gap:var(--space-3); align-items:center}
+.sh-f .btn-p{flex:1 1 auto; width:auto}
+
+.ta{width:100%; min-height:96px; resize:vertical; border:1px solid var(--edge); border-radius:var(--radius-ctl);
+  background:var(--sunken); padding:12px; font-size:var(--fs-16); line-height:var(--lh-thai); outline:none}
+.ta:focus-visible{outline:2px solid var(--focus); outline-offset:1px}
+.tawrap{position:relative; margin-top:var(--space-2)}
+.cnt{position:absolute; right:10px; bottom:8px; font:400 var(--fs-13)/1 var(--font-ui); color:var(--text-3); font-feature-settings:var(--num); pointer-events:none}
+.num{width:100%; border:1px solid var(--edge); border-radius:var(--radius-ctl); background:var(--sunken); padding:11px 12px; font-size:var(--fs-16); outline:none}
+.lbl{display:flex; align-items:baseline; gap:8px; font:600 var(--fs-16)/var(--lh-thai) var(--font-ui); margin-top:var(--space-5)}
+.lbl i{font-style:normal; font-weight:400; font-size:var(--fs-14); color:var(--text-2)}
+.chk{display:flex; gap:10px; align-items:flex-start; margin-top:var(--space-4); cursor:pointer}
+.chk input{appearance:none; width:24px; height:24px; flex:0 0 auto; border:1px solid var(--edge);
+  border-radius:var(--radius-sm); background:var(--sunken); margin:1px 0 0; display:grid; place-items:center}
+.chk input:checked{background:var(--action); border-color:var(--action)}
+.chk input:checked::after{content:"✓"; color:var(--on-action); font-size:15px; line-height:1}
+.chk b{font:600 var(--fs-16)/var(--lh-thai) var(--font-ui); display:block}
+.chk small{display:block; color:var(--text-2); font-size:var(--fs-14); line-height:var(--lh-thai)}
+
+.srow2{display:flex; align-items:center; gap:12px; width:100%; padding:var(--space-3) var(--space-3);
+  border:1px solid var(--rule); border-radius:var(--radius-card); margin-top:var(--space-2); background:var(--surface)}
+.srow2:hover{background:var(--hover)}
+.srow2.sel{border-color:var(--now); box-shadow:0 0 0 1px var(--now)}
+.srow2 .ic{width:40px; height:40px; border-radius:50%; border:1px solid var(--edge); display:grid; place-items:center; flex:0 0 auto; color:var(--text)}
+.srow2 .tx{flex:1 1 auto; min-width:0}
+.srow2 .tx b{display:block; font:600 var(--fs-16)/var(--lh-thai) var(--font-ui)}
+.srow2 .tx small{display:block; color:var(--text-2); font-size:var(--fs-14); line-height:var(--lh-thai)}
+.srow2 .ar{color:var(--text-3); flex:0 0 auto}
+.srow2[disabled]{opacity:.75}
+
+/* ---------- flow / steps list ---------- */
+.flow{list-style:none; margin:0; padding:0}
+.flow li{display:flex; gap:12px; align-items:flex-start; position:relative; padding-bottom:var(--space-4)}
+.flow li:last-child{padding-bottom:0}
+.flow li::before{content:""; position:absolute; left:11px; top:24px; bottom:0; border-left:2px dotted var(--rule-strong)}
+.flow li:last-child::before{display:none}
+.flow .mk{width:24px; height:24px; border-radius:50%; border:1px solid var(--edge); flex:0 0 auto; display:grid; place-items:center; background:var(--surface); z-index:1}
+.flow li.done .mk{background:var(--action); border-color:var(--action); color:var(--on-action)}
+.flow li.now .mk{border:2px solid var(--now)}
+.flow li.now .mk::after{content:""; width:10px; height:10px; border-radius:50%; background:var(--now)}
+.flow .bd{flex:1 1 auto; min-width:0}
+.flow .bd b{font:600 var(--fs-16)/var(--lh-thai) var(--font-ui)}
+.flow li.todo .bd b{font-weight:400; color:var(--text-3)}
+.flow .bd small{display:block; color:var(--text-2); font-size:var(--fs-14); line-height:var(--lh-thai)}
+.flow .tm{margin-left:auto; flex:0 0 auto; font:400 var(--fs-13)/1.6 var(--font-display); color:var(--text-2); font-feature-settings:var(--num)}
+
+/* ---------- track ---------- */
+.rail{display:flex; align-items:center; gap:0; margin:var(--space-3) 0 var(--space-2)}
+.rail i{width:10px; height:10px; border-radius:50%; border:1px solid var(--edge); flex:0 0 auto; background:var(--surface)}
+.rail i.d{background:var(--action); border-color:var(--action)}
+.rail i.c{border:2px solid var(--now); background:var(--surface); width:12px; height:12px}
+.rail s{flex:1 1 auto; height:2px; background:var(--rule); text-decoration:none}
+.rail s.d{background:var(--action)}
+.tline{display:flex; gap:8px; align-items:baseline; font-size:var(--fs-13); color:var(--text-2); padding:2px 0}
+.tline em{font-style:normal; margin-left:auto; font-family:var(--font-display); font-feature-settings:var(--num)}
+.dish{border-top:1px solid var(--rule); padding:var(--space-4) 0}
+.dish:first-of-type{border-top:0}
+.ref{font:500 var(--fs-20)/1 var(--font-display); letter-spacing:.06em; font-feature-settings:var(--num)}
+
+/* ---------- cart lines ---------- */
+.line{display:flex; gap:12px; padding:var(--space-4) 0; border-top:1px dashed var(--rule-strong); align-items:flex-start}
+.line:first-of-type{border-top:0}
+.thumb{width:56px; height:56px; flex:0 0 auto; border-radius:var(--radius-hair); display:grid; place-items:center;
+  box-shadow:0 0 0 3px var(--image-mat),0 0 0 4px var(--rule); margin:3px}
+.thumb span{font:italic 600 var(--fs-20)/1 var(--font-serif); color:var(--plate-ink); opacity:.5}
+.lacts{display:flex; align-items:center; gap:var(--space-4); margin-top:var(--space-3); flex-wrap:wrap}
+.notebox{margin-top:var(--space-2); padding:9px 11px; background:var(--sunken); border-radius:var(--radius-sm); font-size:var(--fs-14); line-height:var(--lh-thai)}
+.notebox b{display:block; font-size:var(--fs-13); color:var(--text-2); font-weight:600; margin-bottom:2px}
+.notebox.al{background:var(--alert-tint); color:var(--text)}
+.notebox.al b{color:var(--alert)}
+
+/* ---------- toast ---------- */
+#toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 12px);
+  width:min(calc(var(--col) - 32px), calc(100% - 32px)); z-index:60; background:var(--inverse); color:var(--on-inverse);
+  border-radius:var(--radius-ctl); padding:12px 14px; font-size:var(--fs-15); line-height:var(--lh-thai);
+  box-shadow:var(--shadow-float); opacity:0; pointer-events:none; transition:opacity var(--dur-base) var(--ease-out)}
+#toast.on{opacity:1}
+.empty{text-align:center; padding:var(--space-8) var(--space-4)}
+.empty h3{margin:0 0 var(--space-2); font:600 var(--fs-20)/var(--lh-thai) var(--font-ui)}
+.empty p{margin:0 0 var(--space-4); color:var(--text-2); font-size:var(--fs-15)}
+.joinbar{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:min(var(--col),100%); z-index:30;
+  background:var(--surface); border-top:1px solid var(--rule); padding:var(--space-3) var(--gutter);
+  padding-bottom:calc(var(--space-3) + env(safe-area-inset-bottom,0px))}
+.wm{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-top:var(--space-2)}
+.frame{border:1px solid var(--rule-ink); border-radius:var(--radius-hair); padding:var(--space-3) var(--space-6);
+  display:inline-flex; align-items:baseline; gap:10px}
+.frame i{font-style:normal; font-size:var(--fs-13); color:var(--text-2)}
+.frame b{font:500 var(--fs-48)/1 var(--font-display); font-feature-settings:var(--num)}
+.center{text-align:center}
+.circ{width:64px; height:64px; border-radius:50%; border:1px solid var(--edge); display:grid; place-items:center; margin:0 auto var(--space-4); color:var(--text-2)}
+hr.r{border:0; border-top:1px solid var(--rule-ink); margin:var(--space-5) 0}
+.sw{width:52px; height:30px; border-radius:var(--radius-pill); background:var(--sunken); border:1px solid var(--edge); position:relative; flex:0 0 auto; transition:background var(--dur-fast)}
+.sw::after{content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:var(--surface); box-shadow:var(--shadow-card); transition:transform var(--dur-fast) var(--ease-out)}
+.sw[aria-pressed="true"]{background:var(--action); border-color:var(--action)}
+.sw[aria-pressed="true"]::after{transform:translateX(22px)}
+</style>
+</head>
+<body>
+<div id="col">
+  <div id="app"></div>
+</div>
+<div id="scrim" data-act="closeSheet"></div>
+<div id="sheet" role="dialog" aria-modal="true" aria-label="" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<nav id="nav" aria-label=""></nav>
+
+<script type="application/json" id="catalog">{"categories":[{"id":"cat_0BA5DYW1J3VESA1X","key":"beef-selection","th":"เนื้อ","en":"Beef Selection","sort":10,"alcohol":0},{"id":"cat_8FBBSM63TPSMNR1G","key":"special-matcha","th":"มัทฉะพิเศษ","en":"Special Matcha","sort":10,"alcohol":0},{"id":"cat_KTT2M9BZEX4PXBJZ","key":"coffee","th":null,"en":"Coffee","sort":20,"alcohol":0},{"id":"cat_M8B2FR0P7XTAG16J","key":"from-the-grill","th":"จานหลักจากเตา","en":"From the Grill","sort":20,"alcohol":0},{"id":"cat_87PHD7YFQ3X359EG","key":"appetizers","th":"ของเรียกน้ำย่อย","en":"Appetizers","sort":30,"alcohol":0},{"id":"cat_NEB527WYF5B2GHNG","key":"hot-tea","th":null,"en":"Hot Tea","sort":30,"alcohol":0},{"id":"cat_S8E2BBMJWV9GTJ6J","key":"milky","th":"นม","en":"Milky","sort":40,"alcohol":0},{"id":"cat_0QYKYTGDETP4S97B","key":"salads","th":"สลัด","en":"Salads","sort":40,"alcohol":0},{"id":"cat_YV71KQQGDP6Q5PQB","key":"soda","th":"โซดา","en":"Soda","sort":50,"alcohol":0},{"id":"cat_M9ZBHVF9B40082Q1","key":"fresh-juice","th":"น้ำผลไม้สด","en":"Fresh Juice","sort":60,"alcohol":0},{"id":"cat_VECWBRKSNDZTYR56","key":"rice","th":"ข้าว","en":"Rice","sort":60,"alcohol":0},{"id":"cat_ZPHNYVWDWE1ZV5FR","key":"side-dishes","th":"เครื่องเคียง","en":"Side Dishes","sort":70,"alcohol":0},{"id":"cat_FFFWB1FHHAXHFV7V","key":"dessert","th":"ของหวาน","en":"Dessert","sort":80,"alcohol":0},{"id":"cat_TE3DMBX2CA3RB477","key":"draft-beer","th":"เบียร์สด","en":"Draft Beer","sort":80,"alcohol":1},{"id":"cat_PT89MTX75AN1TV45","key":"bottled-beer","th":"เบียร์ขวด","en":"Bottled Beer","sort":90,"alcohol":1},{"id":"cat_D1ET9ECCK5MNCMAY","key":"whiskey","th":null,"en":"Whiskey","sort":100,"alcohol":1},{"id":"cat_6EZ1KHJ38D7AG8H1","key":"soft-drinks","th":null,"en":"Soft Drinks","sort":110,"alcohol":0}],"items":[{"id":"itm_ZR1ZETGDZ5RXBN1J","key":"prime-rib","cat":"cat_0BA5DYW1J3VESA1X","sort":10,"th":"ไพร์มริบ","en":"Prime Rib","dth":null,"den":null,"price":null,"rate":49000,"basis":100,"kind":"measured_weight","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"primerib-full","pnth":null,"pnen":null},{"id":"itm_4EVP3WEYXSV627GF","key":"grilled-baby-chicken","cat":"cat_M8B2FR0P7XTAG16J","sort":10,"th":"ไก่ย่างตัวเล็กคลุกเครื่องเทศ","en":"Grilled Baby Chicken","dth":null,"den":null,"price":59000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"baby-chicken","pnth":null,"pnen":null},{"id":"itm_ZNZEB0707PTG0GCA","key":"corn-rib","cat":"cat_87PHD7YFQ3X359EG","sort":10,"th":"คอร์นริบ","en":"Corn Rib","dth":null,"den":null,"price":15000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"corn-rib","pnth":null,"pnen":null},{"id":"itm_KWPVZZ3R7SVTQZEW","key":"grilled-caesar-salad","cat":"cat_0QYKYTGDETP4S97B","sort":10,"th":"กริลลซีซาร์สลัด","en":"Grilled Caesar Salad","dth":null,"den":null,"price":26000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"caesar","pnth":null,"pnen":null},{"id":"itm_R6FD78PR48XJCTYA","key":"basil-beef-rice","cat":"cat_VECWBRKSNDZTYR56","sort":10,"th":"ข้าวกะเพราคลุกเนื้อย่าง","en":"Rice with Stir-Fried Basil and Grilled Beef","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"basil-beef-rice","pnth":null,"pnen":null},{"id":"itm_EW1E0DZRJY4EF4HR","key":"mashed-potato","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":10,"th":"มันบด","en":"Mashed Potato","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"mashed-potato","pnth":null,"pnen":null},{"id":"itm_VESFD6Y1HCQ8VF00","key":"creme-brulee-lemon","cat":"cat_FFFWB1FHHAXHFV7V","sort":10,"th":"เครมบรูเล่เลมอน","en":"Crème Brûlée Lemon","dth":null,"den":null,"price":16000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"creme-brulee","pnth":null,"pnen":null},{"id":"itm_81MP7FQ8WABP9KGF","key":"clear-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":10,"th":null,"en":"Clear Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_62NXTGRK0VJGSQ2B","key":"short-black","cat":"cat_KTT2M9BZEX4PXBJZ","sort":10,"th":null,"en":"Short Black","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_FYV9SNSAW1XZN1DF","key":"rosemary-tea","cat":"cat_NEB527WYF5B2GHNG","sort":10,"th":null,"en":"Rosemary Tea","dth":null,"den":null,"price":14000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_XJFJX8W6173ZF7C9","key":"caramel-fresh-milk","cat":"cat_S8E2BBMJWV9GTJ6J","sort":10,"th":null,"en":"Caramel Fresh Milk","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_V9NEYBJX5RP67EWF","key":"strawberry-soda","cat":"cat_YV71KQQGDP6Q5PQB","sort":10,"th":null,"en":"Strawberry Soda","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_STD0A6P1HCVPWMR2","key":"cold-pressed-watermelon","cat":"cat_M9ZBHVF9B40082Q1","sort":10,"th":null,"en":"Cold Pressed Watermelon","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_68HBTKXX3XPT1CPJ","key":"hoegaarden-white","cat":"cat_TE3DMBX2CA3RB477","sort":10,"th":null,"en":"Hoegaarden White","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_ZHG9YRP2TNAFJ7JN","key":"beer-budweiser","cat":"cat_PT89MTX75AN1TV45","sort":10,"th":null,"en":"Beer Budweiser","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_CRQCSR8551R227FK","key":"regency","cat":"cat_D1ET9ECCK5MNCMAY","sort":10,"th":null,"en":"Regency","dth":null,"den":null,"price":55000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":"350 มล.","pnen":"350 ml"},{"id":"itm_4D48X2XE8JH3X00S","key":"mont-fleur","cat":"cat_6EZ1KHJ38D7AG8H1","sort":10,"th":null,"en":"Mont Fleur","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_AJ8RK7JFF244GRTC","key":"australian-striploin","cat":"cat_0BA5DYW1J3VESA1X","sort":20,"th":"เนื้อสันนอกออสเตรเลีย","en":"Australian Striploin","dth":null,"den":null,"price":59000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"striploin","pnth":null,"pnen":null},{"id":"itm_XFDH3XRYRAXNXPRQ","key":"grilled-pork","cat":"cat_M8B2FR0P7XTAG16J","sort":20,"th":"หมูย่าง","en":"Grilled Pork","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"grilled-pork","pnth":null,"pnen":null},{"id":"itm_RPXR9D9727CFP1W7","key":"nashville-hot-chicken","cat":"cat_87PHD7YFQ3X359EG","sort":20,"th":"ไก่ทอดซอสเผ็ดแนชวิลล์","en":"Nashville Hot Chicken","dth":null,"den":null,"price":24000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"nashville-chicken","pnth":null,"pnen":null},{"id":"itm_RWXGZDQX60GH0Z8R","key":"green-beans-peas-salad","cat":"cat_0QYKYTGDETP4S97B","sort":20,"th":"สลัดถั่วหวานกับซอสบัลซามิก","en":"Green Beans and Peas Salad","dth":null,"den":null,"price":28000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"greenbean-peas","pnth":null,"pnen":null},{"id":"itm_229S2ZAM9PTXXHMX","key":"american-fried-rice","cat":"cat_VECWBRKSNDZTYR56","sort":20,"th":"ข้าวผัดอเมริกัน","en":"American Fried Rice","dth":null,"den":null,"price":35000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"american-fried-rice","pnth":null,"pnen":null},{"id":"itm_M6A6PH2XJH02SSZ7","key":"sauteed-potato","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":20,"th":"มันฝรั่งผัด","en":"Sauteed Potato","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"sauteed-potato","pnth":null,"pnen":null},{"id":"itm_2XQQ5HXKVE0R9T57","key":"tiramisu","cat":"cat_FFFWB1FHHAXHFV7V","sort":20,"th":"ทีรามิสุ","en":"Tiramisu","dth":null,"den":null,"price":18000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"tiramisu","pnth":null,"pnen":null},{"id":"itm_H5JK8ZEDAGM95DPX","key":"coconut-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":20,"th":null,"en":"Coconut Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_3KMG0DNP1J5GYC3S","key":"long-black","cat":"cat_KTT2M9BZEX4PXBJZ","sort":20,"th":null,"en":"Long Black","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_7H02JKYE1745RZV3","key":"chocolate","cat":"cat_S8E2BBMJWV9GTJ6J","sort":20,"th":null,"en":"Chocolate","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_AD66SBT5D1482FVR","key":"blueberry-soda","cat":"cat_YV71KQQGDP6Q5PQB","sort":20,"th":null,"en":"Blueberry Soda","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_KHE0SGV8VQ7AJE7C","key":"orange-juice-fresh","cat":"cat_M9ZBHVF9B40082Q1","sort":20,"th":null,"en":"Orange Juice","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_YTHPYHTD4C9J8X9A","key":"hoegaarden-rosee","cat":"cat_TE3DMBX2CA3RB477","sort":20,"th":null,"en":"Hoegaarden Rosee","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_HTHYFPC6E29EHJBE","key":"beer-singha","cat":"cat_PT89MTX75AN1TV45","sort":20,"th":null,"en":"Beer Singha","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_QX8QW5NZZBB29HMR","key":"soda-singha","cat":"cat_6EZ1KHJ38D7AG8H1","sort":20,"th":null,"en":"Soda Singha","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_6PSBKVEYNGQ4DH3X","key":"wagyu-tenderloin","cat":"cat_0BA5DYW1J3VESA1X","sort":30,"th":"เนื้อสันในวากิวย่างซอสไวน์แดง","en":"Wagyu Tenderloin MB 6–7 with Red Wine Jus","dth":null,"den":null,"price":199000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"wagyu-tenderloin","pnth":"300 กรัม","pnen":"300 g"},{"id":"itm_VRZE8YJ7MHCSB9H1","key":"grilled-pork-ribs","cat":"cat_M8B2FR0P7XTAG16J","sort":30,"th":"ซี่โครงหมูย่าง","en":"Grilled Pork Ribs","dth":null,"den":null,"price":59000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"pork-ribs","pnth":null,"pnen":null},{"id":"itm_VEZ8ZDBWFNH4YJNY","key":"fried-sweet-potato","cat":"cat_87PHD7YFQ3X359EG","sort":30,"th":"มันหวานทอด","en":"Fried Sweet Potato","dth":null,"den":null,"price":18000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"sweet-potato","pnth":null,"pnen":null},{"id":"itm_786PB5EYXD1YA7JM","key":"green-salad-balsamic","cat":"cat_0QYKYTGDETP4S97B","sort":30,"th":"สลัดรวมกับซอสบัลซามิก","en":"Green Salad with Balsamic Dressing","dth":null,"den":null,"price":26000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"green-salad","pnth":null,"pnen":null},{"id":"itm_WEP5DDFMAV7TMW1E","key":"beef-fried-rice","cat":"cat_VECWBRKSNDZTYR56","sort":30,"th":"ข้าวผัดมันเนื้อย่าง","en":"Beef Fried Rice with Grilled Beef","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"beef-fried-rice","pnth":null,"pnen":null},{"id":"itm_T537S3CFA4DNEGFG","key":"french-fries","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":30,"th":"เฟรนช์ฟรายส์","en":"French Fries","dth":null,"den":null,"price":9000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"french-fries","pnth":null,"pnen":null},{"id":"itm_GKGF7AVQ435Q2TAS","key":"coconut-matcha-cold-foam","cat":"cat_8FBBSM63TPSMNR1G","sort":30,"th":null,"en":"Coconut Matcha Cold Foam","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_V23HRXSACT6W4NBK","key":"long-black-coconut","cat":"cat_KTT2M9BZEX4PXBJZ","sort":30,"th":null,"en":"Long Black Coconut","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_FCVT0W7HGW8PAZJ9","key":"strawberry-cocao","cat":"cat_S8E2BBMJWV9GTJ6J","sort":30,"th":null,"en":"Strawberry Cocao","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_7VK7AGZSY90RCXAM","key":"apple-soda","cat":"cat_YV71KQQGDP6Q5PQB","sort":30,"th":null,"en":"Apple Soda","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_FBGN1J2JZPM2W5EM","key":"coconut-water-fresh","cat":"cat_M9ZBHVF9B40082Q1","sort":30,"th":null,"en":"Coconut Water","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_413KWHNR5RH1H9VA","key":"stellar","cat":"cat_TE3DMBX2CA3RB477","sort":30,"th":null,"en":"Stellar","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_Z4KY0HTJKE46W1B8","key":"beer-chang-classic","cat":"cat_PT89MTX75AN1TV45","sort":30,"th":null,"en":"Beer Chang Classic","dth":null,"den":null,"price":11000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":true,"img":null,"pnth":null,"pnen":null},{"id":"itm_S4P17PNNZHJPYKAF","key":"singha-lemon-soda","cat":"cat_6EZ1KHJ38D7AG8H1","sort":30,"th":null,"en":"Singha Lemon Soda","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_91YNJX36NV8G7T0R","key":"grilled-tongue","cat":"cat_0BA5DYW1J3VESA1X","sort":40,"th":"ลิ้นวัวย่าง","en":"Grilled Tongue","dth":null,"den":null,"price":59000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"grilled-tongue","pnth":null,"pnen":null},{"id":"itm_8SBYMH2NHRC27XG0","key":"fish-and-chips","cat":"cat_M8B2FR0P7XTAG16J","sort":40,"th":"ฟิชแอนดชิปส์","en":"Fish and Chips","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"fish-chips","pnth":null,"pnen":null},{"id":"itm_VX8VN6SC1AQ6B6QJ","key":"beef-tartare-bone-marrow","cat":"cat_87PHD7YFQ3X359EG","sort":40,"th":"บีฟทาร์ทาร์เสิร์ฟพร้อมโบนแมโรว์","en":"Beef Tartare Bone Marrow","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"bone-marrow","pnth":null,"pnen":null},{"id":"itm_5Q7981HYKPBD44SJ","key":"tomato-salad","cat":"cat_0QYKYTGDETP4S97B","sort":40,"th":"สลัดมะเขือเทศ","en":"Tomato Salad","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"tomato-salad","pnth":null,"pnen":null},{"id":"itm_DMEF2ZS2860EWKSA","key":"sauteed-green-beans-bacon","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":40,"th":"ถั่วแขกผัดเบคอน","en":"Sauteed Green Beans Bacon","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"greenbeans-bacon","pnth":null,"pnen":null},{"id":"itm_R45N7EHVEH7DJQMF","key":"matcha-latte-special","cat":"cat_8FBBSM63TPSMNR1G","sort":40,"th":null,"en":"Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_2YJ0TYXEZ4A53ZKA","key":"long-black-longan","cat":"cat_KTT2M9BZEX4PXBJZ","sort":40,"th":null,"en":"Long Black Longan","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_GGKGGRW1SK1848YA","key":"matcha-latte-milky","cat":"cat_S8E2BBMJWV9GTJ6J","sort":40,"th":null,"en":"Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_QYNPCHZREP0MFAGQ","key":"longan-juice","cat":"cat_M9ZBHVF9B40082Q1","sort":40,"th":"น้ำลำไย","en":"Longan Juice","dth":null,"den":null,"price":8000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_X6JS8KP8HCWERTKY","key":"pepsi-original","cat":"cat_6EZ1KHJ38D7AG8H1","sort":40,"th":null,"en":"Pepsi Original","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_JD9ZMCN5ZV6JKY4X","key":"beef-tongue-stew","cat":"cat_0BA5DYW1J3VESA1X","sort":50,"th":"สตูว์ลิ้นวัว","en":"Beef Tongue Stew","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"tongue-stew","pnth":null,"pnen":null},{"id":"itm_GD0SDECQ2YGQXQWD","key":"grilled-river-prawns","cat":"cat_M8B2FR0P7XTAG16J","sort":50,"th":"กุ้งแม่น้ำย่าง","en":"Grilled River Prawns","dth":null,"den":null,"price":99000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"river-prawns","pnth":null,"pnen":null},{"id":"itm_M4AE863Q8SRB34W1","key":"calamari-tartar-sauce","cat":"cat_87PHD7YFQ3X359EG","sort":50,"th":"หมึกชุบเกล็ดขนมปังทอดเสิร์ฟพร้อมซอสทาร์ทาร์","en":"Calamari Served with Tartar Sauce","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"calamari","pnth":null,"pnen":null},{"id":"itm_VHGHMQR912R82DA8","key":"burrata-tomato-salad","cat":"cat_0QYKYTGDETP4S97B","sort":50,"th":"ชีสบุเรต้าสลัดมะเขือเทศ","en":"Burrata Cheese and Tomato Salad","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"burrata-tomato","pnth":null,"pnen":null},{"id":"itm_Q4PHS17KMXPWFDMC","key":"garlic-confit","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":50,"th":"กระเทียมคอนฟี","en":"Garlic Confit","dth":null,"den":null,"price":10000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"garlic-confit","pnth":null,"pnen":null},{"id":"itm_SGF135C3BDH9KP60","key":"strawberry-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":50,"th":null,"en":"Strawberry Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_EB3D2B170NCX6TDY","key":"piccolo-latte","cat":"cat_KTT2M9BZEX4PXBJZ","sort":50,"th":null,"en":"Piccolo Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_ZDJE30CP4K54Z7R5","key":"thai-tea","cat":"cat_S8E2BBMJWV9GTJ6J","sort":50,"th":null,"en":"Thai Tea","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_NTYA5TAY46W0996J","key":"pepsi-zero","cat":"cat_6EZ1KHJ38D7AG8H1","sort":50,"th":null,"en":"Pepsi Zero","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_3JX23QAV4CT6CJD6","key":"grilled-lamb-rack","cat":"cat_0BA5DYW1J3VESA1X","sort":60,"th":"ซี่โครงแกะย่าง","en":"Grilled Lamb Rack","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"lamb-rack","pnth":null,"pnen":null},{"id":"itm_NZAC4Y6231TTADQJ","key":"grilled-squid","cat":"cat_M8B2FR0P7XTAG16J","sort":60,"th":"ปลาหมึกย่าง","en":"Grilled Squid","dth":null,"den":null,"price":39000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"grilled-squid","pnth":null,"pnen":null},{"id":"itm_G40VTMS7THNPP4AS","key":"sauteed-mini-broccoli","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":60,"th":"บรอกโคลีเล็กผัด","en":"Sauteed Mini Broccoli","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"mini-broccoli","pnth":null,"pnen":null},{"id":"itm_48HJ6SBBXG3QHZS7","key":"earl-grey-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":60,"th":null,"en":"Earl Grey Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_AX9ZSWJK1CNSZWJZ","key":"latte","cat":"cat_KTT2M9BZEX4PXBJZ","sort":60,"th":null,"en":"Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_1QF9DY894X7G603Q","key":"sprite","cat":"cat_6EZ1KHJ38D7AG8H1","sort":60,"th":null,"en":"Sprite","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_RGFJMXHHT3VY3RGY","key":"grilled-fish","cat":"cat_M8B2FR0P7XTAG16J","sort":70,"th":"ปลาย่าง","en":"Grilled Fish","dth":null,"den":null,"price":49000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"grilled-fish","pnth":null,"pnen":null},{"id":"itm_HHP25XT91741N06N","key":"sauteed-mushrooms","cat":"cat_ZPHNYVWDWE1ZV5FR","sort":70,"th":"เห็ดผัด","en":"Sauteed Mushrooms","dth":null,"den":null,"price":12000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":true,"why":null,"notes":true,"maxQty":20,"station":"kitchen","alcohol":false,"img":"mushrooms","pnth":null,"pnen":null},{"id":"itm_QMM327EGD37993AY","key":"red-bean-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":70,"th":null,"en":"Red Bean Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_J2767MJ8TZNTH36Y","key":"cappuccino","cat":"cat_KTT2M9BZEX4PXBJZ","sort":70,"th":null,"en":"Cappuccino","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_SW2RBENZCZ7RYVC5","key":"ice","cat":"cat_6EZ1KHJ38D7AG8H1","sort":70,"th":null,"en":"Ice","dth":null,"den":null,"price":3000,"rate":null,"basis":null,"kind":"fixed","soldOut":false,"orderable":false,"why":"unverified","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_8TTGA01GBJ0G5FYP","key":"biscoff-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":80,"th":null,"en":"Biscoff Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_GEJAF5XFNCKA9V0X","key":"mocha","cat":"cat_KTT2M9BZEX4PXBJZ","sort":80,"th":null,"en":"Mocha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_ASCK1RZ1VKM2H6JS","key":"nutella-matcha-latte","cat":"cat_8FBBSM63TPSMNR1G","sort":90,"th":null,"en":"Nutella Matcha Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_QJ7Q1X2N8EZR9FBA","key":"ice-coffee","cat":"cat_KTT2M9BZEX4PXBJZ","sort":90,"th":null,"en":"Ice Coffee","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_R6K79WVH6V96SM2P","key":"longan-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":100,"th":null,"en":"Longan Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_51TB63SDNDNQHK1N","key":"dirty-coffee","cat":"cat_KTT2M9BZEX4PXBJZ","sort":100,"th":null,"en":"Dirty Coffee","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_FRQ2DN3F7XA3103A","key":"orange-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":110,"th":null,"en":"Orange Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_QGQ6T2RJ8ANVZ1RW","key":"caramel-latte","cat":"cat_KTT2M9BZEX4PXBJZ","sort":110,"th":null,"en":"Caramel Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_EY8XW3NNV40RFQE0","key":"dirty-matcha","cat":"cat_8FBBSM63TPSMNR1G","sort":120,"th":null,"en":"Dirty Matcha","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_H369SMP2NJ71GKN3","key":"biscoff-latte","cat":"cat_KTT2M9BZEX4PXBJZ","sort":120,"th":null,"en":"Biscoff Latte","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null},{"id":"itm_1HN4BHY8S1RDC6N9","key":"black-orange","cat":"cat_KTT2M9BZEX4PXBJZ","sort":130,"th":null,"en":"Black Orange","dth":null,"den":null,"price":null,"rate":null,"basis":null,"kind":"variant","soldOut":false,"orderable":false,"why":"no_price","notes":true,"maxQty":20,"station":"bar","alcohol":false,"img":null,"pnth":null,"pnen":null}],"groups":[{"id":"mgp_C5VS2B1302NBCTNX","th":"เมล็ดกาแฟ","en":"Beans","min":0,"max":1,"included":0}],"options":[{"id":"mop_SFYQ7770BZ4ZZP81","group":"mgp_C5VS2B1302NBCTNX","th":null,"en":"Laos Bolaven single-origin","sort":10},{"id":"mop_BATVMRGTRFF15ARS","group":"mgp_C5VS2B1302NBCTNX","th":null,"en":"Balanced Blend - Bluetamp","sort":20}],"links":[{"item":"itm_62NXTGRK0VJGSQ2B","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_3KMG0DNP1J5GYC3S","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_V23HRXSACT6W4NBK","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_2YJ0TYXEZ4A53ZKA","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_EB3D2B170NCX6TDY","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_AX9ZSWJK1CNSZWJZ","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_J2767MJ8TZNTH36Y","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_GEJAF5XFNCKA9V0X","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_51TB63SDNDNQHK1N","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_QGQ6T2RJ8ANVZ1RW","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_H369SMP2NJ71GKN3","group":"mgp_C5VS2B1302NBCTNX"},{"item":"itm_1HN4BHY8S1RDC6N9","group":"mgp_C5VS2B1302NBCTNX"}]}</script>
+<script>
+(function(){
+"use strict";
+var C = JSON.parse(document.getElementById('catalog').textContent);
+
+/* ------------------------------------------------------------------ copy
+   Thai and English strings are the ones the real product ships, taken from
+   client/src/i18n/*.ts. [key, th, en] */
+var D = [
+['restaurant','Rabbit Grill เขาใหญ่','Rabbit Grill Khao Yai'],
+['tableWord','โต๊ะ','Table'],
+['demoTitle','โหมดทดลอง','Demo mode'],
+['demoBody','เมนูและราคายังรอร้านยืนยัน ออร์เดอร์ตอนนี้เป็นข้อมูลทดลอง','Menu and prices await confirmation. Orders are demo data.'],
+['demoData','ข้อมูลทดลอง','Demo data'],
+['thai','ไทย','ไทย'],['english','EN','EN'],
+['langTo','เปลี่ยนเป็นภาษาอังกฤษ','เปลี่ยนเป็นภาษาไทย'],
+['close','ปิด','Close'],
+
+['joinKicker','ยินดีต้อนรับสู่ Rabbit Grill','Welcome to Rabbit Grill'],
+['joinOpenTitle','โต๊ะ {label} พร้อมสั่งอาหาร','Table {label} is ready to order'],
+['joinOpenBody','เข้าร่วมโต๊ะแล้วเลือกเมนูได้เลย','Join the table, then choose from the menu.'],
+['joinAskStaff','ถ้าเข้าไม่ได้ ขอให้พนักงานช่วยได้เลย','If this does not work, ask a member of staff to help.'],
+['joinSubmit','เข้าร่วมโต๊ะ {label}','Join table {label}'],
+['joinBrowse','ดูเมนูก่อน','Browse the menu first'],
+['joinPrivacy','ออร์เดอร์และบิลของโต๊ะจะแสดงหลังเข้าร่วมโต๊ะแล้วเท่านั้น','Your table’s orders and bill appear only after you join.'],
+['joinToast','ยินดีต้อนรับสู่ Rabbit Grill · โต๊ะ {label}','Welcome to Rabbit Grill · Table {label}'],
+
+['navMenu','เมนู','Menu'],['navOrder','รายการของฉัน','Your order'],['navTrack','ติดตาม','Track'],
+['navService','บริการ','Service'],['navLabel','เมนูหลัก','Main navigation'],
+
+['menuHeading','เมนู','Menu'],
+['groupFood','อาหาร','Food'],['groupDrinks','เครื่องดื่ม','Drinks'],
+['searchShort','ค้นหา','Search'],
+['searchLong','ค้นหาเมนู ไทย หรือ English','Search the menu in Thai or English'],
+['allCats','ทุกหมวด','All categories'],
+['itemCount','{n} รายการ','{n} dishes'],
+['resultsFor','ผลการค้นหา “{q}”','Results for “{q}”'],
+['results','พบ {n} รายการ','{n} results'],
+['noResTitle','ไม่พบเมนูที่ตรงกับ “{q}”','No dishes match “{q}”'],
+['noResBody','ลองพิมพ์ชื่อเมนูเป็นภาษาไทยหรือภาษาอังกฤษ บางรายการมีแต่ชื่อภาษาอังกฤษ ลองพิมพ์เป็นภาษาอังกฤษด้วย','Try the dish name in Thai or English. Some dishes have English names only, so try English too.'],
+['clearSearch','ล้างคำค้นหา','Clear search'],
+['enOnly','ชื่อภาษาอังกฤษตามเมนูของร้าน','English name as printed on the restaurant’s menu'],
+['add','เพิ่ม','Add'],
+['catByWeight','{name}คิดราคาตามน้ำหนัก','{name} is priced by weight'],
+
+['priceByWeight','ราคาตามน้ำหนัก','Priced by weight'],
+['perGrams','ต่อ {n} กรัม','per {n} g'],
+['weighNote','พนักงานจะชั่งและแจ้งยอดให้ยืนยันก่อนเริ่มย่าง','Staff weigh your cut and show you the price to confirm before it goes on the grill'],
+['askToWeigh','ขอให้พนักงานชั่ง','Ask staff to weigh'],
+['soldOut','หมดชั่วคราว','Sold out for now'],
+['pricePending','รอยืนยันราคา','Price to be confirmed'],
+['reasonPrice','ร้านยังไม่ได้ยืนยันราคา สอบถามพนักงานได้','Price not confirmed yet. Please ask staff.'],
+['reasonVerify','ยังสั่งผ่านระบบไม่ได้ สอบถามพนักงานได้','Not available to order here yet. Please ask staff.'],
+['reasonDefault','ตอนนี้สั่งรายการนี้ไม่ได้','This item can’t be ordered right now.'],
+['unavailPrice','ร้านยังไม่ได้ยืนยันราคา ตอนนี้ยังสั่งไม่ได้','The price is not confirmed yet, so it cannot be ordered.'],
+['unavailVerify','ร้านยังตรวจรายการนี้ไม่เสร็จ ตอนนี้ยังสั่งไม่ได้','The restaurant is still checking this item, so it cannot be ordered yet.'],
+['unavailSold','จานนี้หมดชั่วคราว','Sold out for now'],
+['unavailOther','ตอนนี้สั่งรายการนี้ไม่ได้','This cannot be ordered right now.'],
+['alcoholConfirm','มีแอลกอฮอล์ พนักงานจะยืนยันก่อนเสิร์ฟ','Contains alcohol. Staff confirm before serving.'],
+
+['itemPrice','ราคา','Price'],
+['noteLabel','หมายเหตุถึงพนักงาน','Note for the staff'],
+['optional','ไม่บังคับ','Optional'],
+['notePh','เช่น ขอจานแบ่ง 2 ใบ','For example: two sharing plates, please'],
+['noteHelp','หมายเหตุเป็นคำขอถึงร้าน พนักงานจะยืนยันอีกครั้ง การเขียนไว้ไม่ได้รับประกันว่าครัวจะทำให้ได้','A note is a request. Staff will confirm it, and writing it does not guarantee the kitchen can do it.'],
+['noteAllergy','หมายเหตุนี้เกี่ยวกับอาหารที่แพ้','This note is about an allergy'],
+['noteAllergyHelp','ครัวจะเห็นหมายเหตุนี้ชัดขึ้น แต่ควรบอกพนักงานด้วย','The kitchen sees it highlighted, but please also tell a member of staff.'],
+['itemAdd','เพิ่มในรายการ','Add to order'],
+['itemUpdate','บันทึกการแก้ไข','Save changes'],
+['itemRemove','เอาจานนี้ออกจากรายการ','Remove from your order'],
+['added','เพิ่ม {name} แล้ว','Added {name}'],
+['addedQty','เพิ่ม {name} × {n} แล้ว','Added {name} × {n}'],
+['updated','แก้ไข {name} แล้ว','Updated {name}'],
+['removed','เอา {name} ออกแล้ว','Removed {name}'],
+['maxQty','สั่งได้ครั้งละไม่เกิน {n}','You can order up to {n} at a time.'],
+['beansGroup','เมล็ดกาแฟ','Beans'],
+['optionalOne','ไม่บังคับ · เลือกได้ 1 อย่าง','Optional · choose 1'],
+['optionNone','ไม่เลือก','None'],
+['allergyTitle','แพ้อาหารหรือมีข้อจำกัดด้านอาหาร?','Allergies or dietary needs?'],
+['allergyUnknown','ร้านยังไม่ได้ยืนยันข้อมูลสารก่อภูมิแพ้ของจานนี้ การเขียนหมายเหตุไม่ได้รับประกันว่าครัวจะปรับให้ได้ คุยกับพนักงานก่อนสั่งได้เลย','The restaurant has not confirmed the allergens in this dish yet. A note does not guarantee the kitchen can adjust it, so please talk to staff before you order.'],
+['noAccess','ดูเมนูได้ แต่จะสั่งอาหารต้องสแกน QR ที่โต๊ะก่อน','You can browse, but ordering starts once you scan the QR code on your table.'],
+['weighLede','จานนี้คิดราคาตามน้ำหนักจริง','This cut is priced by its actual weight.'],
+['portStepsTitle','สั่งแบบชั่งน้ำหนักทำอย่างไร','How ordering by weight works'],
+['portStep1','พนักงานชั่งน้ำหนักจริงของชิ้นที่จะย่าง','Staff weigh the actual cut that will be grilled for you'],
+['portStep2','น้ำหนักและยอดของจานนี้จะขึ้นที่หน้าติดตามเพื่อให้ยืนยัน','The weight and exact price appear on Track for you to confirm'],
+['portStep3','ยืนยันแล้วจานนี้จึงเข้าออร์เดอร์ ก่อนหน้านั้นยังไม่มีการย่าง','Only then does it join your order. Nothing goes on the grill before you confirm.'],
+['portPreferred','น้ำหนักที่อยากได้','Preferred weight'],
+['portPrefHelp','บอกคร่าวๆ ได้ พนักงานจะชั่งจริงแล้วแจ้งยอดให้ยืนยันอีกครั้ง','A rough idea is fine. Staff weigh the real cut and ask you to confirm the price.'],
+['grams','กรัม','g'],
+['portNote','ข้อความถึงพนักงาน','Note for staff'],
+['portNoteHelp','พนักงานที่ชั่งให้จะเห็นข้อความนี้','The staff member weighing your cut will see this.'],
+['portSentTitle','ส่งคำขอชั่งแล้ว','Request sent'],
+['portSentBody','พนักงานจะชั่ง{name}แล้วแจ้งยอดที่หน้าติดตาม ระหว่างนี้สั่งจานอื่นต่อได้เลย','Staff will weigh your {name} and show the price on Track. You can keep ordering other dishes meanwhile.'],
+['portOpenExisting','โต๊ะนี้มีคำขอชั่ง{name}รออยู่แล้ว ดูได้ที่หน้าติดตาม','Your table already has a {name} request waiting. You can see it on Track.'],
+['portRequested','รอพนักงานชั่ง','Waiting for staff to weigh'],
+['portQuoted','รอคุณยืนยันปริมาณ','Please confirm this portion'],
+['portWeighed','พนักงานชั่งแล้ว','Weighed by staff'],
+['portRate','ราคาต่อ {n} กรัม','Price per {n} g'],
+['portTotal','ยอดของจานนี้','This dish'],
+['portHold','ยังไม่เริ่มย่างจนกว่าคุณจะยืนยัน','Nothing goes on the grill until you confirm'],
+['portConfirm','ยืนยันปริมาณนี้','Confirm this portion'],
+['portCancel','ไม่ต้องชั่งแล้ว','No longer needed'],
+['portCancelled','ยกเลิกคำขอชั่ง{name}แล้ว','{name} request cancelled'],
+['portAskedAt','ขอเมื่อ {time}','Asked at {time}'],
+['portPrefShown','น้ำหนักที่ขอไว้','Preferred weight'],
+['portYourNote','ข้อความของคุณ','Your note'],
+['portConfirmedToast','ยืนยัน{name}แล้ว · ส่งเป็นรอบที่ {round}','{name} confirmed · sent as round {round}'],
+['portQuoteArrived','พนักงานชั่ง{name}แล้ว รอคุณยืนยัน','{name} weighed, waiting for your confirmation'],
+['byPortion','จากคำขอชั่งน้ำหนัก','From a weighed portion'],
+
+['cartTitle','รายการของฉัน','Your order'],
+['cartKicker','โต๊ะ {label} · ยังอยู่ในเครื่องนี้','Table {label} · on this device only'],
+['cartLede','รายการนี้ยังไม่ถึงครัว ตรวจให้เรียบร้อยแล้วกดส่งได้เลย','Nothing here has reached the kitchen yet. Check it, then send.'],
+['cartEdit','แก้ไข','Edit'],
+['cartRemove','เอาออก','Remove'],
+['cartNote','หมายเหตุ','Note'],
+['allergyMark','เรื่องอาหารที่แพ้','Allergy'],
+['roundTotal','ยอดรอบนี้','This round'],
+['subtotal','ยอดรวม · {n} รายการ','Subtotal · {n} items'],
+['cartTotalNote','ยังไม่ได้ส่งเข้าครัว · ยอดสุดท้ายพนักงานจะยืนยันในบิล','Not sent to the kitchen yet · staff confirm the final amount on the bill'],
+['cartSend','ส่งออร์เดอร์','Send order'],
+['cartEmptyTitle','ยังไม่มีรายการ','Nothing here yet'],
+['cartEmptyBody','เลือกจากเมนูได้เลย รายการจะอยู่ในเครื่องนี้จนกว่าคุณจะกดส่ง','Choose from the menu. Your picks stay on this device until you send them.'],
+['cartEmptyAct','ไปเลือกเมนู','Browse the menu'],
+['notSent','ยังไม่ได้ส่งเข้าครัว','Not sent to the kitchen yet'],
+
+['subKicker','โต๊ะ {label} · ขั้นสุดท้ายก่อนส่ง','Table {label} · last step before sending'],
+['subTitle','ตรวจรายการก่อนส่ง','Review your order'],
+['subTitleEn','Review your order','Review your order'],
+['subTable','ส่งเข้าครัวสำหรับโต๊ะ','Sending to the kitchen for table'],
+['subItems','จำนวน','Items'],
+['subItemsValue','{n} รายการ','{n} items'],
+['subExplain','กดยืนยันแล้วออร์เดอร์จะส่งถึงร้านทันทีพร้อมเลขอ้างอิง จากนั้นพนักงานจะยืนยันอีกครั้ง ดูแต่ละขั้นได้ที่หน้าติดตาม','When you place the order, the restaurant receives it at once and you get a reference. Staff then confirm it, and Track shows every real step.'],
+['subNotes','หมายเหตุทุกข้อเป็นคำขอ พนักงานจะยืนยันอีกครั้ง','Every note is a request. Staff will confirm it.'],
+['subPlace','ยืนยันและส่งออร์เดอร์','Place order'],
+['subBack','กลับไปแก้ไข','Back to edit'],
+['subReceived','ออร์เดอร์ส่งถึงร้านแล้ว เลขอ้างอิง {ref} รอพนักงานยืนยัน','Order received, reference {ref}. Waiting for staff to confirm it.'],
+
+['trackTitle','ติดตามอาหาร','Track your food'],
+['trackTitleEn','Track','Track'],
+['trackKicker','โต๊ะ {label} · ส่งแล้ว {n} รอบ','Table {label} · {n} rounds sent'],
+['trackKickerOne','โต๊ะ {label} · ส่งแล้ว 1 รอบ','Table {label} · 1 round sent'],
+['trackShared','ออร์เดอร์ที่ส่งแล้วเป็นของทั้งโต๊ะ ทุกเครื่องที่โต๊ะ {label} เห็นสถานะเดียวกัน','Sent orders belong to the whole table. Every device at table {label} sees the same status.'],
+['liveGuest','ข้อมูลสด','Live'],
+['updated2','อัปเดตล่าสุด {time}','Last update {time}'],
+['round','รอบที่ {n}','Round {n}'],
+['trackMeta','ส่งเมื่อ {time} · {items} · โต๊ะ {label}','Sent {time} · {items} · Table {label}'],
+['items','{n} รายการ','{n} items'],
+['reference','เลขอ้างอิง','Reference'],
+['mine','สั่งจากเครื่องนี้','Ordered on this device'],
+['dishes','รายจาน','Dishes'],
+['honestStatus','สถานะเปลี่ยนเมื่อครัวบันทึกจริงเท่านั้น','Status changes only when the kitchen records it. No times are guessed.'],
+['stepUpcoming','ยังไม่ถึงขั้นนี้','not yet'],
+['stRecv','ส่งถึงร้านแล้ว','Order received'],
+['stConf','ร้านยืนยันแล้ว','Order confirmed'],
+['stCook','กำลังปรุง','Currently cooking'],
+['stPrep','กำลังเตรียม','Currently preparing'],
+['stAlmost','ใกล้เสร็จแล้ว','Almost done'],
+['stServed','เสิร์ฟแล้ว','Served'],
+['msgReceived','ออร์เดอร์ส่งถึงร้านแล้ว รอพนักงานยืนยัน','The restaurant has your order. Staff will confirm it.'],
+['msgConfirmed','ร้านยืนยันออร์เดอร์แล้ว จะเริ่มทำตามลำดับคิว','Staff confirmed your order. Orders are prepared in turn.'],
+['msgPreparing','ครัวเริ่มปรุงแล้ว แต่ละจานอาจเสร็จไม่พร้อมกัน','The kitchen has started cooking. Dishes may finish at different times.'],
+['msgAlmost','พนักงานแจ้งว่าใกล้เสร็จแล้ว','Staff say it is almost ready.'],
+['msgServed','เสิร์ฟครบทุกรายการในรอบนี้แล้ว','Everything in this round has been served.'],
+['trackEmptyTitle','ยังไม่ได้ส่งออร์เดอร์','Nothing sent yet'],
+['trackEmptyBody','รอบที่ส่งแล้วจะแสดงที่นี่ พร้อมสถานะจากร้าน','Rounds you send appear here, with live status from the restaurant.'],
+['toMenu','ไปเลือกเมนู','Choose from the menu'],
+['pastHeading','รอบก่อนหน้า','Earlier rounds'],
+['currentHeading','รอบที่ยังไม่เสร็จ','Rounds in progress'],
+
+['billTitle','บิลของโต๊ะ','Table bill'],
+['billTitleEn','Table bill','Table bill'],
+['billKicker','โต๊ะ {label} · บิลเดียวของทั้งโต๊ะ','Table {label} · one bill for the table'],
+['billShared','บิลนี้รวมทุกรายการจากทุกเครื่องที่โต๊ะ {label} ระบบนี้ยังแยกบิลไม่ได้','This bill includes every order from every device at table {label}. Split bills are not available here.'],
+['billOpen','บิลยังเปิดอยู่','Running bill'],
+['billRequestedPill','ขอเช็กบิลแล้ว {time}','Bill requested {time}'],
+['billFlow','ขั้นตอนเช็กบิล','How checkout works'],
+['billF1','ขอเช็กบิล','Ask for the bill'],
+['billF2','พนักงานสรุปบิล','Staff prepare the bill'],
+['billF3','ชำระกับพนักงาน','Pay a member of staff'],
+['billF4','พนักงานยืนยันการชำระ','Staff confirm your payment'],
+['billF1Sub','กดขอเช็กบิลด้านล่างเมื่อพร้อม','Tap Request the bill below when you are ready'],
+['billWaitSub','รอพนักงานมาสรุปบิล','Waiting for staff to prepare it'],
+['billPrepSub','ระหว่างนี้สั่งอาหารเพิ่มไม่ได้ ถ้าต้องการสั่งเพิ่ม เรียกพนักงานได้เลย','New orders are paused meanwhile. Call staff if you would like more.'],
+['billPaySub','ยอดสุดท้ายอยู่ด้านล่าง','The final amount is below'],
+['billAccepted','รายการที่ร้านยืนยันแล้ว','Confirmed items'],
+['billPending','รอพนักงานยืนยัน · ยังไม่รวมในยอด','Awaiting staff · not in the total yet'],
+['billPendingNote','เมื่อพนักงานยืนยันรายการเหล่านี้ ยอดจะรวมให้เอง','Once staff confirm these items, the total includes them.'],
+['billSubtotal','ค่าอาหารและเครื่องดื่ม','Food and drinks'],
+['chargesNone','ยังไม่มีค่าบริการ','No charges'],
+['billTotalNow','ยอดตอนนี้','Total so far'],
+['billTotalNowNote','ยังไม่ใช่ยอดสุดท้าย พนักงานจะยืนยันยอดตอนสรุปบิล','Not final yet. Staff confirm the amount when they prepare the bill.'],
+['billRequestHelp','พนักงานจะมาตรวจรายการและสรุปบิลของทั้งโต๊ะ','Staff will check the orders and prepare one bill for the table.'],
+['billRequested','ขอเช็กบิลเมื่อ {time} พนักงานได้รับคำขอแล้ว','You asked for the bill at {time}. Staff have been notified.'],
+['billHowTitle','การชำระเงิน','Paying'],
+['billHow1','ชำระกับพนักงานของร้าน พนักงานจะบันทึกการชำระให้เอง ไม่ต้องกดยืนยันในโทรศัพท์','Pay a member of staff. They record the payment, so there is nothing to confirm on your phone.'],
+['billHow2','หน้านี้ไม่ใช่ใบกำกับภาษี','This page is not a tax invoice.'],
+['billHow3','ถ้าต้องการสั่งเพิ่มระหว่างสรุปบิล เรียกพนักงานได้เลย','Want something more while the bill is being prepared? Call a member of staff.'],
+['billEmptyTitle','ยังไม่มีรายการในบิล','Nothing on the bill yet'],
+['billEmptyBody','รายการที่ร้านยืนยันแล้วจะแสดงที่นี่','Items appear here once staff confirm them.'],
+
+['serviceAt','บริการที่โต๊ะ {label}','Service at table {label}'],
+['svcCall','เรียกพนักงาน','Call staff'],
+['svcChange','ขอแก้ไขออร์เดอร์','Ask to change an order'],
+['svcAllergy','สอบถามเรื่องอาหารที่แพ้','Ask about allergies'],
+['svcBill','ขอเช็กบิล','Request the bill'],
+['subCall','พนักงานจะมาที่โต๊ะ {label}','A member of staff will come to table {label}'],
+['subChange','แก้หรือยกเลิกจานที่ส่งแล้ว พนักงานจะยืนยันกับคุณ','Change or cancel a sent dish. Staff confirm it with you.'],
+['subAllergy','พนักงานจะมาคุยเรื่องส่วนผสมและอาหารที่แพ้','Staff will talk you through ingredients and allergies'],
+['subBill','พนักงานจะสรุปบิลรวมของทั้งโต๊ะ','Staff prepare one bill for the whole table'],
+['viewBill','ดูบิลของโต๊ะ','View the table bill'],
+['viewBillSub','ยอดที่ร้านยืนยันแล้ว {amount} · ยังไม่ใช่ยอดสุดท้าย','Confirmed so far {amount} · not final'],
+['helpSent','ส่งแล้ว {time} · รอพนักงานรับทราบ','Sent {time} · waiting for staff'],
+['helpAck','พนักงานรับทราบแล้ว','Seen by staff'],
+['helpAckCall','พนักงานรับทราบแล้ว · กำลังมาที่โต๊ะ','Seen by staff · on the way to your table'],
+['helpDoneWait','เรียบร้อยแล้ว {time} · ขอใหม่ได้ในอีก {n} วินาที','Done at {time} · you can ask again in {n} s'],
+['helpDone','เรียบร้อยแล้ว {time} · ขอใหม่ได้','Done at {time} · you can ask again'],
+['helpExisting','ส่งคำขอนี้ไว้แล้ว รอพนักงานรับทราบ','Already sent. Waiting for staff to see it.'],
+['helpExistingSeen','ส่งคำขอนี้ไว้แล้ว พนักงานรับทราบแล้ว','Already sent, and staff have seen it.'],
+['helpSentToast','ส่งคำขอแล้ว · {name}','Request sent · {name}'],
+['helpBack','บริการทั้งหมด','All services'],
+['helpNoteChange','อยากแก้อะไร','What would you like to change?'],
+['helpNoteAllergy','แพ้อะไร หรืออยากถามเรื่องไหน','What are you allergic to, or what would you like to ask?'],
+['helpNoteHelp','พนักงานจะมาคุยที่โต๊ะ ข้อความนี้ช่วยให้เตรียมคำตอบได้','Staff will come to your table. This note helps them prepare an answer.'],
+['helpLeadChange','ออร์เดอร์ที่ส่งแล้วแก้เองไม่ได้ พนักงานจะมาคุยและยืนยันการเปลี่ยนแปลงให้','A sent order cannot be changed from here. Staff will talk it through and confirm any change with you.'],
+['helpLeadAllergy','ร้านยังไม่ได้ยืนยันข้อมูลสารก่อภูมิแพ้ของทุกจาน คุยกับพนักงานก่อนทานได้เลย','The restaurant has not confirmed allergen information for every dish. Please talk to staff before you eat.'],
+['helpSendChange','ส่งคำขอแก้ออร์เดอร์','Send the request'],
+['helpSendAllergy','ส่งคำถามถึงพนักงาน','Send the question'],
+['helpBillLead','พนักงานจะตรวจรายการแล้วสรุปบิลรวมของทั้งโต๊ะ ระหว่างสรุปบิลจะสั่งอาหารเพิ่มไม่ได้','Staff will check the orders and prepare one bill for the whole table. New orders pause meanwhile.'],
+['svcFallback','ถ้าส่งคำขอไม่ได้ โบกมือเรียกพนักงานที่อยู่ใกล้ได้เลย','If a request will not send, wave to any staff member nearby.'],
+['measureTitle','การวัดการใช้เมนู','Anonymous menu measurement'],
+['measureBody','ร้านนับการใช้เมนูแบบไม่ระบุตัวตน เช่น หมวดที่ดูและจานที่เปิด เพื่อจัดเมนูให้อ่านง่ายขึ้น ไม่เก็บข้อความที่พิมพ์ รหัสโต๊ะ หรือข้อมูลการชำระเงิน ปิดได้ทุกเมื่อ และสั่งอาหารได้ตามปกติ','The restaurant counts how the menu is used, such as the sections viewed and the dishes opened, without knowing who you are. No typed text, table codes or payment details are collected. You can turn it off at any time, and ordering works the same.'],
+['measureSwitch','วัดการใช้เมนูในเครื่องนี้','Measure menu use on this device'],
+['on','เปิดอยู่','On'],['off','ปิดแล้ว','Off']
+];
+var TH={}, EN={};
+for (var i=0;i<D.length;i++){ TH[D[i][0]]=D[i][1]; EN[D[i][0]]=D[i][2]; }
+
+var TABLE = '07';
+var NOTE_MAX = 140;
+var MAX_QTY = 20;
+
+/* ------------------------------------------------------------------ state */
+var S = {
+  lang:'th', screen:'join', joined:false, browsing:false,
+  group:'food', cat:null, catsOpen:false, q:'',
+  draft:[], rounds:[], portions:[], reqs:{}, billAt:null,
+  sheet:null, measure:true, now:Date.now(), uid:1, roundNo:0
+};
+
+/* ------------------------------------------------------------------ helpers */
+function t(k,v){
+  var s = (S.lang==='th'?TH:EN)[k];
+  if (s==null) return k;
+  if (v) for (var p in v) s = s.split('{'+p+'}').join(v[p]);
+  return s;
+}
+function esc(x){
+  return String(x==null?'':x).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function baht(satang){
+  var neg = satang<0, v = Math.abs(satang);
+  var whole = Math.floor(v/100), frac = v%100;
+  var s = whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (frac) s += '.' + (frac<10?'0':'') + frac;
+  return (neg?'-':'') + '฿' + s;
+}
+function fmtTime(ts){
+  var d = new Date(ts);
+  var h = d.getHours(), m = d.getMinutes();
+  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+}
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
+
+/* ------------------------------------------------------------------ catalog index */
+var ITEM = {}, CAT = {};
+C.items.forEach(function(it){ ITEM[it.id]=it; });
+C.categories.forEach(function(c){ CAT[c.id]=c; c.items=[]; });
+C.items.forEach(function(it){ if (CAT[it.cat]) CAT[it.cat].items.push(it); });
+C.categories.forEach(function(c){ c.items.sort(function(a,b){ return a.sort-b.sort; }); });
+var GROUP = { food:[], drinks:[] };
+C.categories.forEach(function(c){
+  if (!c.items.length) return;
+  var bar = c.items.filter(function(i){ return i.station==='bar'; }).length;
+  (bar > c.items.length/2 ? GROUP.drinks : GROUP.food).push(c);
+});
+GROUP.food.sort(function(a,b){ return a.sort-b.sort; });
+GROUP.drinks.sort(function(a,b){ return a.sort-b.sort; });
+GROUP.food.forEach(function(c,i){ c.no=i+1; });
+GROUP.drinks.forEach(function(c,i){ c.no=i+1; });
+
+var LINKS = {};
+C.links.forEach(function(l){ (LINKS[l.item]=LINKS[l.item]||[]).push(l.group); });
+var GRP = {}; C.groups.forEach(function(g){ GRP[g.id]=g; g.options=[]; });
+C.options.forEach(function(o){ if (GRP[o.group]) GRP[o.group].options.push(o); });
+C.groups.forEach(function(g){ g.options.sort(function(a,b){ return a.sort-b.sort; }); });
+
+function nameOf(it){
+  if (S.lang==='th') return it.th || it.en;
+  return it.en || it.th;
+}
+function altOf(it){
+  if (!it.th || !it.en) return '';
+  return S.lang==='th' ? it.en : it.th;
+}
+function catName(c){ return (S.lang==='th' ? (c.th||c.en) : (c.en||c.th)); }
+function catAlt(c){ if (!c.th || !c.en) return ''; return S.lang==='th' ? c.en : c.th; }
+function isMeasured(it){ return it.kind==='measured_weight' || it.kind==='measured'; }
+function plateClass(key){
+  var h=0; for (var i=0;i<key.length;i++) h=(h*31+key.charCodeAt(i))>>>0;
+  return 'pl'+(h%6+1);
+}
+function initial(it){
+  var n = it.th || it.en || '?';
+  return n.charAt(0);
+}
+function whyText(it){
+  if (it.soldOut) return t('unavailSold');
+  if (it.why==='no_price') return t('unavailPrice');
+  if (it.why==='unverified') return t('unavailVerify');
+  return t('unavailOther');
+}
+function shortWhy(it){
+  if (it.soldOut) return t('soldOut');
+  if (it.why==='no_price') return t('reasonPrice');
+  if (it.why==='unverified') return t('reasonVerify');
+  return t('reasonDefault');
+}
+function canOrder(it){ return it.orderable && !it.soldOut && (it.price!=null || isMeasured(it)); }
+
+/* ------------------------------------------------------------------ icons */
+var IC = {
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+  book:'<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
+  list:'<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  track:'<path d="M4 6h3M4 12h3M4 18h3M10 6h10M10 12h10M10 18h7"/>',
+  bell:'<path d="M12 3 5 10v4l-1 3h16l-1-3v-4z"/>',
+  scale:'<path d="M12 4v16M6 8h12M4 14a3 3 0 0 0 6 0l-3-6zM14 14a3 3 0 0 0 6 0l-3-6z"/>',
+  fork:'<path d="M8 3v7a2 2 0 0 0 4 0V3M10 10v11M16 3c-1.5 2-2 4-2 6s.7 2.5 2 2.5V21"/>',
+  hand:'<path d="M8 12V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8a6 6 0 0 1-6 6h-1a5 5 0 0 1-4.3-2.5L5 17"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  check:'<path d="m5 12 5 5L19 7"/>',
+  chev:'<path d="m9 5 7 7-7 7"/>',
+  alert:'<path d="M12 4 3 20h18zM12 10v4M12 17h.01"/>',
+  note:'<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 8h8M8 12h8M8 16h4"/>',
+  receipt:'<path d="M5 3h14v18l-2.3-1.6L14.4 21 12 19.4 9.6 21l-2.3-1.6L5 21z"/><path d="M9 8h6M9 12h6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+};
+function ic(n,size){
+  return '<svg width="'+(size||20)+'" height="'+(size||20)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[n]+'</svg>';
+}
+
+/* ------------------------------------------------------------------ orders */
+var STEPS = ['received','confirmed','preparing','almost','served'];
+function stepLabel(k,station){
+  if (k==='received') return t('stRecv');
+  if (k==='confirmed') return t('stConf');
+  if (k==='preparing') return station==='bar' ? t('stPrep') : t('stCook');
+  if (k==='almost') return t('stAlmost');
+  return t('stServed');
+}
+function newRef(){
+  var A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s='';
+  for (var i=0;i<4;i++) s += A.charAt(Math.floor(Math.random()*A.length));
+  return 'RG-'+s;
+}
+function schedule(from, station){
+  var base = station==='bar' ? 2600 : 4200;
+  var out = [from];
+  for (var i=1;i<5;i++){
+    out.push(out[i-1] + base + Math.floor(Math.random()*2600));
+  }
+  return out;
+}
+function lineStep(line, now){
+  var n = 0;
+  for (var i=0;i<line.sched.length;i++) if (now >= line.sched[i]) n = i;
+  return n;
+}
+function roundStep(r, now){
+  var m = 4;
+  r.lines.forEach(function(l){ m = Math.min(m, lineStep(l, now)); });
+  return m;
+}
+function lineAmount(l){ return l.unit * l.qty; }
+function draftTotal(){
+  var s=0; S.draft.forEach(function(l){ s += lineAmount(l); }); return s;
+}
+function draftCount(){
+  var n=0; S.draft.forEach(function(l){ n += l.qty; }); return n;
+}
+function acceptedTotal(){
+  var s=0;
+  S.rounds.forEach(function(r){
+    if (roundStep(r, S.now) < 1) return;
+    r.lines.forEach(function(l){ s += lineAmount(l); });
+  });
+  return s;
+}
+function pendingLines(){
+  var out=[];
+  S.rounds.forEach(function(r){ if (roundStep(r, S.now) < 1) out = out.concat(r.lines); });
+  return out;
+}
+
+/* ------------------------------------------------------------------ seed
+   One round already sent from another phone at this table, before this
+   device scanned the QR card. Values come straight from the catalog. */
+(function seed(){
+  function find(key){ for (var k in ITEM) if (ITEM[k].key===key) return ITEM[k]; return null; }
+  var t0 = Date.now() - 22*60000;
+  var picks = [['nashville-chicken',1],['grilled-fish',1],['pepsi-original',2]];
+  var lines = [];
+  picks.forEach(function(p){
+    var it = find(p[0]); if (!it) return;
+    var sch = [t0, t0+95000, t0+150000, t0+430000, t0+620000];
+    lines.push({ uid:'s'+(S.uid++), itemId:it.id, qty:p[1], unit:it.price, note:'', allergy:false, opt:null, sched:sch, mine:false });
+  });
+  if (lines.length){
+    S.roundNo = 1;
+    S.rounds.push({ n:1, ref:'RG-EDMG', at:t0, lines:lines, mine:false });
+  }
+})();
+
+try{
+  var sl = store('rg.lang'); if (sl==='th'||sl==='en') S.lang = sl;
+  var sd = store('rg.draft');
+  if (sd){
+    var arr = JSON.parse(sd);
+    if (arr && arr.length) arr.forEach(function(l){
+      var it = ITEM[l.itemId];
+      if (!it || !canOrder(it) || isMeasured(it)) return;
+      S.draft.push({ uid:'d'+(S.uid++), itemId:it.id, qty:Math.max(1,Math.min(MAX_QTY,l.qty|0)),
+        unit:it.price, note:String(l.note||'').slice(0,NOTE_MAX), allergy:!!l.allergy, opt:l.opt||null });
+    });
+  }
+}catch(e){}
+function saveDraft(){
+  try{
+    store('rg.draft', JSON.stringify(S.draft.map(function(l){
+      return { itemId:l.itemId, qty:l.qty, note:l.note, allergy:l.allergy, opt:l.opt };
+    })));
+  }catch(e){}
+}
+
+/* ------------------------------------------------------------------ shell */
+function masthead(withTag){
+  return '<header class="mast"><div class="mast-in">'
+    + (withTag ? '<span class="tag"><i>'+esc(t('tableWord'))+'</i><b>'+TABLE+'</b></span>' : '')
+    + '<span class="mark"><b lang="en">Rabbit Grill</b><i lang="en">Khao Yai</i></span>'
+    + '<div class="lang" role="group" aria-label="'+esc(t('langTo'))+'">'
+    +   '<button data-act="lang" data-v="th" aria-pressed="'+(S.lang==='th')+'" lang="th">'+esc(TH.thai)+'</button>'
+    +   '<button data-act="lang" data-v="en" aria-pressed="'+(S.lang==='en')+'" lang="en">EN</button>'
+    + '</div></div></header>'
+    + '<div class="demo">'+ic('info',20)+'<p><b>'+esc(t('demoTitle'))+'</b> · '+esc(t('demoBody'))+'</p></div>';
+}
+function navBar(){
+  var n = draftCount();
+  function b(id,label,icon,badge){
+    return '<button data-act="nav" data-v="'+id+'"'+(S.screen===id||(id==='cart'&&S.screen==='review')?' aria-current="page"':'')+'>'
+      + ic(icon,22) + '<span>'+esc(label)+'</span>'
+      + (badge ? '<span class="badge" aria-hidden="true">'+badge+'</span>' : '') + '</button>';
+  }
+  return b('menu',t('navMenu'),'book',0)
+    + b('cart',t('navOrder'),'list',n>0?n:0)
+    + b('track',t('navTrack'),'track',0)
+    + b('service',t('navService'),'bell',0);
+}
+
+/* ------------------------------------------------------------------ join */
+function joinScreen(){
+  return masthead(false)
+  + '<div class="gut center" style="padding-top:28px">'
+  +   '<p class="note" style="margin:0">'+esc(t('joinKicker'))+'</p>'
+  +   '<div class="frame" style="margin-top:14px"><i>'+esc(t('tableWord'))+'</i><b>'+TABLE+'</b></div>'
+  +   '<hr class="r">'
+  + '</div>'
+  + '<div class="gut"><div class="card center" style="margin-top:0;padding:26px 20px">'
+  +   '<div class="circ">'+ic('fork',26)+'</div>'
+  +   '<h3 style="font-size:var(--fs-24);margin:0 0 6px">'+esc(t('joinOpenTitle',{label:TABLE}))+'</h3>'
+  +   '<p class="note" style="margin:0 0 12px">'+esc(t('joinOpenBody'))+'</p>'
+  +   '<p class="hint" style="display:flex;gap:8px;align-items:flex-start;justify-content:center;text-align:left;margin:0 0 20px">'
+  +     ic('hand',18)+'<span>'+esc(t('joinAskStaff'))+'</span></p>'
+  +   '<button class="btn btn-p" data-act="join">'+esc(t('joinSubmit',{label:TABLE}))+'</button>'
+  + '</div>'
+  + '<p class="center" style="margin:18px 0 0"><button class="btn-txt" data-act="browse">'+esc(t('joinBrowse'))+' &rsaquo;</button></p>'
+  + '<p class="hint center" style="margin-top:14px;padding-bottom:30px">'+esc(t('joinPrivacy'))+'</p>'
+  + '</div>';
+}
+
+/* ------------------------------------------------------------------ menu */
+function matches(it,q){
+  if (!q) return true;
+  var a = (it.th||'')+' '+(it.en||'');
+  return a.toLowerCase().indexOf(q) >= 0;
+}
+function dishRow(it){
+  var ok = canOrder(it);
+  var meas = isMeasured(it);
+  var alt = altOf(it);
+  var h = '<button class="row'+(ok?'':' off')+'" data-act="open" data-v="'+it.id+'" data-th="'+esc((it.th||'')+' '+(it.en||'')).toLowerCase()+'">';
+  if (it.img) h += '<span class="plate '+plateClass(it.key)+'" aria-hidden="true"><span>'+esc(initial(it))+'</span></span>';
+  h += '<span class="rbody">';
+  if (meas) h += '<span class="rkick">'+ic('scale',16)+esc(t('priceByWeight'))+'</span>';
+  h += '<span class="lead"><span class="nm rname">'+esc(nameOf(it))+'</span><span class="dots"></span>';
+  if (meas && it.rate!=null) h += '<span class="amt">'+baht(it.rate)+'</span>';
+  else if (it.price!=null) h += '<span class="amt">'+baht(it.price)+'</span>';
+  else h += '<span class="amt amt-sm" style="color:var(--text-2)">'+esc(t('pricePending'))+'</span>';
+  h += '</span>';
+  if (meas && it.basis) h += '<span class="rper" style="display:block">'+esc(t('perGrams',{n:it.basis}))+'</span>';
+  if (alt) h += '<span class="ren" style="display:block">'+esc(alt)+'</span>';
+  if (meas) h += '<span class="note" style="display:block">'+esc(t('weighNote'))+'</span>';
+  if (!ok) h += '<span class="rwhy">'+ic('alert',16)+'<span>'+esc(shortWhy(it))+'</span></span>';
+  h += '<span class="ract">';
+  if (meas) h += '<span class="btn btn-o">'+ic('scale',18)+esc(t('askToWeigh'))+'</span>';
+  else if (ok) h += '<span class="btn btn-o">'+ic('plus',18)+esc(t('add'))+'</span>';
+  h += '</span></span></button>';
+  return h;
+}
+function menuScreen(){
+  var cats = GROUP[S.group];
+  var q = S.q.trim().toLowerCase();
+  var h = masthead(true);
+
+  h += '<div class="srow">'
+    + '<label class="sbox">'+ic('search',20)
+    + '<input id="q" type="search" value="'+esc(S.q)+'" placeholder="'+esc(t('searchShort'))+'" aria-label="'+esc(t('searchLong'))+'" autocomplete="off">'
+    + '</label>'
+    + '<div class="seg" role="group">'
+    +   '<button data-act="group" data-v="food" aria-pressed="'+(S.group==='food')+'">'+esc(t('groupFood'))+'</button>'
+    +   '<button data-act="group" data-v="drinks" aria-pressed="'+(S.group==='drinks')+'">'+esc(t('groupDrinks'))+'</button>'
+    + '</div></div>';
+
+  if (q){
+    var hits = [];
+    GROUP.food.concat(GROUP.drinks).forEach(function(c){
+      c.items.forEach(function(it){ if (matches(it,q)) hits.push(it); });
+    });
+    h += '<div class="gut head"><p class="kick" lang="en">'+esc(t('results',{n:hits.length}))+'</p>'
+      + '<h1 class="ptitle">'+esc(t('resultsFor',{q:S.q.trim()}))+'</h1>'
+      + '<p style="margin-top:10px"><button class="btn-txt" data-act="clearq">'+esc(t('clearSearch'))+'</button></p></div>';
+    if (!hits.length){
+      h += '<div class="gut"><div class="empty"><h3>'+esc(t('noResTitle',{q:S.q.trim()}))+'</h3><p>'+esc(t('noResBody'))+'</p></div></div>';
+    } else {
+      h += '<div class="gut"><div class="rows">';
+      hits.forEach(function(it){ h += dishRow(it); });
+      h += '</div></div>';
+    }
+    return h;
+  }
+
+  h += '<div class="tabs"><div class="tabs-in">'
+    + '<button data-act="togglecats" aria-expanded="'+(S.catsOpen?'true':'false')+'">'+ic('menu',18)+esc(t('allCats'))+'</button>';
+  cats.forEach(function(c){
+    h += '<button data-act="cat" data-v="'+c.id+'" aria-current="'+(S.cat===c.id?'true':'false')+'">'
+      + '<span class="no" lang="en">'+(c.no<10?'0':'')+c.no+'</span>'+esc(catName(c))+'</button>';
+  });
+  h += '</div>';
+  if (S.catsOpen){
+    h += '<div class="catlist">';
+    cats.forEach(function(c){
+      h += '<button data-act="cat" data-v="'+c.id+'"><span class="n" lang="en">'+(c.no<10?'0':'')+c.no+'</span>'
+        + '<span>'+esc(catName(c))+'</span><span class="c">'+esc(t('itemCount',{n:c.items.length}))+'</span></button>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  h += '<div class="gut">';
+  cats.forEach(function(c){
+    var measured = c.items.filter(isMeasured)[0];
+    h += '<section id="sec-'+c.id+'" style="scroll-margin-top:118px">'
+      + '<div class="sectno"><span lang="en">NO. '+(c.no<10?'0':'')+c.no+'</span><hr></div>'
+      + '<div class="secthead"><h2>'+esc(catName(c))+'</h2>'
+      + (catAlt(c) ? '<span class="en">'+esc(catAlt(c))+'</span>' : '')
+      + '</div>';
+    if (measured) h += '<p class="note">'+esc(t('catByWeight',{name:nameOf(measured)}))+'</p>';
+    h += '<div class="rows">';
+    c.items.forEach(function(it){ h += dishRow(it); });
+    h += '</div></section>';
+  });
+  h += '<div style="height:24px"></div></div>';
+  return h;
+}
+
+/* ------------------------------------------------------------------ cart */
+function thumb(it){
+  if (!it.img) return '';
+  return '<span class="thumb '+plateClass(it.key)+'" aria-hidden="true"><span>'+esc(initial(it))+'</span></span>';
+}
+function noteBlocks(l){
+  if (!l.note) return '';
+  return '<div class="notebox'+(l.allergy?' al':'')+'"><b>'+esc(l.allergy?t('allergyMark'):t('cartNote'))+'</b>'+esc(l.note)+'</div>';
+}
+function cartScreen(){
+  var h = masthead(true);
+  h += '<div class="gut head"><p class="kick">'+esc(t('cartKicker',{label:TABLE}))+'</p>'
+    + '<h1 class="ptitle">'+esc(t('cartTitle'))+(S.lang==='th'?'<span class="en" lang="en">Your order</span>':'')+'</h1>'
+    + '<p class="lede">'+esc(t('cartLede'))+'</p></div>';
+
+  if (!S.draft.length){
+    h += '<div class="gut"><div class="card"><div class="empty"><h3>'+esc(t('cartEmptyTitle'))+'</h3>'
+      + '<p>'+esc(t('cartEmptyBody'))+'</p>'
+      + '<button class="btn btn-o" data-act="nav" data-v="menu">'+esc(t('cartEmptyAct'))+'</button></div></div></div>';
+    return h;
+  }
+
+  h += '<div class="gut"><div class="card">';
+  S.draft.forEach(function(l){
+    var it = ITEM[l.itemId];
+    h += '<div class="line">'+thumb(it)+'<div style="flex:1 1 auto;min-width:0">'
+      + '<div class="lead"><span class="nm" style="font:600 var(--fs-17)/var(--lh-thai) var(--font-ui)">'+esc(nameOf(it))+'</span>'
+      + '<span class="dots"></span><span class="amt">'+baht(lineAmount(l))+'</span></div>'
+      + '<div class="hint" style="margin-top:2px">× '+l.qty+(l.qty>1?' · '+baht(l.unit)+'':'')+'</div>'
+      + noteBlocks(l)
+      + '<div class="lacts"><span class="step">'
+      +   '<button data-act="qty" data-v="'+l.uid+'" data-d="-1" aria-label="-"'+(l.qty<=1?' disabled':'')+'>−</button>'
+      +   '<b>'+l.qty+'</b>'
+      +   '<button data-act="qty" data-v="'+l.uid+'" data-d="1" aria-label="+"'+(l.qty>=MAX_QTY?' disabled':'')+'>+</button>'
+      + '</span>'
+      + '<button class="btn-txt" style="text-decoration:none;display:inline-flex;gap:6px;align-items:center;color:var(--text)" data-act="edit" data-v="'+l.uid+'">'+ic('note',18)+esc(t('cartEdit'))+'</button>'
+      + '<button class="btn-txt" style="text-decoration:none;color:var(--text)" data-act="rm" data-v="'+l.uid+'">'+esc(t('cartRemove'))+'</button>'
+      + '</div></div></div>';
+  });
+  h += '</div>';
+
+  h += '<div class="card"><h3>'+esc(t('roundTotal'))+'</h3><hr class="r" style="margin:0 0 14px">'
+    + '<div class="lead"><span class="nm" style="font-weight:600">'+esc(t('subtotal',{n:S.draft.length}))+'</span>'
+    + '<span class="dots"></span><span class="amt amt-lg">'+baht(draftTotal())+'</span></div>'
+    + '<p class="hint">'+esc(t('cartTotalNote'))+'</p>'
+    + '<div style="margin-top:16px"><button class="btn btn-p" data-act="review">'+esc(t('cartSend'))+' · '+baht(draftTotal())+'</button></div>'
+    + '</div><div style="height:16px"></div></div>';
+  return h;
+}
+
+/* ------------------------------------------------------------------ review */
+function reviewScreen(){
+  var h = masthead(true);
+  h += '<div class="gut head"><p class="kick">'+esc(t('subKicker',{label:TABLE}))+'</p>'
+    + '<h1 class="ptitle">'+esc(t('subTitle'))+'</h1>'
+    + (S.lang==='th'?'<p class="en" style="font:italic 500 var(--fs-20)/1.2 var(--font-serif);color:var(--text-3);margin:4px 0 0" lang="en">Review your order</p>':'')
+    + '</div>';
+  h += '<div class="gut"><div class="card">'
+    + '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">'
+    +   '<div><p class="note" style="margin:0">'+esc(t('subTable'))+'</p>'
+    +   '<b style="font:500 var(--fs-40)/1 var(--font-display);font-feature-settings:var(--num)">'+TABLE+'</b></div>'
+    +   '<div style="text-align:right"><p class="note" style="margin:0">'+esc(t('subItems'))+'</p>'
+    +   '<b style="font:600 var(--fs-18)/1.4 var(--font-ui)">'+esc(t('subItemsValue',{n:S.draft.length}))+'</b></div>'
+    + '</div><hr class="r">';
+  S.draft.forEach(function(l){
+    var it = ITEM[l.itemId];
+    h += '<div class="line">'+thumb(it)+'<div style="flex:1 1 auto;min-width:0">'
+      + '<div class="lead"><span class="nm" style="font:600 var(--fs-17)/var(--lh-thai) var(--font-ui)">'+esc(nameOf(it))+'</span>'
+      + '<span class="dots"></span><span class="amt">'+baht(lineAmount(l))+'</span></div>'
+      + '<div class="hint" style="margin-top:2px">× '+l.qty+'</div>'+noteBlocks(l)+'</div></div>';
+  });
+  h += '<hr class="r">'
+    + '<div class="lead"><span class="nm" style="font-weight:600">'+esc(t('subtotal',{n:S.draft.length}))+'</span>'
+    + '<span class="dots"></span><span class="amt amt-lg">'+baht(draftTotal())+'</span></div>'
+    + '<p class="hint">'+esc(t('cartTotalNote'))+'</p></div>';
+  h += '<div class="card"><p class="note" style="display:flex;gap:10px;align-items:flex-start;margin:0">'
+    + ic('info',18)+'<span>'+esc(t('subExplain'))+'</span></p>'
+    + '<p class="hint" style="margin-top:10px">'+esc(t('subNotes'))+'</p>'
+    + '<div style="margin-top:16px"><button class="btn btn-p" data-act="place">'+esc(t('subPlace'))+' · '+baht(draftTotal())+'</button></div>'
+    + '<p class="center" style="margin:12px 0 0"><button class="btn-txt" data-act="nav" data-v="cart">'+esc(t('subBack'))+'</button></p>'
+    + '</div><div style="height:16px"></div></div>';
+  return h;
+}
+
+/* ------------------------------------------------------------------ track */
+function portionCard(p){
+  var it = ITEM[p.itemId];
+  var h = '<div class="card" style="border-left:3px solid var(--now)">';
+  if (p.state==='requested'){
+    h += '<p class="rkick" style="margin:0 0 4px">'+ic('scale',16)+esc(t('portRequested'))+'</p>'
+      + '<h3 style="margin:0 0 8px">'+esc(nameOf(it))+(altOf(it)?' <span class="en" style="font:italic 500 var(--fs-17)/1 var(--font-serif);color:var(--text-3)">'+esc(altOf(it))+'</span>':'')+'</h3>'
+      + '<div class="lead"><span class="nm note" style="margin:0">'+esc(t('portRate',{n:it.basis}))+'</span><span class="dots"></span><span class="amt amt-sm">'+baht(it.rate)+'</span></div>'
+      + '<p class="hint">'+esc(t('portAskedAt',{time:fmtTime(p.at)}))+'</p>';
+    if (p.grams) h += '<p class="hint">'+esc(t('portPrefShown'))+' · '+p.grams+' '+esc(t('grams'))+'</p>';
+    if (p.note) h += '<div class="notebox"><b>'+esc(t('portYourNote'))+'</b>'+esc(p.note)+'</div>';
+    h += '<p class="note">'+esc(t('weighNote'))+'</p>'
+      + '<p style="text-align:right;margin:8px 0 0"><button class="btn-txt" data-act="pcancel" data-v="'+p.id+'">'+esc(t('portCancel'))+'</button></p>';
+  } else {
+    h += '<p class="rkick" style="margin:0 0 4px;color:var(--heat-text)">'+ic('scale',16)+esc(t('portQuoted'))+'</p>'
+      + '<h3 style="margin:0 0 8px">'+esc(nameOf(it))+'</h3>'
+      + '<p class="hint" style="margin-top:0">'+esc(t('portWeighed'))+' · '+fmtTime(p.quoteAt)+'</p>'
+      + '<div class="lead" style="margin-top:10px"><span class="nm">'+p.quoteGrams+' '+esc(t('grams'))+'</span><span class="dots"></span><span class="amt amt-sm">'+esc(t('portRate',{n:it.basis}))+' '+baht(it.rate)+'</span></div>'
+      + '<hr class="r" style="margin:12px 0">'
+      + '<div class="lead"><span class="nm" style="font-weight:600">'+esc(t('portTotal'))+'</span><span class="dots"></span><span class="amt amt-lg">'+baht(p.quoteAmount)+'</span></div>'
+      + '<p class="hint">'+esc(t('portHold'))+'</p>';
+    if (p.note) h += '<div class="notebox"><b>'+esc(t('portYourNote'))+'</b>'+esc(p.note)+'</div>';
+    h += '<div style="margin-top:14px"><button class="btn btn-p" data-act="paccept" data-v="'+p.id+'">'+esc(t('portConfirm'))+' · '+baht(p.quoteAmount)+'</button></div>'
+      + '<p class="center" style="margin:10px 0 0"><button class="btn-txt" data-act="pcancel" data-v="'+p.id+'">'+esc(t('portCancel'))+'</button></p>';
+  }
+  return h + '</div>';
+}
+function dishBlock(l){
+  var it = ITEM[l.itemId];
+  var idx = lineStep(l, S.now);
+  var h = '<div class="dish">'
+    + '<div class="lead"><span class="nm" style="font:600 var(--fs-16)/var(--lh-thai) var(--font-ui)">'+esc(nameOf(it))+'</span>'
+    + '<span class="dots"></span><span class="amt amt-sm">'+baht(lineAmount(l))+'</span></div>'
+    + '<div class="hint" style="margin-top:2px">× '+l.qty+'</div>'
+    + noteBlocks(l)
+    + '<div class="rail" aria-hidden="true">';
+  for (var i=0;i<5;i++){
+    if (i>0) h += '<s class="'+(i<=idx?'d':'')+'"></s>';
+    h += '<i class="'+(i<idx?'d':(i===idx?(idx===4?'d':'c'):''))+'"></i>';
+  }
+  h += '</div><p class="pill '+(idx===4?'pill-ok':(idx>=3?'pill-h':'pill-n'))+'" style="margin:2px 0 8px">'
+    + (idx===4?ic('check',14):'<i class="dot"></i>')+esc(stepLabel(STEPS[idx], it.station))+'</p>';
+  for (var j=0;j<=idx;j++){
+    h += '<div class="tline"><span>'+esc(stepLabel(STEPS[j], it.station))+'</span><em>'+fmtTime(l.sched[j])+'</em></div>';
+  }
+  for (var k=idx+1;k<5;k++){
+    h += '<div class="tline" style="color:var(--text-3)"><span>'+esc(stepLabel(STEPS[k], it.station))+'</span><em>'+esc(t('stepUpcoming'))+'</em></div>';
+  }
+  return h + '</div>';
+}
+function roundCard(r){
+  var idx = roundStep(r, S.now);
+  var msg = [t('msgReceived'),t('msgConfirmed'),t('msgPreparing'),t('msgAlmost'),t('msgServed')][idx];
+  var last = r.at; r.lines.forEach(function(l){ var s=lineStep(l,S.now); if (l.sched[s]>last) last=l.sched[s]; });
+  var n=0; r.lines.forEach(function(l){ n+=l.qty; });
+  var h = '<div class="card">'
+    + '<div style="display:flex;align-items:flex-start;gap:12px">'
+    +   '<div style="flex:1 1 auto;min-width:0"><h3 style="margin:0;font-size:var(--fs-20)">'+esc(t('round',{n:r.n}))+'</h3>'
+    +   '<p class="hint" style="margin-top:4px">'+esc(t('trackMeta',{time:fmtTime(r.at),items:t('items',{n:n}),label:TABLE}))+'</p>'
+    +   '<p class="hint" style="margin-top:2px">'+esc(t('updated2',{time:fmtTime(last)}))+'</p></div>'
+    +   '<div style="text-align:right;flex:0 0 auto"><p class="hint" style="margin:0">'+esc(t('reference'))+'</p>'
+    +   '<b class="ref" lang="en">'+esc(r.ref)+'</b></div>'
+    + '</div>';
+  if (r.mine || r.fromPortion) h += '<p class="pill pill-n" style="margin-top:10px">'+esc(r.fromPortion?t('byPortion'):t('mine'))+'</p>';
+  h += '<p class="note">'+esc(msg)+'</p><hr class="r" style="margin:14px 0 0">';
+  r.lines.forEach(function(l){ h += dishBlock(l); });
+  return h + '</div>';
+}
+function reqButtonLabel(kind){
+  var r = S.reqs[kind];
+  if (!r) return null;
+  if (r.state==='sent') return t('helpSent',{time:fmtTime(r.at)});
+  if (r.state==='ack') return kind==='call_staff' ? t('helpAckCall') : t('helpAck');
+  var left = Math.max(0, Math.ceil((r.until - S.now)/1000));
+  return left>0 ? t('helpDoneWait',{time:fmtTime(r.doneAt),n:left}) : t('helpDone',{time:fmtTime(r.doneAt)});
+}
+function trackScreen(){
+  var h = masthead(true);
+  var n = S.rounds.length;
+  h += '<div class="gut head"><p class="kick">'+esc(n===1?t('trackKickerOne',{label:TABLE}):t('trackKicker',{label:TABLE,n:n}))+'</p>'
+    + '<h1 class="ptitle">'+esc(t('trackTitle'))+(S.lang==='th'?'<span class="en" lang="en">Track</span>':'')+'</h1>'
+    + '<p class="pill pill-ok" style="margin-top:12px"><i class="dot"></i>'+esc(t('liveGuest'))+' · '+esc(t('updated2',{time:fmtTime(S.now)}))+'</p>'
+    + '<p class="lede">'+esc(t('trackShared',{label:TABLE}))+'</p>'
+    + '<p class="hint">'+esc(t('honestStatus'))+'</p></div>';
+
+  h += '<div class="gut" style="display:flex;gap:12px">'
+    + '<button class="btn btn-g" data-act="req" data-v="call_staff"'+(reqBusy('call_staff')?' disabled':'')+'>'+ic('bell',18)+esc(t('svcCall'))+'</button>'
+    + '<button class="btn btn-g" data-act="req" data-v="bill"'+(reqBusy('bill')?' disabled':'')+'>'+ic('receipt',18)+esc(t('svcBill'))+'</button>'
+    + '</div>';
+  ['call_staff','bill'].forEach(function(k){
+    var lab = reqButtonLabel(k);
+    if (lab) h += '<p class="gut hint" style="margin-top:8px">'+esc((k==='call_staff'?t('svcCall'):t('svcBill'))+' · '+lab)+'</p>';
+  });
+
+  h += '<div class="gut">';
+  S.portions.forEach(function(p){ h += portionCard(p); });
+  if (!S.rounds.length && !S.portions.length){
+    h += '<div class="card"><div class="empty"><h3>'+esc(t('trackEmptyTitle'))+'</h3><p>'+esc(t('trackEmptyBody'))+'</p>'
+      + '<button class="btn btn-o" data-act="nav" data-v="menu">'+esc(t('toMenu'))+'</button></div></div>';
+  }
+  var open = S.rounds.filter(function(r){ return roundStep(r,S.now)<4; });
+  var done = S.rounds.filter(function(r){ return roundStep(r,S.now)===4; });
+  if (open.length){
+    h += '<h2 class="kick" style="margin-top:22px">'+esc(t('currentHeading'))+'</h2>';
+    open.slice().reverse().forEach(function(r){ h += roundCard(r); });
+  }
+  if (done.length){
+    h += '<h2 class="kick" style="margin-top:22px">'+esc(t('pastHeading'))+'</h2>';
+    done.slice().reverse().forEach(function(r){ h += roundCard(r); });
+  }
+  return h + '<div style="height:16px"></div></div>';
+}
+
+/* ------------------------------------------------------------------ bill */
+function billScreen(){
+  var h = masthead(true);
+  h += '<div class="gut head"><p class="kick">'+esc(t('billKicker',{label:TABLE}))+'</p>'
+    + '<h1 class="ptitle">'+esc(t('billTitle'))+(S.lang==='th'?'<span class="en" lang="en">Table bill</span>':'')+'</h1>'
+    + '<p class="pill pill-n" style="margin-top:12px">'+ic('receipt',16)
+    + esc(S.billAt ? t('billRequestedPill',{time:fmtTime(S.billAt)}) : t('billOpen'))+'</p>'
+    + '<p class="lede">'+esc(t('billShared',{label:TABLE}))+'</p></div>';
+
+  var steps = [
+    [t('billF1'), S.billAt ? t('billRequested',{time:fmtTime(S.billAt)}) : t('billF1Sub')],
+    [t('billF2'), S.billAt ? t('billPrepSub') : t('billWaitSub')],
+    [t('billF3'), t('billPaySub')],
+    [t('billF4'), '']
+  ];
+  var cur = S.billAt ? 1 : 0;
+  h += '<div class="gut"><div class="card"><h3>'+esc(t('billFlow'))+'</h3><ul class="flow">';
+  steps.forEach(function(s,i){
+    var cls = i<cur ? 'done' : (i===cur ? 'now' : 'todo');
+    h += '<li class="'+cls+'"><span class="mk">'+(i<cur?ic('check',14):'')+'</span><span class="bd">'
+      + '<span class="lead"><b class="nm">'+esc(s[0])+'</b>'+(i===cur?'<span class="dots"></span><span class="chip-ink">'+esc(S.lang==='th'?'ตอนนี้':'Now')+'</span>':'')+'</span>'
+      + (s[1]?'<small>'+esc(s[1])+'</small>':'')+'</span></li>';
+  });
+  h += '</ul></div>';
+
+  var acc = [], pend = [];
+  S.rounds.forEach(function(r){
+    (roundStep(r,S.now)>=1 ? acc : pend).push(r);
+  });
+  if (!acc.length && !pend.length){
+    h += '<div class="card"><div class="empty"><h3>'+esc(t('billEmptyTitle'))+'</h3><p>'+esc(t('billEmptyBody'))+'</p></div></div>';
+  }
+  if (acc.length){
+    h += '<div class="card"><h3>'+esc(t('billAccepted'))+'</h3>';
+    acc.forEach(function(r){
+      h += '<p class="kick" style="margin-top:14px" lang="en">'+esc(r.ref)+'</p>';
+      r.lines.forEach(function(l){
+        var it = ITEM[l.itemId];
+        h += '<div class="lead" style="margin-top:10px"><span class="nm" style="font:600 var(--fs-16)/var(--lh-thai) var(--font-ui)">'
+          + esc(nameOf(it))+' <span style="font-weight:400;color:var(--text-2)">× '+l.qty+'</span></span>'
+          + '<span class="dots"></span><span class="amt amt-sm">'+baht(lineAmount(l))+'</span></div>';
+      });
+    });
+    h += '</div>';
+  }
+  if (pend.length){
+    h += '<div class="card" style="border-style:dashed"><h3>'+esc(t('billPending'))+'</h3>';
+    pend.forEach(function(r){
+      r.lines.forEach(function(l){
+        var it = ITEM[l.itemId];
+        h += '<div class="lead" style="margin-top:10px"><span class="nm">'+esc(nameOf(it))+' <span style="color:var(--text-2)">× '+l.qty+'</span></span>'
+          + '<span class="dots"></span><span class="amt amt-sm" style="color:var(--text-2)">'+baht(lineAmount(l))+'</span></div>';
+      });
+    });
+    h += '<p class="hint">'+esc(t('billPendingNote'))+'</p></div>';
+  }
+
+  var tot = acceptedTotal();
+  h += '<div class="card">'
+    + '<div class="lead"><span class="nm">'+esc(t('billSubtotal'))+'</span><span class="dots"></span><span class="amt amt-sm">'+baht(tot)+'</span></div>'
+    + '<div class="lead" style="margin-top:8px"><span class="nm" style="color:var(--text-2)">'+esc(t('chargesNone'))+'</span><span class="dots"></span><span class="amt amt-sm" style="color:var(--text-2)">'+baht(0)+'</span></div>'
+    + '<hr class="r" style="margin:14px 0">'
+    + '<div class="lead"><span class="nm" style="font-weight:600">'+esc(t('billTotalNow'))+'</span><span class="dots"></span><span class="amt amt-lg">'+baht(tot)+'</span></div>'
+    + '<p class="hint">'+esc(t('billTotalNowNote'))+'</p>';
+  if (!S.billAt){
+    h += '<div style="margin-top:16px"><button class="btn btn-p" data-act="req" data-v="bill">'+esc(t('svcBill'))+'</button></div>'
+      + '<p class="hint center" style="margin-top:10px">'+esc(t('billRequestHelp'))+'</p>';
+  } else {
+    h += '<p class="note" style="display:flex;gap:10px;align-items:flex-start;margin-top:14px">'+ic('clock',18)
+      + '<span>'+esc(t('billRequested',{time:fmtTime(S.billAt)}))+'</span></p>';
+  }
+  h += '</div>';
+
+  h += '<div class="card"><h3>'+esc(t('billHowTitle'))+'</h3>'
+    + '<p class="note" style="margin-top:0">'+esc(t('billHow1'))+'</p>'
+    + '<p class="note">'+esc(t('billHow2'))+'</p>'
+    + '<p class="note">'+esc(t('billHow3'))+'</p></div>'
+    + '<div style="height:16px"></div></div>';
+  return h;
+}
+
+/* ------------------------------------------------------------------ requests */
+function reqBusy(kind){
+  var r = S.reqs[kind];
+  if (!r) return false;
+  if (r.state !== 'done') return true;
+  return S.now < r.until;
+}
+function sendReq(kind, note){
+  if (reqBusy(kind)) return false;
+  var now = Date.now();
+  S.reqs[kind] = { state:'sent', at:now, ackAt:now+7000, doneAt:now+15000, until:now+35000, note:note||'' };
+  if (kind === 'bill' && !S.billAt) S.billAt = now;
+  return true;
+}
+function reqName(kind){
+  return kind==='call_staff' ? t('svcCall') : kind==='bill' ? t('svcBill')
+       : kind==='order_change' ? t('svcChange') : t('svcAllergy');
+}
+function reqStatusLine(kind){
+  var r = S.reqs[kind];
+  if (!r) return '';
+  if (r.state==='sent') return t('helpSent',{time:fmtTime(r.at)});
+  if (r.state==='ack') return kind==='call_staff' ? t('helpAckCall') : t('helpAck');
+  var left = Math.max(0, Math.ceil((r.until - S.now)/1000));
+  return left>0 ? t('helpDoneWait',{time:fmtTime(r.doneAt),n:left}) : t('helpDone',{time:fmtTime(r.doneAt)});
+}
+
+/* ------------------------------------------------------------------ item sheet */
+var SH = { qty:1, note:'', allergy:false, opt:null, grams:'', pnote:'' };
+
+function itemSheet(){
+  var it = ITEM[S.sheet.id];
+  if (!it) return '';
+  var cat = CAT[it.cat];
+  var meas = isMeasured(it);
+  var ok = canOrder(it);
+  var editing = !!S.sheet.editUid;
+  var groups = (LINKS[it.id]||[]).map(function(g){ return GRP[g]; }).filter(Boolean);
+  var existing = S.portions.filter(function(p){ return p.itemId===it.id; })[0];
+
+  var h = '<div class="grab"></div>'
+    + '<div class="sh-h"><span class="k"><span lang="en">NO. '+(cat.no<10?'0':'')+cat.no+'</span> · '+esc(catName(cat))+'</span>'
+    + '<button class="iconbtn" data-act="lang" data-v="'+(S.lang==='th'?'en':'th')+'" aria-label="'+esc(t('langTo'))+'"><span style="font:600 var(--fs-14)/1 var(--font-ui)">'+(S.lang==='th'?'EN':'TH')+'</span></button>'
+    + '<button class="iconbtn x" data-act="closeSheet" aria-label="'+esc(t('close'))+'">'+ic('x',20)+'</button></div>'
+    + '<div class="sh-b">';
+
+  if (it.img) h += '<div class="plate '+plateClass(it.key)+'" style="width:100%;margin:0 0 18px" aria-hidden="true"><span style="font-size:var(--fs-48)">'+esc(initial(it))+'</span></div>';
+
+  h += '<h2 style="margin:0;font:600 var(--fs-24)/var(--lh-thai-min) var(--font-ui)">'+esc(nameOf(it))+'</h2>';
+  if (altOf(it)) h += '<p style="margin:4px 0 0;font:italic 500 var(--fs-22)/1.2 var(--font-serif);color:var(--text-3)">'+esc(altOf(it))+'</p>';
+  if (!it.th) h += '<p class="hint">'+esc(t('enOnly'))+'</p>';
+  h += '<hr class="r">';
+
+  if (meas){
+    h += '<div class="lead"><span class="nm note" style="margin:0">'+esc(t('portRate',{n:it.basis}))+'</span><span class="dots"></span><span class="amt amt-lg">'+baht(it.rate)+'</span></div>'
+      + '<p class="note">'+esc(t('weighLede'))+'</p>';
+  } else if (it.price!=null){
+    h += '<div class="lead"><span class="nm note" style="margin:0">'+esc(t('itemPrice'))+'</span><span class="dots"></span><span class="amt amt-lg">'+baht(it.price)+'</span></div>';
+  } else {
+    h += '<div class="lead"><span class="nm note" style="margin:0">'+esc(t('itemPrice'))+'</span><span class="dots"></span><span class="amt amt-sm" style="color:var(--text-2)">'+esc(t('pricePending'))+'</span></div>';
+  }
+  if (it.alcohol) h += '<p class="rkick" style="margin-top:10px">'+ic('alert',16)+esc(t('alcoholConfirm'))+'</p>';
+
+  if (!ok){
+    h += '<div class="card" style="background:var(--alert-tint);border-color:var(--alert-tint)">'
+      + '<p style="display:flex;gap:10px;align-items:flex-start;margin:0;font-weight:600;color:var(--alert)">'+ic('alert',20)
+      + '<span>'+esc(whyText(it))+'</span></p></div>';
+  }
+
+  if (groups.length){
+    groups.forEach(function(g){
+      h += '<p class="lbl">'+esc(S.lang==='th'?(g.th||g.en):(g.en||g.th))+' <i>'+esc(t('optionalOne'))+'</i></p>';
+      h += '<button class="srow2'+(SH.opt===null?' sel':'')+'" data-act="opt" data-v=""'+(ok?'':' disabled')+'>'
+        + '<span class="tx"><b>'+esc(t('optionNone'))+'</b></span></button>';
+      g.options.forEach(function(o){
+        h += '<button class="srow2'+(SH.opt===o.id?' sel':'')+'" data-act="opt" data-v="'+o.id+'"'+(ok?'':' disabled')+'>'
+          + '<span class="tx"><b>'+esc(o.en||o.th)+'</b></span></button>';
+      });
+    });
+  }
+
+  if (meas){
+    h += '<div class="card" style="margin-top:20px"><h3>'+esc(t('portStepsTitle'))+'</h3><ul class="flow">'
+      + '<li class="now"><span class="mk"></span><span class="bd"><b>'+esc(t('portStep1'))+'</b></span></li>'
+      + '<li class="todo"><span class="mk"></span><span class="bd"><b>'+esc(t('portStep2'))+'</b></span></li>'
+      + '<li class="todo"><span class="mk"></span><span class="bd"><b>'+esc(t('portStep3'))+'</b></span></li>'
+      + '</ul></div>';
+    if (existing){
+      h += '<p class="note" style="display:flex;gap:10px;align-items:flex-start">'+ic('info',18)+'<span>'+esc(t('portOpenExisting',{name:nameOf(it)}))+'</span></p>';
+    } else {
+      h += '<p class="lbl">'+esc(t('portPreferred'))+' <i>'+esc(t('optional'))+'</i></p>'
+        + '<input class="num" id="pg" type="number" inputmode="numeric" min="50" max="2000" step="10" value="'+esc(SH.grams)+'" placeholder="'+esc(t('grams'))+'">'
+        + '<p class="hint">'+esc(t('portPrefHelp'))+'</p>'
+        + '<p class="lbl">'+esc(t('portNote'))+' <i>'+esc(t('optional'))+'</i></p>'
+        + '<div class="tawrap"><textarea class="ta" id="pn" maxlength="'+NOTE_MAX+'" placeholder="'+esc(t('notePh'))+'">'+esc(SH.pnote)+'</textarea>'
+        + '<span class="cnt" id="pnc">'+SH.pnote.length+' / '+NOTE_MAX+'</span></div>'
+        + '<p class="hint">'+esc(t('portNoteHelp'))+'</p>';
+    }
+  } else if (it.notes){
+    h += '<p class="lbl">'+esc(t('noteLabel'))+' <i>'+esc(t('optional'))+'</i></p>'
+      + '<div class="tawrap"><textarea class="ta" id="nt" maxlength="'+NOTE_MAX+'" placeholder="'+esc(t('notePh'))+'"'+(ok?'':' disabled')+'>'+esc(SH.note)+'</textarea>'
+      + '<span class="cnt" id="ntc">'+SH.note.length+' / '+NOTE_MAX+'</span></div>'
+      + '<p class="hint">'+esc(t('noteHelp'))+'</p>'
+      + '<label class="chk"><input type="checkbox" id="al"'+(SH.allergy?' checked':'')+(ok?'':' disabled')+'>'
+      + '<span><b>'+esc(t('noteAllergy'))+'</b><small>'+esc(t('noteAllergyHelp'))+'</small></span></label>';
+  }
+
+  h += '<div class="card" style="background:var(--sunken);border-color:var(--rule-soft);box-shadow:none">'
+    + '<h3 style="font-size:var(--fs-16)">'+esc(t('allergyTitle'))+'</h3>'
+    + '<p class="note" style="margin:0">'+esc(t('allergyUnknown'))+'</p>'
+    + '<p style="margin:10px 0 0"><button class="btn-txt" data-act="helpopen" data-v="allergy_help">'+esc(t('svcAllergy'))+'</button></p></div>';
+
+  h += '<p class="hint">'+esc(t('maxQty',{n:MAX_QTY}))+'</p><div style="height:8px"></div></div>';
+
+  /* footer */
+  h += '<div class="sh-f">';
+  if (!S.joined){
+    h += '<div style="flex:1 1 auto"><p class="hint" style="margin:0 0 8px">'+esc(t('noAccess'))+'</p>'
+      + '<button class="btn btn-p" data-act="join">'+esc(t('joinSubmit',{label:TABLE}))+'</button></div>';
+  } else if (meas){
+    if (existing){
+      h += '<button class="btn btn-p" data-act="nav" data-v="track">'+esc(t('trackTitle'))+'</button>';
+    } else {
+      h += '<button class="btn btn-p" data-act="weigh" data-v="'+it.id+'">'+ic('scale',18)+esc(t('askToWeigh'))+'</button>';
+    }
+  } else if (!ok){
+    h += '<div style="flex:1 1 auto"><p class="hint" style="margin:0">'+esc(whyText(it))+'</p></div>';
+  } else {
+    h += '<span class="step">'
+      + '<button data-act="shqty" data-d="-1" aria-label="-"'+(SH.qty<=1?' disabled':'')+'>−</button><b>'+SH.qty+'</b>'
+      + '<button data-act="shqty" data-d="1" aria-label="+"'+(SH.qty>=MAX_QTY?' disabled':'')+'>+</button></span>'
+      + '<button class="btn btn-p" data-act="'+(editing?'save':'add')+'">'+esc(editing?t('itemUpdate'):t('itemAdd'))+' · '+baht(it.price*SH.qty)+'</button>';
+  }
+  h += '</div>';
+  if (editing){
+    h += '<div style="padding:0 var(--gutter) var(--space-4);text-align:center"><button class="btn-txt" data-act="rm" data-v="'+S.sheet.editUid+'">'+esc(t('itemRemove'))+'</button></div>';
+  }
+  return h;
+}
+
+/* ------------------------------------------------------------------ service sheet */
+function svcRow(kind, icon){
+  var r = S.reqs[kind];
+  var busy = reqBusy(kind);
+  var sub = r ? reqStatusLine(kind) : (kind==='call_staff' ? t('subCall',{label:TABLE})
+            : kind==='bill' ? t('subBill') : kind==='order_change' ? t('subChange') : t('subAllergy'));
+  var act = (kind==='call_staff'||kind==='bill') ? 'req' : 'helpopen';
+  return '<button class="srow2'+(r&&r.state!=='done'?' sel':'')+'" data-act="'+act+'" data-v="'+kind+'"'+(busy&&act==='req'?' disabled':'')+'>'
+    + '<span class="ic">'+ic(icon,20)+'</span>'
+    + '<span class="tx"><b>'+esc(reqName(kind))+'</b><small>'+esc(sub)+'</small></span>'
+    + '<span class="ar">'+ic('chev',18)+'</span></button>';
+}
+function serviceSheet(){
+  if (S.sheet.help){
+    var kind = S.sheet.help;
+    var r = S.reqs[kind];
+    var h = '<div class="grab"></div><div class="sh-h"><span class="t">'+esc(reqName(kind))+'</span>'
+      + '<button class="iconbtn x" data-act="closeSheet" aria-label="'+esc(t('close'))+'">'+ic('x',20)+'</button></div><div class="sh-b">'
+      + '<p style="margin:0 0 4px"><button class="btn-txt" data-act="helpback">&lsaquo; '+esc(t('helpBack'))+'</button></p>'
+      + '<p class="note">'+esc(kind==='order_change'?t('helpLeadChange'):t('helpLeadAllergy'))+'</p>';
+    if (r){
+      h += '<div class="card"><p class="pill '+(r.state==='done'?'pill-ok':'pill-h')+'" style="margin:0 0 8px">'
+        + (r.state==='done'?ic('check',14):'<i class="dot"></i>')+esc(reqStatusLine(kind))+'</p>'
+        + '<p class="note" style="margin:0">'+esc(r.state==='sent'?t('helpExisting'):t('helpExistingSeen'))+'</p>'
+        + (r.note ? '<div class="notebox"><b>'+esc(t('portYourNote'))+'</b>'+esc(r.note)+'</div>' : '')
+        + '</div>';
+    } else {
+      h += '<p class="lbl">'+esc(kind==='order_change'?t('helpNoteChange'):t('helpNoteAllergy'))+' <i>'+esc(t('optional'))+'</i></p>'
+        + '<div class="tawrap"><textarea class="ta" id="hn" maxlength="'+NOTE_MAX+'">'+esc(SH.pnote)+'</textarea>'
+        + '<span class="cnt" id="hnc">'+SH.pnote.length+' / '+NOTE_MAX+'</span></div>'
+        + '<p class="hint">'+esc(t('helpNoteHelp'))+'</p>';
+    }
+    h += '</div><div class="sh-f">';
+    h += r ? '<button class="btn btn-p" data-act="closeSheet">'+esc(t('close'))+'</button>'
+           : '<button class="btn btn-p" data-act="helpsend" data-v="'+kind+'">'+esc(kind==='order_change'?t('helpSendChange'):t('helpSendAllergy'))+'</button>';
+    return h + '</div>';
+  }
+
+  var h = '<div class="grab"></div><div class="sh-h"><span class="t">'+esc(t('serviceAt',{label:TABLE}))+'</span>'
+    + '<button class="iconbtn" data-act="lang" data-v="'+(S.lang==='th'?'en':'th')+'" aria-label="'+esc(t('langTo'))+'"><span style="font:600 var(--fs-14)/1 var(--font-ui)">'+(S.lang==='th'?'EN':'TH')+'</span></button>'
+    + '<button class="iconbtn x" data-act="closeSheet" aria-label="'+esc(t('close'))+'">'+ic('x',20)+'</button></div><div class="sh-b">'
+    + svcRow('call_staff','bell')
+    + svcRow('order_change','note')
+    + svcRow('allergy_help','alert')
+    + svcRow('bill','receipt')
+    + '<button class="srow2" data-act="nav" data-v="bill"><span class="ic">'+ic('list',20)+'</span>'
+    +   '<span class="tx"><b>'+esc(t('viewBill'))+'</b><small>'+esc(t('viewBillSub',{amount:baht(acceptedTotal())}))+'</small></span>'
+    +   '<span class="ar">'+ic('chev',18)+'</span></button>'
+    + '<p class="note" style="display:flex;gap:10px;align-items:flex-start;background:var(--sunken);padding:12px;border-radius:var(--radius-card);margin-top:16px">'
+    +   ic('hand',18)+'<span>'+esc(t('svcFallback'))+'</span></p>'
+    + '<p class="lbl">'+ic('info',16)+' '+esc(t('measureTitle'))+'</p>'
+    + '<p class="note" style="margin-top:4px">'+esc(t('measureBody'))+'</p>'
+    + '<div style="display:flex;align-items:center;gap:12px;margin:14px 0 8px">'
+    +   '<button class="sw" data-act="measure" aria-pressed="'+(S.measure?'true':'false')+'" aria-label="'+esc(t('measureSwitch'))+'"></button>'
+    +   '<span><b style="font:600 var(--fs-15)/1.4 var(--font-ui)">'+esc(t('measureSwitch'))+'</b> '
+    +   '<span class="hint" style="display:inline">'+esc(S.measure?t('on'):t('off'))+'</span></span></div>'
+    + '<div style="height:8px"></div></div>';
+  return h;
+}
+
+/* ------------------------------------------------------------------ render */
+var toastTimer = null;
+function toast(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('on'); }, 4000);
+}
+function screenHTML(){
+  if (S.screen==='join') return joinScreen();
+  if (S.screen==='menu') return menuScreen();
+  if (S.screen==='cart') return cartScreen();
+  if (S.screen==='review') return reviewScreen();
+  if (S.screen==='track') return trackScreen();
+  return billScreen();
+}
+function render(){
+  document.documentElement.lang = S.lang;
+  var app = document.getElementById('app');
+  var html = screenHTML();
+  if (!S.joined && S.screen!=='join'){
+    html += '<div class="joinbar"><button class="btn btn-p" data-act="join">'+esc(t('joinSubmit',{label:TABLE}))+'</button></div>'
+          + '<div style="height:84px"></div>';
+  }
+  app.innerHTML = html;
+
+  var nav = document.getElementById('nav');
+  if (S.joined){ nav.innerHTML = navBar(); nav.setAttribute('aria-label', t('navLabel')); nav.hidden = false; }
+  else { nav.innerHTML = ''; nav.hidden = true; }
+
+  renderSheet();
+  syncTabs();
+}
+function renderSheet(){
+  var el = document.getElementById('sheet');
+  var sc = document.getElementById('scrim');
+  if (!S.sheet){
+    el.classList.remove('on'); sc.classList.remove('on');
+    setTimeout(function(){ if (!S.sheet){ el.hidden = true; el.innerHTML = ''; } }, 240);
+    return;
+  }
+  el.innerHTML = S.sheet.type==='item' ? itemSheet() : serviceSheet();
+  el.setAttribute('aria-label', S.sheet.type==='item' ? (ITEM[S.sheet.id] ? nameOf(ITEM[S.sheet.id]) : '') : t('serviceAt',{label:TABLE}));
+  el.hidden = false;
+  sc.classList.add('on');
+  requestAnimationFrame(function(){ el.classList.add('on'); });
+}
+function syncTabs(){
+  if (S.screen!=='menu' || S.q.trim()) return;
+  var tabs = document.querySelectorAll('.tabs-in [data-act="cat"]');
+  if (!tabs.length) return;
+  var best = null, bestTop = -1e9;
+  GROUP[S.group].forEach(function(c){
+    var el = document.getElementById('sec-'+c.id);
+    if (!el) return;
+    var top = el.getBoundingClientRect().top - 130;
+    if (top <= 0 && top > bestTop){ bestTop = top; best = c.id; }
+  });
+  if (!best) best = GROUP[S.group][0] && GROUP[S.group][0].id;
+  if (best === S.cat) return;
+  S.cat = best;
+  for (var i=0;i<tabs.length;i++){
+    tabs[i].setAttribute('aria-current', tabs[i].getAttribute('data-v')===best ? 'true' : 'false');
+  }
+}
+
+/* ------------------------------------------------------------------ actions */
+function openItem(id, editUid){
+  var it = ITEM[id]; if (!it) return;
+  S.sheet = { type:'item', id:id, editUid:editUid||null };
+  if (editUid){
+    var l = S.draft.filter(function(x){ return x.uid===editUid; })[0];
+    SH = { qty:l.qty, note:l.note, allergy:l.allergy, opt:l.opt, grams:'', pnote:'' };
+  } else {
+    SH = { qty:1, note:'', allergy:false, opt:null, grams:'', pnote:'' };
+  }
+  render();
+}
+function closeSheet(){ S.sheet = null; render(); }
+
+function addLine(){
+  var it = ITEM[S.sheet.id];
+  S.draft.push({ uid:'d'+(S.uid++), itemId:it.id, qty:SH.qty, unit:it.price,
+    note:SH.note.trim().slice(0,NOTE_MAX), allergy:SH.allergy, opt:SH.opt });
+  saveDraft();
+  var name = nameOf(it);
+  S.sheet = null; render();
+  toast(SH.qty>1 ? t('addedQty',{name:name,n:SH.qty}) : t('added',{name:name}));
+}
+function saveLine(){
+  var l = S.draft.filter(function(x){ return x.uid===S.sheet.editUid; })[0];
+  if (l){ l.qty = SH.qty; l.note = SH.note.trim().slice(0,NOTE_MAX); l.allergy = SH.allergy; l.opt = SH.opt; }
+  saveDraft();
+  var name = nameOf(ITEM[S.sheet.id]);
+  S.sheet = null; render(); toast(t('updated',{name:name}));
+}
+function removeLine(uid){
+  var l = S.draft.filter(function(x){ return x.uid===uid; })[0];
+  if (!l) return;
+  var name = nameOf(ITEM[l.itemId]);
+  S.draft = S.draft.filter(function(x){ return x.uid!==uid; });
+  saveDraft();
+  S.sheet = null; render(); toast(t('removed',{name:name}));
+}
+function placeOrder(){
+  if (!S.draft.length) return;
+  var now = Date.now();
+  var r = { n:++S.roundNo, ref:newRef(), at:now, mine:true, lines:[] };
+  S.draft.forEach(function(l){
+    var it = ITEM[l.itemId];
+    r.lines.push({ uid:l.uid, itemId:l.itemId, qty:l.qty, unit:l.unit, note:l.note,
+      allergy:l.allergy, opt:l.opt, sched:schedule(now, it.station), mine:true });
+  });
+  S.rounds.push(r);
+  S.draft = []; saveDraft();
+  S.screen = 'track'; render();
+  toast(t('subReceived',{ref:r.ref}));
+  window.scrollTo(0,0);
+}
+function askWeigh(id){
+  var it = ITEM[id];
+  var g = parseInt(SH.grams,10);
+  if (!(g>=50 && g<=2000)) g = 0;
+  var now = Date.now();
+  S.portions.push({ id:'p'+(S.uid++), itemId:id, grams:g||0, note:SH.pnote.trim().slice(0,NOTE_MAX),
+    state:'requested', at:now, quoteAt:now+6500 });
+  S.sheet = null; S.screen = 'track'; render();
+  toast(t('portSentBody',{name:nameOf(it)}));
+  window.scrollTo(0,0);
+}
+function acceptPortion(pid){
+  var p = S.portions.filter(function(x){ return x.id===pid; })[0];
+  if (!p || p.state!=='quoted') return;
+  var it = ITEM[p.itemId];
+  var now = Date.now();
+  var r = { n:++S.roundNo, ref:newRef(), at:now, mine:true, fromPortion:true, lines:[
+    { uid:'w'+(S.uid++), itemId:p.itemId, qty:1, unit:p.quoteAmount, note:p.note, allergy:false,
+      opt:null, sched:schedule(now, it.station), mine:true }
+  ]};
+  S.rounds.push(r);
+  S.portions = S.portions.filter(function(x){ return x.id!==pid; });
+  render();
+  toast(t('portConfirmedToast',{name:nameOf(it),round:r.n}));
+}
+function cancelPortion(pid){
+  var p = S.portions.filter(function(x){ return x.id===pid; })[0];
+  if (!p) return;
+  var name = nameOf(ITEM[p.itemId]);
+  S.portions = S.portions.filter(function(x){ return x.id!==pid; });
+  render(); toast(t('portCancelled',{name:name}));
+}
+
+/* ------------------------------------------------------------------ events */
+document.addEventListener('click', function(ev){
+  var el = ev.target.closest ? ev.target.closest('[data-act]') : null;
+  if (!el) return;
+  var a = el.getAttribute('data-act'), v = el.getAttribute('data-v');
+  if (el.disabled) return;
+
+  if (a==='lang'){ S.lang = v; store('rg.lang', v); render(); return; }
+  if (a==='join'){
+    S.joined = true; S.browsing = false; S.sheet = null;
+    if (S.screen==='join') S.screen = 'menu';
+    render(); toast(t('joinToast',{label:TABLE})); window.scrollTo(0,0); return;
+  }
+  if (a==='browse'){ S.browsing = true; S.screen = 'menu'; render(); window.scrollTo(0,0); return; }
+  if (a==='nav'){
+    if (v==='service'){ S.sheet = { type:'service', help:null }; SH.pnote=''; render(); return; }
+    S.screen = v; S.sheet = null; render(); window.scrollTo(0,0); return;
+  }
+  if (a==='open'){ openItem(v); return; }
+  if (a==='closeSheet'){ closeSheet(); return; }
+  if (a==='shqty'){
+    var d = parseInt(el.getAttribute('data-d'),10);
+    SH.qty = Math.max(1, Math.min(MAX_QTY, SH.qty + d));
+    renderSheet(); return;
+  }
+  if (a==='opt'){ SH.opt = v || null; renderSheet(); return; }
+  if (a==='add'){ addLine(); return; }
+  if (a==='save'){ saveLine(); return; }
+  if (a==='rm'){ removeLine(v); return; }
+  if (a==='edit'){ openItem(S.draft.filter(function(x){return x.uid===v;})[0].itemId, v); return; }
+  if (a==='qty'){
+    var dd = parseInt(el.getAttribute('data-d'),10);
+    var ln = S.draft.filter(function(x){ return x.uid===v; })[0];
+    if (ln){ ln.qty = Math.max(1, Math.min(MAX_QTY, ln.qty + dd)); saveDraft(); render(); }
+    return;
+  }
+  if (a==='review'){ S.screen = 'review'; render(); window.scrollTo(0,0); return; }
+  if (a==='place'){ placeOrder(); return; }
+  if (a==='weigh'){ askWeigh(v); return; }
+  if (a==='paccept'){ acceptPortion(v); return; }
+  if (a==='pcancel'){ cancelPortion(v); return; }
+  if (a==='req'){
+    if (sendReq(v)) { render(); toast(t('helpSentToast',{name:reqName(v)})); }
+    else render();
+    return;
+  }
+  if (a==='helpopen'){ S.sheet = { type:'service', help:v }; SH.pnote=''; render(); return; }
+  if (a==='helpback'){ S.sheet = { type:'service', help:null }; render(); return; }
+  if (a==='helpsend'){
+    if (sendReq(v, SH.pnote.trim())) toast(t('helpSentToast',{name:reqName(v)}));
+    render(); return;
+  }
+  if (a==='measure'){ S.measure = !S.measure; renderSheet(); return; }
+  if (a==='group'){ S.group = v; S.cat = null; S.catsOpen = false; render(); window.scrollTo(0,0); return; }
+  if (a==='togglecats'){ S.catsOpen = !S.catsOpen; render(); return; }
+  if (a==='clearq'){ S.q = ''; render(); window.scrollTo(0,0); return; }
+  if (a==='cat'){
+    S.cat = v;
+    var reRender = S.catsOpen; S.catsOpen = false;
+    if (reRender) render();
+    else {
+      var tabs = document.querySelectorAll('.tabs-in [data-act="cat"]');
+      for (var i=0;i<tabs.length;i++) tabs[i].setAttribute('aria-current', tabs[i].getAttribute('data-v')===v?'true':'false');
+    }
+    var sec = document.getElementById('sec-'+v);
+    if (sec) sec.scrollIntoView({ behavior:'smooth', block:'start' });
+    return;
+  }
+}, false);
+
+document.addEventListener('input', function(ev){
+  var id = ev.target.id;
+  if (id==='q'){
+    S.q = ev.target.value;
+    var pos = ev.target.selectionStart;
+    render();
+    var q = document.getElementById('q');
+    if (q){ q.focus(); try{ q.setSelectionRange(pos,pos); }catch(e){} }
+    return;
+  }
+  if (id==='nt'){ SH.note = ev.target.value; var c=document.getElementById('ntc'); if(c) c.textContent = SH.note.length+' / '+NOTE_MAX; return; }
+  if (id==='pn'){ SH.pnote = ev.target.value; var c2=document.getElementById('pnc'); if(c2) c2.textContent = SH.pnote.length+' / '+NOTE_MAX; return; }
+  if (id==='hn'){ SH.pnote = ev.target.value; var c3=document.getElementById('hnc'); if(c3) c3.textContent = SH.pnote.length+' / '+NOTE_MAX; return; }
+  if (id==='pg'){ SH.grams = ev.target.value; return; }
+}, false);
+
+document.addEventListener('change', function(ev){
+  if (ev.target.id==='al'){ SH.allergy = ev.target.checked; }
+}, false);
+
+document.addEventListener('keydown', function(ev){
+  if (ev.key==='Escape' && S.sheet) closeSheet();
+}, false);
+
+window.addEventListener('scroll', function(){ syncTabs(); }, { passive:true });
+
+/* ------------------------------------------------------------------ clock */
+setInterval(function(){
+  var prev = S.now;
+  S.now = Date.now();
+  var dirty = false;
+
+  for (var k in S.reqs){
+    var r = S.reqs[k];
+    if (r.state==='sent' && S.now >= r.ackAt){ r.state='ack'; dirty = true; }
+    else if (r.state==='ack' && S.now >= r.doneAt){ r.state='done'; dirty = true; }
+    else if (r.state==='done' && prev < r.until && S.now >= r.until){ dirty = true; }
+  }
+  S.portions.forEach(function(p){
+    if (p.state==='requested' && S.now >= p.quoteAt){
+      var it = ITEM[p.itemId];
+      var g = p.grams || 320;
+      g = Math.round((g + (Math.random()*40 - 12)) / 5) * 5;
+      p.quoteGrams = g;
+      p.quoteAmount = Math.round(g * it.rate / it.basis);
+      p.quoteAt = S.now;
+      p.state = 'quoted';
+      dirty = true;
+      toast(t('portQuoteArrived',{name:nameOf(it)}));
+    }
+  });
+  S.rounds.forEach(function(r){
+    r.lines.forEach(function(l){
+      for (var i=0;i<l.sched.length;i++){
+        if (prev < l.sched[i] && S.now >= l.sched[i]) dirty = true;
+      }
+    });
+  });
+  if (!dirty && S.screen!=='track' && !(S.sheet && S.sheet.type==='service')) return;
+
+  var ae = document.activeElement;
+  if (ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA')) return;
+  render();
+}, 1000);
+
+render();
+})();
+</script>
+</body>
+</html>
